@@ -1,13 +1,19 @@
-# Python library for equilibrium of legged robots
+<img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/feasible_region.png" alt="hyqgreen" width="400"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/foothold_planning.png" alt="planning" width="400"/>
 
-This library uses common operations over [convex
+
+# Feasible Region: an Actuation-Aware Extension of the Support Region
+This python library contains the code used for the motion planning formulation proposed in this [preprint](https://arxiv.org/abs/1903.07999#). In here you can also find the code used to generate the figures and plots of the manuscript. 
+
+<img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/3contacts_F%26A.png" alt="hyqgreen" width="200"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/3contacts_onlyA.png" alt="planning" width="200"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/4contacts_F%26A.png" alt="hyqgreen" width="200"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/4contacts_onlyA.png" alt="planning" width="200"/>
+
+Jet-leg performs common operations over [convex
 polyhedra](https://en.wikipedia.org/wiki/Convex_polyhedron) in higher dimensions in order to assess the problem of stability and motion feasibility of legged robots.
 
-## What you can do with this package
-- find various example formulations of linear, convex or nonlinear optimization problems;
-- find examples of convex and nonlinear trajectory optimization problems for legged robots;
-- find implamentation of Iterative Projection algorithms for the solution of geometrical problems related to legged locomotion stability and feasibility analysis
-- generate animated plots
+## What you can do with Jet-leg
+- you will find an implamentation of Iterative Projection algorithms for the solution of geometrical problems related to legged locomotion stability and feasibility analysis. This includes the computation of the [Feasible Region](https://arxiv.org/abs/1903.07999#).
+- generate the same plots that can be found in the same preprint above;
+- test various formulations of linear, convex or nonlinear optimization problems;
+
 
 ## Dependencies
 APT dependencies:
@@ -27,7 +33,7 @@ Python dependencies:
 - Matplotlib
 - [Pypoman](https://github.com/stephane-caron/pypoman) for the manipulation of polyhedrical object
 
-Install dependencies by:
+The above dependencies can be installed with the following commands:
 ```
 sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy
 CVXOPT_BUILD_GLPK=1 pip install cvxopt --user
@@ -60,7 +66,10 @@ python setup.py install --user
 ## Testing the library
 Jet-Leg comes with a number of unit tests intended to check the proper installation of the packages and make sure that all the mandatory depedencies are properly found. For this purpose, after completing the installation navigate to the [unit_test_main.py](https://gitlab.advr.iit.it/rorsolino/jet-leg/blob/master/unit_tests/unit_test_main.py) and run it.
 
-After that, navigate to the [examples folder](https://gitlab.advr.iit.it/rorsolino/jet-leg/tree/master/examples) to find more explanation on the usage of the package.
+After that, navigate to the [examples folder](https://gitlab.advr.iit.it/rorsolino/jet-leg/tree/master/examples) to find more explanation on the usage of the package. Check for example:
+
+- [single_iterative_projection](https://github.com/orsoromeo/jet-leg/blob/master/examples/single_iterative_projection_example.py) can be used to see how to set up an iterative projection problem in order to compute the friction/actuation/feasible region;
+- [single_LP_example](https://github.com/orsoromeo/jet-leg/blob/master/examples/single_LP_example.py) can be used to see how to solve a feasibility problem that checks whether the CoM projection belongs to the friction/actuation/feasible region or not
 
 ## Troubleshooting
 
