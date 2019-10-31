@@ -64,6 +64,7 @@ class FootHoldPlanning:
 #        print numberOfFeetOptions
         feasible_regions = []
         area = []
+        # Loop over all the possible (default is 9) foothold options
         for i in range(0, footPlanningParams.numberOfFeetOptions):
             #these two lines go together to overwrite the future swing foot
                      

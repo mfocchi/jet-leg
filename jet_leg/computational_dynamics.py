@@ -33,7 +33,9 @@ class ComputationalDynamics():
         self.eq = ([],[])
         
     def getGraspMatrix(self, r):
-
+        # Returns a single column of the grasp matrix
+        # as defined in the equation 13 in Feasible Region paper
+        # This is defined in general for the six-dimensional wrench case
         G = np.vstack([np.hstack([eye(3), zeros((3, 3))]),np.hstack([self.math.skew(r), eye(3)])])
         return G
 
@@ -60,7 +62,6 @@ class ComputationalDynamics():
         constraint_mode = iterative_projection_params.getConstraintModes()
         extForceWF = iterative_projection_params.externalForceWF
         robotMass = iterative_projection_params.robotMass
-        
         ''' parameters to be tuned'''
         g = 9.81
         contactsNumber = np.sum(stanceLegs)
@@ -75,22 +76,28 @@ class ComputationalDynamics():
         stanceIndex = []
         swingIndex = []
 #        print 'stance', stanceLegs
+
+        # Extract stance legs numerical indices from binary representation
         for iter in range(0, 4):
             if stanceLegs[iter] == 1:
-#                print 'new poly', stanceIndex, iter
+                # print 'new poly', stanceIndex, iter
                 stanceIndex = np.hstack([stanceIndex, iter])
             else:
                 swingIndex = iter
 
         for j in range(0,contactsNumber):
-           
+
+            # Get the 3D position r of contact point of stance leg j
             r = contactsWF[int(stanceIndex[j]),:]
             #print 'r is ', r
-           
-            graspMatrix = self.getGraspMatrix(r)[:,0:3]
+
+            # Build grasp matrix of the set of contact points
+            # See equations 12 and 13 in Feasible Region paper
+            # or equation 6 in Bretl
+            graspMatrix = self.getGraspMatrix(r)[:,0:3]  # get the transformation for forces (3D) only (no torque)
             Ex = hstack([Ex, -graspMatrix[4]])
             Ey = hstack([Ey, graspMatrix[3]])
-            G = hstack([G, graspMatrix])            
+            G = hstack([G, graspMatrix])  # Full grasp matrix
             
 #        print 'grasp matrix',G
         E = vstack((Ex, Ey)) / (g)

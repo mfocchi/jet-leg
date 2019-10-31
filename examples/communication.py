@@ -62,6 +62,7 @@ class HyQSim(threading.Thread):
         self.pub_force_polygons = ros.Publisher(self.force_polygons_topic_name, LegsPolygons, queue_size=1000)
 
     def _reg_sim_time(self, time):
+
         self.sim_time = time.clock.secs + time.clock.nsecs/1000000000.0
 #        print("getting time")
 
@@ -110,7 +111,7 @@ class HyQSim(threading.Thread):
             point = Point()
             point.x = polygon[i][0]
             point.y = polygon[i][1]
-            point.z = 0.0 #is the centroidal frame
+            point.z = 0.0  #is the centroidal frame
             vertices = np.hstack([vertices, point])
         return vertices
 
@@ -118,27 +119,29 @@ def talker():
     compDyn = ComputationalDynamics()
     footHoldPlanning = FootHoldPlanning()
     math = Math()
-    p=HyQSim()
-    p.start()
+
+    # Create a communication thread
+    p = HyQSim()
+    p.start()  # Start thread
     p.register_node()
 
     name = "Actuation_region"
     force_polytopes_name = "force_polytopes"
 
+    # Create parameter objects
     params = IterativeProjectionParameters()
     foothold_params = FootholdPlanningInterface()
     i = 0
 
     p.get_sim_wbs()
+    # Save foothold planning and IP parameters from "debug" topic
     params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
     foothold_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
     params.getFutureStanceFeetFlags(p.hyq_debug_msg)
-   
 
     """ contact points """
     ng = 4
     params.setNumberOfFrictionConesEdges(ng)    
-
 
 
 
@@ -147,6 +150,7 @@ def talker():
         print 'CIAOOOOOOO'
         p.get_sim_wbs()
 
+        # Save foothold planning and IP parameters from "debug" topic
         params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
         foothold_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
         #params.getFutureStanceFeet(p.hyq_debug_msg)
@@ -255,6 +259,8 @@ def talker():
             
             #chosen_foothold, actuationRegions = footHoldPlanning.selectMaximumFeasibleArea(foothold_params, params)
 #            print 'current swing ',params.actual_swing
+
+            # Select foothold option with maximum feasible region from among all possible (default is 9) options
             foothold_params.option_index, stackedResidualRadius, actuationRegions, mapFootHoldIdxToPolygonIdx = footHoldPlanning.selectMaximumFeasibleArea( foothold_params, params)
 
             if actuationRegions is False:
