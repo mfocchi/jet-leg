@@ -31,6 +31,14 @@ from jet_leg.foothold_planning_interface import FootholdPlanningInterface
 
 from jet_leg.foothold_planning import FootHoldPlanning
 
+# from jet_leg.plotting_tools import Plotter
+# import matplotlib.pyplot as plt
+
+
+
+np.set_printoptions(precision = 3, linewidth = 200, suppress = True)
+np.set_printoptions(threshold=np.inf)
+
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 sys.stderr = stderr
@@ -103,7 +111,7 @@ class HyQSim(threading.Thread):
         self.pub_polygon.publish(output)
 
     def fillPolygon(self, polygon):
-
+        # print 'polygon ', polygon
         num_actuation_vertices = np.size(polygon, 0)
         vertices = []
 
@@ -141,13 +149,21 @@ def talker():
 
     """ contact points """
     ng = 4
-    params.setNumberOfFrictionConesEdges(ng)    
+    params.setNumberOfFrictionConesEdges(ng)
 
-
-
+    # plt.close()
+    # plt.figure()
+    # plt.grid()
+    # plt.xlabel("X [m]")
+    # plt.ylabel("Y [m]")
+    # plotter = Plotter()
+    # plt.legend()
+    # plt.ion()
+    # plt.show()
+    
     while not ros.is_shutdown():
 
-        print 'CIAOOOOOOO'
+        # print 'CIAOOOOOOO'
         p.get_sim_wbs()
 
         # Save foothold planning and IP parameters from "debug" topic
@@ -162,36 +178,53 @@ def talker():
                            'FRICTION_AND_ACTUATION',
                            'FRICTION_AND_ACTUATION'])
         IAR, actuation_polygons_array, computation_time = compDyn.try_iterative_projection_bretl(params)
-        # print 'feasible region', IAR
-#        if IAR is not False:
-#            p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
-#            old_IAR = IAR
-#        else:
-#            print 'Could not compute the feasible region'
-#            p.send_actuation_polygons(name, p.fillPolygon(old_IAR), foothold_params.option_index,
-#
-#                                      foothold_params.ack_optimization_done)
-##   
+
+        # stanceFeet = params.getStanceFeet()
+        # nc = np.sum(stanceFeet)
+        # stanceID = params.getStanceIndex(stanceFeet)
+        # contacts = params.getContactsPosWF()
+        #
+        # # print IAR
+        # for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
+        #     idx = int(stanceID[j])
+        #     ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
+        #     h1 = plt.plot(contacts[idx, 0], contacts[idx, 1], 'ko', markersize=15, label='stance feet')
+        # h2 = plotter.plot_polygon(np.transpose(IAR), '--b', 'Iterative Projection')
+
+        # plt.draw()
+        # plt.pause(0.001)
+        # plt.clf()
+
+        #        if IAR is not False:
+        #            p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
+        #            old_IAR = IAR
+        #        else:
+        #            print 'Could not compute the feasible region'
+        #            p.send_actuation_polygons(name, p.fillPolygon(old_IAR), foothold_params.option_index,
+        #
+        #                                      foothold_params.ack_optimization_done)
+        ##
+        print "IAR", IAR
+
         p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
                                      
-        constraint_mode_IP = 'ONLY_FRICTION'
-        params.setConstraintModes([constraint_mode_IP,
-                                       constraint_mode_IP,
-                                       constraint_mode_IP,
-                                       constraint_mode_IP])
-        params.setNumberOfFrictionConesEdges(ng)
-            
-        params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index]
-
-            #        uncomment this if you dont want to use the vars read in iterative_proJ_params
-            #        params.setContactNormals(normals)
-            #        params.setFrictionCoefficient(mu)
-            #        params.setTrunkMass(trunk_mass)
-            #        IP_points, actuation_polygons, comp_time = comp_dyn.support_region_bretl(stanceLegs, contacts, normals, trunk_mass)
-
-        frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
-        p.send_support_region(name, p.fillPolygon(frictionRegion))         
-       
+        # constraint_mode_IP = 'ONLY_FRICTION'
+        # params.setConstraintModes([constraint_mode_IP,
+        #                                constraint_mode_IP,
+        #                                constraint_mode_IP,
+        #                                constraint_mode_IP])
+        # params.setNumberOfFrictionConesEdges(ng)
+        #
+        # params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index]
+        #
+        #     #        uncomment this if you dont want to use the vars read in iterative_proJ_params
+        #     #        params.setContactNormals(normals)
+        #     #        params.setFrictionCoefficient(mu)
+        #     #        params.setTrunkMass(trunk_mass)
+        #     #        IP_points, actuation_polygons, comp_time = comp_dyn.support_region_bretl(stanceLegs, contacts, normals, trunk_mass)
+        #
+        # frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
+        # p.send_support_region(name, p.fillPolygon(frictionRegion))
 
         
         #print "AA"
@@ -246,10 +279,10 @@ def talker():
         ''' The optimization-done-flag is set by the planner. It is needed to tell the controller whether the optimization 
         is finished or not. When this flag is true the controller will read the result of the optimization that has read 
         from the planner'''
-        print 'optimization done flag',foothold_params.ack_optimization_done
+        # print 'optimization done flag',foothold_params.ack_optimization_done
         ''' The optimization-started-flag is set by the controller. It is needed to tell the planner that a new optimization should start.
         When this flag is true the planner (in jetleg) will start a new computation of the feasible region.'''
-        print 'optimization started flag', foothold_params.optimization_started
+        # print 'optimization started flag', foothold_params.optimization_started
         if foothold_params.optimization_started and not foothold_params.ack_optimization_done:
             print '============================================================'
             print 'current swing ', params.actual_swing            
@@ -280,7 +313,7 @@ def talker():
                                        constraint_mode_IP,
                                        constraint_mode_IP])
             params.setNumberOfFrictionConesEdges(ng)
-            
+
             params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index]
 
             #        uncomment this if you dont want to use the vars read in iterative_proJ_params
@@ -305,7 +338,7 @@ def talker():
                 p.send_actuation_polygons(name, p.fillPolygon(frictionRegion), foothold_params.option_index, foothold_params.ack_optimization_done)
 
 
-        time.sleep(0.1)
+        time.sleep(0.001)
         i+=1
         
     print 'de registering...'
