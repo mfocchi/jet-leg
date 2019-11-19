@@ -22,7 +22,7 @@ from distutils.core import setup
 
 setup(
     name='jet_leg',
-    version='0.1.0',
+    version='0.0.0',
     description="Python Polyhedron Manipulation",
     url="https://github.com/orsoromeo/jet-leg",
     author="Romeo Orsolino",
@@ -37,5 +37,5 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Mathematics'],
-    packages=['jet_leg']
+    packages=['jet_leg','examples', 'resources']
 )
