@@ -121,9 +121,9 @@ class HyQSim(threading.Thread):
             vertices = np.hstack([vertices, point])
         return vertices
 
-def talker():
-    compDyn = ComputationalDynamics()
-    footHoldPlanning = FootHoldPlanning()
+def talker(robotName):
+    compDyn = ComputationalDynamics(robotName)
+    footHoldPlanning = FootHoldPlanning(robotName)
     math = Math()
 
     # Create a communication thread
@@ -346,7 +346,8 @@ def talker():
 if __name__ == '__main__':
     
     try:
-        talker()
+        robot_name = 'hyq'
+        talker(robot_name)
     except ros.ROSInterruptException:
         pass
     
