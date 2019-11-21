@@ -102,8 +102,8 @@ catkin_python_setup()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-  LIBRARIES jet-leg
-  CATKIN_DEPENDS rospy
+#  LIBRARIES jet-leg
+#  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
 
@@ -190,7 +190,11 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
-catkin_install_python(PROGRAMS examples/communication.py examples/context.py
+#install(DIRECTORY resources/
+#  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}/dist-packages/jet_leg-0.0.0-py2.7.egg/resources/
+#  PATTERN ".svn" EXCLUDE)
+
+catkin_install_python(PROGRAMS examples/ros/communication.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 #############

@@ -182,7 +182,7 @@ def talker(robotName):
         # stanceID = params.getStanceIndex(stanceFeet)
         # contacts = params.getContactsPosWF()
         #
-        # # print IAR
+        # print IAR
         # for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
         #     idx = int(stanceID[j])
         #     ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
@@ -202,7 +202,6 @@ def talker(robotName):
         #
         #                                      foothold_params.ack_optimization_done)
         ##
-        print "IAR", IAR
 
         p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
                                      

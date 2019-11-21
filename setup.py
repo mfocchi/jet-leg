@@ -18,9 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with jet_leg. If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.core import setup
-from setuptools import find_packages
-
+from setuptools import setup, find_packages
 	
 setup(
     name='jet_leg',
@@ -39,5 +37,6 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Mathematics'],
-    packages=find_packages()
+    packages=find_packages(),
+    include_package_data=True
 )

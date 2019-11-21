@@ -345,8 +345,7 @@ class IterativeProjectionParameters:
             if str(received_data.name[j]) == str("future_stance_LH"):
                 self.stanceFeet[2] = int(received_data.data[j])
             if str(received_data.name[j]) == str("future_stance_RH"):
-                self.stanceFeet[3] = int(received_data.data[j])  
-        print 'stance feet ', self.stanceFeet
+                self.stanceFeet[3] = int(received_data.data[j])
         self.numberOfContacts = np.sum(self.stanceFeet)
         
     def getCurrentStanceFeetFlags(self, received_data):
