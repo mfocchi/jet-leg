@@ -27,8 +27,20 @@ class IterativeProjectionParameters:
         self.RF_tau_lim = [50.0, 50.0, 50.0]
         self.LH_tau_lim = [50.0, 50.0, 50.0]
         self.RH_tau_lim = [50.0, 50.0, 50.0]
+
+        self.LF_q_lim_max = [0., 0., 0.]
+        self.LF_q_lim_min = [0., 0., 0.]
+        self.RF_q_lim_max = [0., 0., 0.]
+        self.RF_q_lim_min = [0., 0., 0.]
+        self.LH_q_lim_max = [0., 0., 0.]
+        self.LH_q_lim_min = [0., 0., 0.]
+        self.RH_q_lim_max = [0., 0., 0.]
+        self.RH_q_lim_min = [0., 0., 0.]
+
         self.torque_limits = np.array([self.LF_tau_lim, self.RF_tau_lim, self.LH_tau_lim, self.RH_tau_lim])
-        
+        self.joint_limits_max = np.array([self.LF_q_lim_max, self.RF_q_lim_max, self.LH_q_lim_max, self.RH_q_lim_max])
+        self.joint_limits_min = np.array([self.LF_q_lim_min, self.RF_q_lim_min, self.LH_q_lim_min, self.RH_q_lim_min])
+
         self.state_machineLF = True
         self.state_machineRF = True
         self.state_machineLH = True
@@ -66,10 +78,24 @@ class IterativeProjectionParameters:
         
     def setCoMPosWF(self, comWF):
         self.comPositionWF = comWF
-    
+
+    def setCoMPosBF(self, comBF):
+        self.comPositionBF = comBF
+
+    def setOrientation(self, rpy):
+        self.roll = rpy[0]
+        self.pitch = rpy[1]
+        self.yaw = rpy[2]
+
     def setTorqueLims(self, torqueLims):
         self.torque_limits = torqueLims
-        
+
+    def setJointLimsMax(self, jointLims_max):
+        self.joint_limits_max = jointLims_max
+
+    def setJointLimsMin(self, jointLims_min):
+        self.joint_limits_min = jointLims_min
+
     def setActiveContacts(self, activeContacts):
         self.stanceFeet = activeContacts
         #print self.stanceFeet
@@ -103,6 +129,12 @@ class IterativeProjectionParameters:
         
     def getTorqueLims(self):
         return self.torque_limits
+
+    def getJointLimsMax(self):
+        return self.joint_limits_max
+
+    def getJointLimsMin(self):
+        return self.joint_limits_min
         
     def getStanceFeet(self):
         return self.stanceFeet
@@ -170,6 +202,11 @@ class IterativeProjectionParameters:
         # print 'number of elements: ', num_of_elements
         for j in range(0,num_of_elements):
 #            print j, received_data.name[j], str(received_data.name[j]), str("footPosLFx")
+
+            # TO-DO in framework:
+            # Changing torque limits in urdf still doesn't change
+            # value used by trunk controller and Jet-leg.
+            # For now, change manually here.
             if str(received_data.name[j]) == str("LF_HAAmaxVar"):
                 self.LF_tau_lim[0] = received_data.data[j]           
             if str(received_data.name[j]) == str("LF_HFEmaxVar"):
@@ -194,12 +231,73 @@ class IterativeProjectionParameters:
                 self.RH_tau_lim[1] = received_data.data[j]
             if str(received_data.name[j]) == str("RH_KFEmaxVar"):
                 self.RH_tau_lim[2] = received_data.data[j]
-                
+
             self.torque_limits = np.array([self.LF_tau_lim, 
                                            self.RF_tau_lim, 
                                            self.LH_tau_lim, 
                                            self.RH_tau_lim, ])
- 
+
+            # 
+            if str(received_data.name[j]) == str("LF_HAA_th_max"):
+                self.LF_q_lim_max[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("LF_HFE_th_max"):
+                self.LF_q_lim_max[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("LF_KFE_th_max"):
+                self.LF_q_lim_max[2] = received_data.data[j]
+            if str(received_data.name[j]) == str("RF_HAA_th_max"):
+                self.RF_q_lim_max[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("RF_HFE_th_max"):
+                self.RF_q_lim_max[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("RF_KFE_th_max"):
+                self.RF_q_lim_max[2] = received_data.data[j]
+            if str(received_data.name[j]) == str("LH_HAA_th_max"):
+                self.LH_q_lim_max[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("LH_HFE_th_max"):
+                self.LH_q_lim_max[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("LH_KFE_th_max"):
+                self.LH_q_lim_max[2] = received_data.data[j]
+            if str(received_data.name[j]) == str("RH_HAA_th_max"):
+                self.RH_q_lim_max[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("RH_HFE_th_max"):
+                self.RH_q_lim_max[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("RH_KFE_th_max"):
+                self.RH_q_lim_max[2] = received_data.data[j]
+
+            if str(received_data.name[j]) == str("LF_HAA_th_min"):
+                self.LF_q_lim_min[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("LF_HFE_th_min"):
+                self.LF_q_lim_min[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("LF_KFE_th_min"):
+                self.LF_q_lim_min[2] = received_data.data[j]
+            if str(received_data.name[j]) == str("RF_HAA_th_min"):
+                self.RF_q_lim_min[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("RF_HFE_th_min"):
+                self.RF_q_lim_min[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("RF_KFE_th_min"):
+                self.RF_q_lim_min[2] = received_data.data[j]
+            if str(received_data.name[j]) == str("LH_HAA_th_min"):
+                self.LH_q_lim_min[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("LH_HFE_th_min"):
+                self.LH_q_lim_min[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("LH_KFE_th_min"):
+                self.LH_q_lim_min[2] = received_data.data[j]
+            if str(received_data.name[j]) == str("RH_HAA_th_min"):
+                self.RH_q_lim_min[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("RH_HFE_th_min"):
+                self.RH_q_lim_min[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("RH_KFE_th_min"):
+                self.RH_q_lim_min[2] = received_data.data[j]
+
+
+            self.joint_limits_max = np.array([self.LF_q_lim_max,
+                                            self.RF_q_lim_max,
+                                            self.LH_q_lim_max,
+                                            self.RH_q_lim_max])
+            self.joint_limits_min = np.array([self.LF_q_lim_min,
+                                            self.RF_q_lim_min,
+                                            self.LH_q_lim_min,
+                                            self.RH_q_lim_min])
+
 # the inputs are all in the WF this way we can compute generic regions for generic contact sets and generic com position 
             
             if str(received_data.name[j]) == str("contact_setWLFx"):
@@ -329,7 +427,7 @@ class IterativeProjectionParameters:
             if str(received_data.name[j]) == str("actual_swing"):  
                 self.actual_swing = int(received_data.data[j])        
             
-                
+        # TODO
         self.robotMass -= self.externalForceWF[2]/9.81
                                    
           

@@ -23,7 +23,7 @@ class HyQKinematics:
         self.BASE2HAA_offset_z = 0.08;
         self.HAA2HFE = 0.08;
 
-        self.isOutOfWorkSpace = False
+        # self.isOutOfWorkSpace = False
         
         self.fr_LF_lowerleg_Xh_LF_foot = np.zeros((4,4));	
         self.fr_RF_lowerleg_Xh_RF_foot = np.zeros((4,4));
@@ -794,7 +794,7 @@ class HyQKinematics:
         return self.fr_trunk_J_LF_foot[3:6,:] , self.fr_trunk_J_RF_foot[3:6,:], self.fr_trunk_J_LH_foot[3:6,:], self.fr_trunk_J_RH_foot[3:6,:]
 
     def getLegJacobians(self):
-        return self.fr_trunk_J_LF_foot[3:6,:] , self.fr_trunk_J_RF_foot[3:6,:], self.fr_trunk_J_LH_foot[3:6,:], self.fr_trunk_J_RH_foot[3:6,:], self.isOutOfWorkSpace
+        return self.fr_trunk_J_LF_foot[3:6,:] , self.fr_trunk_J_RF_foot[3:6,:], self.fr_trunk_J_LH_foot[3:6,:], self.fr_trunk_J_RH_foot[3:6,:], False
 
 
     def forward_kin(self, q):
@@ -963,4 +963,16 @@ class HyQKinematics:
         self.update_jacobians(q)
         return q
 
-        
+    def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
+        q = joint_positions.reshape((4, 3))
+        # print "q: ", q
+        # print "leq than max ", np.all(np.less_equal(q, joint_limits_max))
+        # print "geq than min ", np.all(np.greater_equal(q, joint_limits_min))
+        return not np.all(np.less_equal(q, joint_limits_max)) \
+               or not np.all(np.greater_equal(q, joint_limits_min))
+
+    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, foot_vel):
+        q = self.fixedBaseInverseKinematics(contactsBF_check, foot_vel)
+        out = self.isOutOfJointLims(q, joint_limits_max, joint_limits_min)
+        print "Out: ", out
+        return out

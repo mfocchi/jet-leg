@@ -46,3 +46,12 @@ class KinematicsInterface:
             q = self.anymalKin.fixedBaseInverseKinematics(contactsBF)
             return q
 
+    def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
+
+        if self.robotName == 'hyq':
+            return self.hyqKin.isOutOfJointLims(joint_positions, joint_limits_max, joint_limits_min)
+
+    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, foot_vel):
+
+        if self.robotName == 'hyq':
+            return self.hyqKin.isOutOfWorkSpace(contactsBF_check, joint_limits_max, joint_limits_min, foot_vel)
