@@ -18,6 +18,7 @@ class IterativeProjectionParameters:
         self.footPosWLH = [-0.3, 0.2, -.0]
         self.footPosWRH = [-0.3, -0.2, -.0]
         self.externalForceWF = [0., 0., 0.]
+        self.externalTorqueWF = [0., 0., 0.]
 
         self.roll = 0.0
         self.pitch = 0.0
@@ -343,13 +344,35 @@ class IterativeProjectionParameters:
                 self.comPositionBF[2] = received_data.data[j]       
                 
             # external wrench
-            if str(received_data.name[j]) == str("extPerturbForceX"):
+            # if str(received_data.name[j]) == str("extPerturbForceX"):
+            #     self.externalForceWF[0] = received_data.data[j]
+            # if str(received_data.name[j]) == str("extPerturbForceY"):
+            #     self.externalForceWF[1] = received_data.data[j]
+            # if str(received_data.name[j]) == str("extPerturbForceZ"):
+            #     self.externalForceWF[2] = received_data.data[j]
+            #
+            # if str(received_data.name[j]) == str("extPerturbTorqueX"):
+            #     self.externalTorqueWF[0] = received_data.data[j]
+            # if str(received_data.name[j]) == str("extPerturbTorqueY"):
+            #     self.externalTorqueWF[1] = received_data.data[j]
+            # if str(received_data.name[j]) == str("extPerturbTorqueZ"):
+            #     self.externalTorqueWF[2] = received_data.data[j]
+
+            # external wrench
+            if str(received_data.name[j]) == str("extWrenchLX"):
                 self.externalForceWF[0] = received_data.data[j]
-            if str(received_data.name[j]) == str("extPerturbForceY"):
-                self.externalForceWF[1] = received_data.data[j]                       
-            if str(received_data.name[j]) == str("extPerturbForceZ"):
-                self.externalForceWF[2] = received_data.data[j]   
-             
+            if str(received_data.name[j]) == str("extWrenchLY"):
+                self.externalForceWF[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("extWrenchLZ"):
+                self.externalForceWF[2] = received_data.data[j]
+
+            if str(received_data.name[j]) == str("extWrenchAX"):
+                self.externalTorqueWF[0] = received_data.data[j]
+            if str(received_data.name[j]) == str("extWrenchAY"):
+                self.externalTorqueWF[1] = received_data.data[j]
+            if str(received_data.name[j]) == str("extWrenchAZ"):
+                self.externalTorqueWF[2] = received_data.data[j]
+
 #            print 'ext force ',self.externalForceWF
 
 #            print self.contactsWF
@@ -428,8 +451,7 @@ class IterativeProjectionParameters:
                 self.actual_swing = int(received_data.data[j])        
             
         # TODO
-        self.robotMass -= self.externalForceWF[2]/9.81
-                                   
+        # self.robotMass -= self.externalForceWF[2]/9.81
           
     def getFutureStanceFeetFlags(self, received_data):
 

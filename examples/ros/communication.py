@@ -21,17 +21,18 @@ from geometry_msgs.msg import Point
 #from dls_msgs.msg import SimpleDoubleArray, StringDoubleArray, Polygon3D, LegsPolygons
 from dls_msgs.msg import  StringDoubleArray
 from feasible_region.msg import  Polygon3D, LegsPolygons
+from shapely.geometry import Polygon
 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
 from jet_leg.maths.math_tools import Math
 from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization.foothold_planning_interface import FootholdPlanningInterface
+from jet_leg.optimization import nonlinear_projection
 
 from jet_leg.optimization.foothold_planning import FootHoldPlanning
 
-# from jet_leg.plotting_tools import Plotter
-# import matplotlib.pyplot as plt
-
+from jet_leg.plotting.plotting_tools import Plotter
+import matplotlib.pyplot as plt
 
 
 np.set_printoptions(precision = 3, linewidth = 200, suppress = True)
@@ -53,6 +54,7 @@ class HyQSim(threading.Thread):
         self.hyq_wbs = dict()
         self.hyq_debug_msg = StringDoubleArray()
         self.actuation_polygon_topic_name = "/feasible_region/actuation_polygon"
+        self.reachable_feasible_topic_name = "/feasible_region/reachble_feasible_region_polygon"
         self.support_region_topic_name = "/feasible_region/support_region"
         self.force_polygons_topic_name = "/feasible_region/force_polygons"
         print ros.get_namespace()
@@ -63,7 +65,8 @@ class HyQSim(threading.Thread):
         self.sub_clock = ros.Subscriber(self.clock_sub_name, Clock, callback=self._reg_sim_time, queue_size=1000)
         self.sub_actuation_params = ros.Subscriber(self.hyq_actuation_params_sub_name, StringDoubleArray,
                                                    callback=self.callback_hyq_debug, queue_size=1000)
-        self.pub_polygon = ros.Publisher(self.actuation_polygon_topic_name, Polygon3D, queue_size=10000)
+        self.pub_feasible_polygon = ros.Publisher(self.actuation_polygon_topic_name, Polygon3D, queue_size=10000)
+        self.pub_reachable_feasible_polygon = ros.Publisher(self.reachable_feasible_topic_name, Polygon3D, queue_size=10000)
         self.pub_support_region = ros.Publisher(self.support_region_topic_name, Polygon3D, queue_size=1000)
         self.pub_force_polygons = ros.Publisher(self.force_polygons_topic_name, LegsPolygons, queue_size=1000)
 
@@ -106,7 +109,14 @@ class HyQSim(threading.Thread):
         output.vertices = vertices
         output.option_index = option_index
         output.ack_optimization_done = ack_optimization_done
-        self.pub_polygon.publish(output)
+        self.pub_feasible_polygon.publish(output)
+
+    def send_reachable_feasible_polygons(self, name, vertices, option_index, ack_optimization_done):
+        output = Polygon3D()
+        output.vertices = vertices
+        output.option_index = option_index
+        output.ack_optimization_done = ack_optimization_done
+        self.pub_reachable_feasible_polygon.publish(output)
 
     def fillPolygon(self, polygon):
         # print 'polygon ', polygon
@@ -124,6 +134,7 @@ class HyQSim(threading.Thread):
 def talker(robotName):
     compDyn = ComputationalDynamics(robotName)
     footHoldPlanning = FootHoldPlanning(robotName)
+    joint_projection = nonlinear_projection.NonlinearProjectionBretl(robot_name)
     math = Math()
 
     # Create a communication thread
@@ -149,16 +160,25 @@ def talker(robotName):
     ng = 4
     params.setNumberOfFrictionConesEdges(ng)
 
-    # plt.close()
-    # plt.figure()
-    # plt.grid()
-    # plt.xlabel("X [m]")
-    # plt.ylabel("Y [m]")
-    # plotter = Plotter()
-    # plt.legend()
-    # plt.ion()
-    # plt.show()
-    
+    ''' joint position limits for each leg (this code assumes a hyq-like design, i.e. three joints per leg)
+    HAA = Hip Abduction Adduction
+    HFE = Hip Flextion Extension
+    KFE = Knee Flextion Extension
+    '''
+    LF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
+    LF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
+    RF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
+    RF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
+    LH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
+    LH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
+    RH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
+    RH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
+    joint_limits_max = np.array([LF_q_lim_max, RF_q_lim_max, LH_q_lim_max, RH_q_lim_max])
+    joint_limits_min = np.array([LF_q_lim_min, RF_q_lim_min, LH_q_lim_min, RH_q_lim_min])
+
+    params.setJointLimsMax(joint_limits_max)
+    params.setJointLimsMin(joint_limits_min)
+
     while not ros.is_shutdown():
 
         # print 'CIAOOOOOOO'
@@ -171,27 +191,26 @@ def talker(robotName):
         params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
         
         # USE THIS ONLY TO PLOT THE ACTUAL REGION FOR A VIDEO FOR THE PAPER DO NOT USE FOR COM PLANNING
-        params.setConstraintModes(['FRICTION_AND_ACTUATION',
-                           'FRICTION_AND_ACTUATION',
-                           'FRICTION_AND_ACTUATION',
-                           'FRICTION_AND_ACTUATION'])
-        IAR, actuation_polygons_array, computation_time = compDyn.try_iterative_projection_bretl(params)
+        constraint_mode_IP = 'FRICTION_AND_ACTUATION'
+        # constraint_mode_IP = 'ONLY_ACTUATION'
+        params.setConstraintModes([constraint_mode_IP,
+                           constraint_mode_IP,
+                           constraint_mode_IP,
+                           constraint_mode_IP])
+        # params.setConstraintModes(['ONLY_FRICTION',
+        #                            'ONLY_FRICTION',
+        #                            'ONLY_FRICTION',
+        #                            'ONLY_FRICTION'])
+        IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
+        # print"IAR computation_time", computation_time
 
-        # stanceFeet = params.getStanceFeet()
-        # nc = np.sum(stanceFeet)
-        # stanceID = params.getStanceIndex(stanceFeet)
-        # contacts = params.getContactsPosWF()
-        #
-        # print IAR
-        # for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
-        #     idx = int(stanceID[j])
-        #     ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
-        #     h1 = plt.plot(contacts[idx, 0], contacts[idx, 1], 'ko', markersize=15, label='stance feet')
-        # h2 = plotter.plot_polygon(np.transpose(IAR), '--b', 'Iterative Projection')
+        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.05)
+        # print "computation_time_joints: ", computation_time_joint
 
-        # plt.draw()
-        # plt.pause(0.001)
-        # plt.clf()
+        pIAR = Polygon(IAR)
+        preachability_polygon = Polygon(reachability_polygon)
+        reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
+        reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
 
         #        if IAR is not False:
         #            p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
@@ -201,16 +220,13 @@ def talker(robotName):
         #            p.send_actuation_polygons(name, p.fillPolygon(old_IAR), foothold_params.option_index,
         #
         #                                      foothold_params.ack_optimization_done)
-        ##
-
-        p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
                                      
-        # constraint_mode_IP = 'ONLY_FRICTION'
-        # params.setConstraintModes([constraint_mode_IP,
-        #                                constraint_mode_IP,
-        #                                constraint_mode_IP,
-        #                                constraint_mode_IP])
-        # params.setNumberOfFrictionConesEdges(ng)
+        constraint_mode_IP = 'ONLY_FRICTION'
+        params.setConstraintModes([constraint_mode_IP,
+                                       constraint_mode_IP,
+                                       constraint_mode_IP,
+                                       constraint_mode_IP])
+        params.setNumberOfFrictionConesEdges(ng)
         #
         # params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index]
         #
@@ -220,8 +236,13 @@ def talker(robotName):
         #     #        params.setTrunkMass(trunk_mass)
         #     #        IP_points, actuation_polygons, comp_time = comp_dyn.support_region_bretl(stanceLegs, contacts, normals, trunk_mass)
         #
-        # frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
-        # p.send_support_region(name, p.fillPolygon(frictionRegion))
+        frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
+
+        p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index,
+                                  foothold_params.ack_optimization_done)
+        p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
+                                  foothold_params.ack_optimization_done)
+        p.send_support_region(name, p.fillPolygon(frictionRegion))
 
         
         #print "AA"
