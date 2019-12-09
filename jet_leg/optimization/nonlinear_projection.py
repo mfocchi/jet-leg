@@ -97,7 +97,7 @@ class NonlinearProjectionBretl:
 
 		return contactsBF
 
-	def compute_vertix(self, com_pos_x, com_pos_y, com_pos_z, params, theta, dir_step, max_iter):
+	def compute_vertix(self, com_pos_x, com_pos_y, com_pos_z, params, theta, min_dir_step, max_iter):
 		"""
 		Compute vertix of projected polygon in vdir direction.
 
@@ -110,6 +110,7 @@ class NonlinearProjectionBretl:
 		"""
 
 		# Search for a CoM position in direction vdir
+
 		vdir = array([cos(theta), sin(theta), 0])
 
 		c_t = [com_pos_x, com_pos_y, com_pos_z]  # CoM to be tested
@@ -118,19 +119,54 @@ class NonlinearProjectionBretl:
 
 		i = 0
 
-		while i < max_iter:
-			# print "cxy_t: ", c_t
-			c_t += dir_step * vdir  # iterate along direction vector by step cm
+		# Find closest feasible and non-feasible points to start bisection algorithm
 
+		# Initial step is large to speed up initial search
+		# However, region is not convex so too large of a step can be non-conservative and skip close vertices
+		dir_step = 0.1
+		c_t_feasible = True  # Flag for out of limits search
+
+		while c_t_feasible and i < max_iter:
+
+			c_t += dir_step * vdir  # iterate along direction vector by step cm
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
 
 			if self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
-				# print "optimal: ", cxy_opt
-				return cxy_opt
+				c_t_feasible = False
 			else:
-				# cxy_opt = [cxy_t[0], cxy_t[1]]
 				cxy_opt = [c_t[0], c_t[1]]
+				dir_step += dir_step / 2
+
+			i += 1
+
+		# Perform bisection algorithm using two points from previous step
+		# Switch direction to go back to feasible region
+		dir_step = -dir_step / 2
+
+		while abs(dir_step) >= min_dir_step and i < max_iter:
+
+			old_c_t_feasible = c_t_feasible
+			c_t += dir_step * vdir
+			contactsBF = self.getcontactsBF(params, c_t)
+			q = self.kin.inverse_kin(contactsBF, foot_vel)
+
+			# If new point is on the same side (feasible or infeasible region) as last point, continue in same direction
+			if not self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
+				c_t_feasible = True
+				cxy_opt = [c_t[0], c_t[1]]
+			else:
+				c_t_feasible = False
+
+			if c_t_feasible == old_c_t_feasible:
+				dir_step = dir_step/2
+			else:
+				dir_step = -dir_step / 2
+
+			i += 1
+			# print "new dir_step: ", dir_step
+
+		return cxy_opt
 
 	def compute_polygon(self, params, theta_step, dir_step, max_iter):
 		"""
@@ -165,7 +201,7 @@ class NonlinearProjectionBretl:
 
 		return polygon
 
-	def project_polytope(self, params, com_wf_check=None, theta_step=10. * pi / 180, dir_step=0.03, max_iter=1000):
+	def project_polytope(self, params, com_wf_check=None, theta_step=20. * pi / 180, dir_step=0.03, max_iter=1000):
 		"""
 		Project a polytope into a 2D polygon using the incremental projection
 		algorithm from [Bretl08].
@@ -175,7 +211,7 @@ class NonlinearProjectionBretl:
 		vertices: list of arrays List of vertices of the
 				projected polygon.
 		"""
-		print theta_step
+
 		ip_start = time.time()
 		polygon = self.compute_polygon(params, theta_step, dir_step, max_iter)
 		# polygon.sort_vertices()
@@ -201,7 +237,7 @@ class NonlinearProjectionBretl:
 		if com_wf_check is not None:
 			foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
 			contactsBF_check = self.getcontactsBF(params, com_wf_check)
-			print "q: ", self.kin.inverse_kin(contactsBF_check, foot_vel)
+			# print "q: ", self.kin.inverse_kin(contactsBF_check, foot_vel)
 			if self.kin.isOutOfWorkSpace(contactsBF_check, params.getJointLimsMax(), params.getJointLimsMin(), foot_vel):
 				print "Ouch!"
 			else:

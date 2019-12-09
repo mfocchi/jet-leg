@@ -973,6 +973,4 @@ class HyQKinematics:
 
     def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, foot_vel):
         q = self.fixedBaseInverseKinematics(contactsBF_check, foot_vel)
-        out = self.isOutOfJointLims(q, joint_limits_max, joint_limits_min)
-        print "Out: ", out
-        return out
+        return self.isOutOfJointLims(q, joint_limits_max, joint_limits_min)

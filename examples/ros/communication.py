@@ -204,7 +204,7 @@ def talker(robotName):
         IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
         # print"IAR computation_time", computation_time
 
-        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.05)
+        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
         # print "computation_time_joints: ", computation_time_joint
 
         pIAR = Polygon(IAR)

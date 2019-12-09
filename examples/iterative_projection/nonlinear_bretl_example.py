@@ -26,16 +26,19 @@ math = Math()
 
 
 # comWF = np.array([.55, 0.005, 0.5])  # pos of COM in world frame
-comWF = np.array([0.0107, 0.0003, 0.5])
-comBF = np.array([0.0094, 0.0002, -0.0433])  # pos of COM in body frame
-rpy = np.array([0.00012, 0.00601, 3.6e-05])  # orientation of body frame
+# comWF = np.array([0.0107, 0.0003, 0.5])  # pos of COM in world frame w.o. trunk controller
+comWF = np.array([0.009, 0.0001, 0.549])  # pos of COM in world frame w. trunk controller
+# comBF = np.array([0.0094,  0.0002, -0.0433])  # pos of COM in body frame w.o. trunk controller
+comBF = np.array([0.0094, 0.0002, -0.0458])  # pos of COM in body frame w. trunk controller
+# rpy = np.array([0.00012, 0.00601, 3.6e-05])  # orientation of body frame w.o. trunk controller
+rpy = np.array([0.00001589, -0.00000726, -0.00000854])  # orientation of body frame w. trunk controller
 
 """ contact points in the World Frame"""
 # LF_foot = np.array([0.9, 0.3, 0.02])
 # RF_foot = np.array([1., -0.3, 0.02])
 # LH_foot = np.array([0.1, 0.3, 0.02])
 # RH_foot = np.array([0.2, -0.3, 0.02])
-LF_foot = np.array([0.36, 0.32, 0.02])  # Starting configuration
+LF_foot = np.array([0.36, 0.32, 0.02])  # Starting configuration w.o. trunk controller
 RF_foot = np.array([0.36, -0.32, 0.02])
 LH_foot = np.array([-0.36, 0.32, 0.02])
 RH_foot = np.array([-0.36, -0.32, 0.02])
@@ -83,8 +86,8 @@ params.setActiveContacts(stanceFeet)
 
 com_check = np.array([0.3, -0.1, 0.5])
 # polygon, computation_time = projection.project_polytope(params, com_check)
-# polygon, computation_time = projection.project_polytope(params, com_check, 20. * np.pi / 180)
-polygon, computation_time = projection.project_polytope(params)
+polygon, computation_time = projection.project_polytope(params, com_check, 20. * np.pi / 180, 0.03)
+# polygon, computation_time = projection.project_polytope(params)
 print "vertices", polygon
 print "Computation Time: ", computation_time, " seconds"
 
