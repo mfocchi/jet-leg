@@ -26,6 +26,7 @@ class ComputationalDynamics:
         self.constr = Constraints(self.kin)
         self.ineq = ([],[])
         self.eq = ([],[])
+        self.A_y = []
 
     def getGraspMatrix(self, r):
         # Returns a single column of the grasp matrix
@@ -55,6 +56,8 @@ class ComputationalDynamics:
    
         contactsWF = iterative_projection_params.getContactsPosWF()
         robotMass = iterative_projection_params.robotMass
+        height = iterative_projection_params.comPositionWF[2]
+
         ''' parameters to be tuned'''
         g = 9.81
         contactsNumber = np.sum(stanceLegs)
@@ -67,7 +70,10 @@ class ComputationalDynamics:
         G = np.zeros((6,0))
 
         extForce = iterative_projection_params.externalForceWF
+        extTorque = iterative_projection_params.externalTorqueWF
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
+        # print "externalForceWF: ", extForce
+        # print "externalTorqueWF: ", extTorque
 
         for j in range(0,contactsNumber):
 
@@ -84,8 +90,9 @@ class ComputationalDynamics:
             G = hstack([G, graspMatrix])  # Full grasp matrix
             
 #        print 'grasp matrix',G
-        E = vstack((Ex, Ey)) / (g*robotMass - extForce[2] )
-        f = zeros(2)
+        E = vstack((Ex, Ey)) / (g*robotMass - extForce[2])
+        f = np.array([(-extTorque[1] - extForce[0]*height)/(g*robotMass - extForce[2]),
+                      (extTorque[0] - extForce[1]*height)/(g*robotMass - extForce[2])])
         proj = (E, f)  # y = E * x + f
         
         # see Equation (52) in "ZMP Support Areas for Multicontact..."
@@ -95,8 +102,13 @@ class ComputationalDynamics:
             [0, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 0, 1]])
         A = dot(A_f_and_tauz, G)
+        # Extension of equation 51 to add additional CoM constraint resulting from external forces and torques
+        # Added instead of 0 block (upper right) in C_ext in Pypoman
+        A_y = np.zeros((A_f_and_tauz.shape[0], 2))
+        A_y[-1] = np.array([[extForce[1], - extForce[0]]])
 #        print A
-        t = hstack([- extForce[0], - extForce[1], g*robotMass - extForce[2], 0])
+        t = hstack([- extForce[0], - extForce[1], g*robotMass - extForce[2],
+                    - extTorque[2]])
 #        print extForceWF, t
 #        print 'mass ', robotMass
 #        print A,t
@@ -104,7 +116,7 @@ class ComputationalDynamics:
 
         C, d, isIKoutOfWorkSpace, actuation_polygons = self.constr.getInequalities(iterative_projection_params)
         ineq = (C, d)    
-        return proj, eq, ineq, actuation_polygons, isIKoutOfWorkSpace
+        return proj, eq, A_y, ineq, actuation_polygons, isIKoutOfWorkSpace
         
     def reorganizeActuationPolytopes(self, actPolytope):
         outputPolytopeX = np.zeros((1,8))
@@ -171,12 +183,12 @@ class ComputationalDynamics:
 
         start_t_IP = time.time()
 #        print stanceLegs, contacts, normals, comWF, ng, mu, saturate_normal_force
-        proj, self.eq, self.ineq, actuation_polygons, isIKoutOfWorkSpace = self.setup_iterative_projection(iterative_projection_params, saturate_normal_force)
+        proj, self.eq, self.A_y, self.ineq, actuation_polygons, isIKoutOfWorkSpace = self.setup_iterative_projection(iterative_projection_params, saturate_normal_force)
 
         if isIKoutOfWorkSpace:
             return False, False, False
         else:
-            vertices_WF = pypoman.project_polytope(proj, self.ineq, self.eq, method='bretl', max_iter=500, init_angle=0.0)
+            vertices_WF = pypoman.project_polytope(proj, self.ineq, self.A_y, self.eq, method='bretl', max_iter=500, init_angle=0.0)
             if vertices_WF is False:
                 print 'Project polytope function is False'
                 return False, False, False
