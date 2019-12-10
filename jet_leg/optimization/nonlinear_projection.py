@@ -218,7 +218,11 @@ class NonlinearProjectionBretl:
 		# vertices_list = polygon.export_vertices()
 		vertices_list = polygon
 		vertices = [array([v.x, v.y]) for v in vertices_list]
-		compressed_vertices = np.compress([True, True], vertices, axis=1)
+		if not vertices:
+			return np.array([]), np.array([])
+		else:
+			compressed_vertices = np.compress([True, True], vertices, axis=1)
+			vertices = compressed_vertices
 		# print compressed_vertices
 		# try:
 		# 	hull = ConvexHull(compressed_vertices)
@@ -231,7 +235,6 @@ class NonlinearProjectionBretl:
 		# compressed_hull = self.geom.clockwise_sort(compressed_hull)
 		# vertices = compressed_hull
 		# compressed_vertices = self.geom.clockwise_sort(compressed_vertices)
-		vertices = compressed_vertices
 		computation_time = (time.time() - ip_start)
 
 		if com_wf_check is not None:

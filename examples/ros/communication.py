@@ -208,9 +208,15 @@ def talker(robotName):
         # print "computation_time_joints: ", computation_time_joint
 
         pIAR = Polygon(IAR)
-        preachability_polygon = Polygon(reachability_polygon)
-        reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
-        reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
+        reachable_feasible_polygon = np.array([])
+        if reachability_polygon.size > 0:
+            preachability_polygon = Polygon(reachability_polygon)
+            reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
+            try:
+                reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
+            except AttributeError:
+                print "Shape not a Polygon."
+                reachable_feasible_polygon = np.array([])
 
         #        if IAR is not False:
         #            p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
