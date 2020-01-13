@@ -20,13 +20,14 @@ from geometry_msgs.msg import Point
 
 #from dls_msgs.msg import SimpleDoubleArray, StringDoubleArray, Polygon3D, LegsPolygons
 from dls_msgs.msg import  StringDoubleArray
+from feasible_region.msg import RobotStates, Foothold
 from feasible_region.msg import  Polygon3D, LegsPolygons
 from shapely.geometry import Polygon
 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
 from jet_leg.maths.math_tools import Math
-from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
-from jet_leg.optimization.foothold_planning_interface import FootholdPlanningInterface
+from jet_leg.maths.simple_iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.optimization.simple_foothold_planning_interface import FootholdPlanningInterface
 from jet_leg.optimization import nonlinear_projection
 
 from jet_leg.optimization.foothold_planning import FootHoldPlanning
@@ -50,9 +51,11 @@ class HyQSim(threading.Thread):
 
         self.clock_sub_name = 'clock'
         self.hyq_wbs_sub_name = "/hyq/robot_states"
-        self.hyq_actuation_params_sub_name = "/hyq/debug"
+        self.hyq_actuation_params_sub_name = "/feasible_region/robot_states"
+        self.hyq_actuation_footholds_params_sub_name = "/feasible_region/foothold"
         self.hyq_wbs = dict()
-        self.hyq_debug_msg = StringDoubleArray()
+        self.hyq_debug_msg = RobotStates()
+        self.hyq_footholds_msg = Foothold()
         self.actuation_polygon_topic_name = "/feasible_region/actuation_polygon"
         self.reachable_feasible_topic_name = "/feasible_region/reachble_feasible_region_polygon"
         self.support_region_topic_name = "/feasible_region/support_region"
@@ -63,8 +66,9 @@ class HyQSim(threading.Thread):
     def run(self):
         print "Run!"
         self.sub_clock = ros.Subscriber(self.clock_sub_name, Clock, callback=self._reg_sim_time, queue_size=1000)
-        self.sub_actuation_params = ros.Subscriber(self.hyq_actuation_params_sub_name, StringDoubleArray,
-                                                   callback=self.callback_hyq_debug, queue_size=1000)
+        self.sub_actuation_params = ros.Subscriber(self.hyq_actuation_params_sub_name, RobotStates, callback=self.callback_hyq_debug, queue_size=5, buff_size=3000)
+        self.sub_actuation_footholds_params = ros.Subscriber(self.hyq_actuation_footholds_params_sub_name, Foothold,
+                                                   callback=self.callback_hyq_footholds, queue_size=5, buff_size=1500)
         self.pub_feasible_polygon = ros.Publisher(self.actuation_polygon_topic_name, Polygon3D, queue_size=10000)
         self.pub_reachable_feasible_polygon = ros.Publisher(self.reachable_feasible_topic_name, Polygon3D, queue_size=10000)
         self.pub_support_region = ros.Publisher(self.support_region_topic_name, Polygon3D, queue_size=1000)
@@ -79,8 +83,10 @@ class HyQSim(threading.Thread):
         self.hyq_wbs = copy.deepcopy(msg)
 
     def callback_hyq_debug(self, msg):
-#        print 'new data received'
-        self.hyq_debug_msg = copy.deepcopy(msg)
+       self.hyq_debug_msg = copy.deepcopy(msg)
+
+    def callback_hyq_footholds(self, msg):
+       self.hyq_footholds_msg = copy.deepcopy(msg)
 
     def register_node(self):
         ros.init_node('sub_pub_node_python', anonymous=False)
@@ -152,9 +158,12 @@ def talker(robotName):
 
     p.get_sim_wbs()
     # Save foothold planning and IP parameters from "debug" topic
+    first = time.time()
+    print p.hyq_debug_msg.tau_lim.data[0]
     params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
-    foothold_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
+    foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
     params.getFutureStanceFeetFlags(p.hyq_debug_msg)
+    print "time: ", time.time() - first
 
     """ contact points """
     ng = 4
@@ -181,14 +190,14 @@ def talker(robotName):
 
     while not ros.is_shutdown():
 
-        # print 'CIAOOOOOOO'
-        p.get_sim_wbs()
-
         # Save foothold planning and IP parameters from "debug" topic
+        first = time.time()
         params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
-        foothold_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
+        foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
         #params.getFutureStanceFeet(p.hyq_debug_msg)
         params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
+        # print "CoM: ", params.getCoMPosWF()
+        # print "time: ", time.time() - first
         
         # USE THIS ONLY TO PLOT THE ACTUAL REGION FOR A VIDEO FOR THE PAPER DO NOT USE FOR COM PLANNING
         constraint_mode_IP = 'FRICTION_AND_ACTUATION'
@@ -204,28 +213,28 @@ def talker(robotName):
         IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
         # print"IAR computation_time", computation_time
 
-        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
+        # reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
         # print "computation_time_joints: ", computation_time_joint
 
-        pIAR = Polygon(IAR)
-        reachable_feasible_polygon = np.array([])
-        if reachability_polygon.size > 0:
-            preachability_polygon = Polygon(reachability_polygon)
-            reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
-            try:
-                reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
-            except AttributeError:
-                print "Shape not a Polygon."
-                reachable_feasible_polygon = np.array([])
+        # pIAR = Polygon(IAR)
+        # reachable_feasible_polygon = np.array([])
+        # if reachability_polygon.size > 0:
+        #     preachability_polygon = Polygon(reachability_polygon)
+        #     reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
+        #     try:
+        #         reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
+        #     except AttributeError:
+        #         print "Shape not a Polygon."
+        #         reachable_feasible_polygon = np.array([])
 
-        #        if IAR is not False:
-        #            p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
-        #            old_IAR = IAR
-        #        else:
-        #            print 'Could not compute the feasible region'
-        #            p.send_actuation_polygons(name, p.fillPolygon(old_IAR), foothold_params.option_index,
-        #
-        #                                      foothold_params.ack_optimization_done)
+               # if IAR is not False:
+               #     p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
+               #     old_IAR = IAR
+               # else:
+               #     print 'Could not compute the feasible region'
+               #     p.send_actuation_polygons(name, p.fillPolygon(old_IAR), foothold_params.option_index,
+               #
+               #                               foothold_params.ack_optimization_done)
                                      
         constraint_mode_IP = 'ONLY_FRICTION'
         params.setConstraintModes([constraint_mode_IP,
@@ -233,63 +242,17 @@ def talker(robotName):
                                        constraint_mode_IP,
                                        constraint_mode_IP])
         params.setNumberOfFrictionConesEdges(ng)
-        #
-        # params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index]
-        #
-        #     #        uncomment this if you dont want to use the vars read in iterative_proJ_params
-        #     #        params.setContactNormals(normals)
-        #     #        params.setFrictionCoefficient(mu)
-        #     #        params.setTrunkMass(trunk_mass)
-        #     #        IP_points, actuation_polygons, comp_time = comp_dyn.support_region_bretl(stanceLegs, contacts, normals, trunk_mass)
-        #
-        frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
 
+        frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
+        # print "frictionRegion: ", frictionRegion
+        # print "friction time: ", computation_time
         p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index,
                                   foothold_params.ack_optimization_done)
-        p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
-                                  foothold_params.ack_optimization_done)
+        # p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
+        #                           foothold_params.ack_optimization_done)
         p.send_support_region(name, p.fillPolygon(frictionRegion))
 
-        
-        #print "AA"
-        
-        #1 - INSTANTANEOUS FEASIBLE REGION    
-        # ONLY_ACTUATION, ONLY_FRICTION or FRICTION_AND_ACTUATION
-
-
-        #IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
-        #print 'feasible region', IAR, 
-        #p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
-         
-
-         
-         
-         
-        #2 - FORCE POLYGONS
-         #point = Point()
-         #polygonVertex = Point()
-         #polygon = Polygon3D()
-#        point.x = actuation_polygons_array[0][0][0]/1000.0
-#        point.y = actuation_polygons_array[0][1][0]/1000.0
-#        point.z = actuation_polygons_array[0][2][0]/1000.0
-                
-#        forcePolygons = []
-#        for i in range(0,4):
-#            singlePolygon = Polygon3D()
-##            print actuation_polygons_array[i]
-#            vertices = []
-#            for j in range(0,8):    
-#                vx = Point()
-#                vx.x = actuation_polygons_array[i][0][j]/1000.0
-#                vx.y = actuation_polygons_array[i][1][j]/1000.0
-#                vx.z = actuation_polygons_array[i][2][j]/1000.0
-#                vertices = np.hstack([vertices, vx])       
-#            singlePolygon.vertices = vertices      
-#            forcePolygons = np.hstack([forcePolygons, singlePolygon])
-#        p.send_force_polytopes(force_polytopes_name, forcePolygons)
-
-
-        #4 - FOOTHOLD PLANNING
+        # FOOTHOLD PLANNING
    
         
         #print 'opt started?', foothold_params.optimization_started
@@ -312,11 +275,6 @@ def talker(robotName):
             print 'current swing ', params.actual_swing            
             print '============================================================'
 
-            #print foothold_params.footOptions
-            
-            #chosen_foothold, actuationRegions = footHoldPlanning.selectMaximumFeasibleArea(foothold_params, params)
-#            print 'current swing ',params.actual_swing
-
             # Select foothold option with maximum feasible region from among all possible (default is 9) options
             foothold_params.option_index, stackedResidualRadius, actuationRegions, mapFootHoldIdxToPolygonIdx = footHoldPlanning.selectMaximumFeasibleArea( foothold_params, params)
 
@@ -338,7 +296,7 @@ def talker(robotName):
                                        constraint_mode_IP])
             params.setNumberOfFrictionConesEdges(ng)
 
-            params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index]
+            params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index] # variable doesn't change in framework. Needs fix
 
             #        uncomment this if you dont want to use the vars read in iterative_proJ_params
             #        params.setContactNormals(normals)
