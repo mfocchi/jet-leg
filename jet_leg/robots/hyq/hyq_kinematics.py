@@ -964,7 +964,9 @@ class HyQKinematics:
         return q
 
     def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
-        q = joint_positions.reshape((4, 3))
+
+        no_of_legs_to_check = joint_positions.size/3
+        q = joint_positions.reshape((no_of_legs_to_check, 3))
         # print "q: ", q
         # print "leq than max ", np.all(np.less_equal(q, joint_limits_max))
         # print "geq than min ", np.all(np.greater_equal(q, joint_limits_min))

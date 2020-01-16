@@ -116,6 +116,7 @@ class NonlinearProjectionBretl:
 		c_t = [com_pos_x, com_pos_y, com_pos_z]  # CoM to be tested
 		cxy_opt = c_t[:2]  # Optimal CoM so far
 		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
+		stanceIndex = params.getStanceIndex(params.getStanceFeet())
 
 		i = 0
 
@@ -131,7 +132,11 @@ class NonlinearProjectionBretl:
 			c_t += dir_step * vdir  # iterate along direction vector by step cm
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
-
+			# q_to_check = np.concatenate([list(q[leg*3 : leg*3+3]) for leg in stanceIndex])
+			# print "q_to_check", q_to_check
+			# print stanceIndex
+			# print "lims: ", params.getJointLimsMax()[stanceIndex,:]
+			# if self.kin.isOutOfJointLims(q_to_check, params.getJointLimsMax()[stanceIndex,:], params.getJointLimsMin()[stanceIndex,:]):
 			if self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
 				c_t_feasible = False
 			else:
@@ -150,8 +155,10 @@ class NonlinearProjectionBretl:
 			c_t += dir_step * vdir
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
+			# q_to_check = np.concatenate([list(q[leg * 3: leg * 3 + 3]) for leg in stanceIndex])
 
 			# If new point is on the same side (feasible or infeasible region) as last point, continue in same direction
+			# if not self.kin.isOutOfJointLims(q_to_check, params.getJointLimsMax()[stanceIndex,:], params.getJointLimsMin()[stanceIndex,:]):
 			if not self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
 				c_t_feasible = True
 				cxy_opt = [c_t[0], c_t[1]]
