@@ -76,6 +76,8 @@ class IterativeProjectionParameters:
 
 		self.actual_swing = 0
 
+		self.desired_acceleration = [0,0,0]
+
 	def setContactsPosBF(self, contactsBF):
 		self.contactsBF = contactsBF
 
@@ -170,7 +172,9 @@ class IterativeProjectionParameters:
 		for iter in range(0, 4):
 			if stanceLegs[iter] == 1:
 				#                print 'new poly', stanceIndex, iter
-				stanceIdx = np.hstack([stanceIdx, iter])
+				stanceIdx = np.hstack([stanceIdx, int(iter)])
+		stanceIdx = stanceIdx.astype(np.int)
+
 		return stanceIdx
 
 	def getParamsFromRosDebugTopic(self, received_data):
@@ -219,6 +223,8 @@ class IterativeProjectionParameters:
 		self.yaw = received_data.yaw
 #
 		self.actual_swing = received_data.actual_swing # variable doesn't change in framework. Needs fix
+
+		self.desired_acceleration = received_data.desired_acceleration
 
 	def getFutureStanceFeetFlags(self, received_data):
 

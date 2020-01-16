@@ -5,6 +5,8 @@ Created on Tue Jun  5 15:57:17 2018
 @author: Romeo Orsolino
 """
 
+
+
 import pypoman
 import numpy as np
 from numpy import array, dot, eye, hstack, vstack, zeros
@@ -71,6 +73,10 @@ class ComputationalDynamics:
 
         extForce = iterative_projection_params.externalForceWF
         extTorque = iterative_projection_params.externalTorqueWF
+        # acceleration = iterative_projection_params.desired_acceleration
+        # linear_momentum_dot = [robotMass*x for x in acceleration]
+        linear_momentum_dot = [0, 0, 0]
+        angular_momentum_dot = [0, 0, 0]
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
         # print "externalForceWF: ", extForce
         # print "externalTorqueWF: ", extTorque
@@ -90,9 +96,11 @@ class ComputationalDynamics:
             G = hstack([G, graspMatrix])  # Full grasp matrix
             
 #        print 'grasp matrix',G
-        E = vstack((Ex, Ey)) / (g*robotMass - extForce[2])
-        f = np.array([(-extTorque[1] - extForce[0]*height)/(g*robotMass - extForce[2]),
-                      (extTorque[0] - extForce[1]*height)/(g*robotMass - extForce[2])])
+        E = vstack((Ex, Ey)) / (g*robotMass - extForce[2] + linear_momentum_dot[2])
+        f = np.array([(-extTorque[1] + angular_momentum_dot[1] - (extForce[0] - linear_momentum_dot[0]) * height) /
+                      (g*robotMass - extForce[2] + linear_momentum_dot[2]),
+                      (extTorque[0] - angular_momentum_dot[0] - (extForce[1] - linear_momentum_dot[1]) * height) /
+                      (g*robotMass - extForce[2] + linear_momentum_dot[2])])
         proj = (E, f)  # y = E * x + f
         
         # see Equation (52) in "ZMP Support Areas for Multicontact..."
@@ -105,10 +113,12 @@ class ComputationalDynamics:
         # Extension of equation 51 to add additional CoM constraint resulting from external forces and torques
         # Added instead of 0 block (upper right) in C_ext in Pypoman
         A_y = np.zeros((A_f_and_tauz.shape[0], 2))
-        A_y[-1] = np.array([[extForce[1], - extForce[0]]])
+        A_y[-1] = np.array([[extForce[1] - linear_momentum_dot[1], - extForce[0] + linear_momentum_dot[0]]])
 #        print A
-        t = hstack([- extForce[0], - extForce[1], g*robotMass - extForce[2],
-                    - extTorque[2]])
+        t = hstack([- extForce[0] + linear_momentum_dot[0],
+                    - extForce[1] + linear_momentum_dot[1],
+                    g*robotMass - extForce[2] + linear_momentum_dot[2],
+                    - extTorque[2] + angular_momentum_dot[2]])
 #        print extForceWF, t
 #        print 'mass ', robotMass
 #        print A,t
