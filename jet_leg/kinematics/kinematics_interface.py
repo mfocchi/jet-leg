@@ -19,6 +19,8 @@ class KinematicsInterface:
         self.dog = DogInterface()
         self.rbd = RigidBodyDynamics()
         self.robotName = robot_name
+        self.hyqreal_ik_success = True
+
         if self.robotName == 'hyq':
             self.hyqKin = HyQKinematics()
         if self.robotName == 'anymal':
@@ -40,7 +42,7 @@ class KinematicsInterface:
             q = self.hyqKin.fixedBaseInverseKinematics(contactsBF, foot_vel)
             return q
         elif self.robotName == 'hyqreal':
-            q = self.hyqrealKin.fixedBaseInverseKinematics(contactsBF)
+            q, self.hyqreal_ik_success = self.hyqrealKin.fixedBaseInverseKinematics(contactsBF)
             return q
         elif self.robotName == 'anymal':
             q = self.anymalKin.fixedBaseInverseKinematics(contactsBF)
@@ -50,8 +52,13 @@ class KinematicsInterface:
 
         if self.robotName == 'hyq':
             return self.hyqKin.isOutOfJointLims(joint_positions, joint_limits_max, joint_limits_min)
+        elif self.robotName == 'hyqreal':
+            return self.hyqrealKin.isOutOfJointLims(joint_positions, joint_limits_max, joint_limits_min)
+
 
     def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, foot_vel):
 
         if self.robotName == 'hyq':
             return self.hyqKin.isOutOfWorkSpace(contactsBF_check, joint_limits_max, joint_limits_min, foot_vel)
+        elif self.robotName == 'hyqreal':
+            return self.hyqrealKin.isOutOfWorkSpace(contactsBF_check, joint_limits_max, joint_limits_min, foot_vel)

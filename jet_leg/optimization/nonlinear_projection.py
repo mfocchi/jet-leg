@@ -129,15 +129,15 @@ class NonlinearProjectionBretl:
 
 		while c_t_feasible and i < max_iter:
 
-			c_t += dir_step * vdir  # iterate along direction vector by step cm
+			c_t += dir_step * vdir  # Iterate along direction vector by step cm
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
-			# q_to_check = np.concatenate([list(q[leg*3 : leg*3+3]) for leg in stanceIndex])
-			# print "q_to_check", q_to_check
-			# print stanceIndex
-			# print "lims: ", params.getJointLimsMax()[stanceIndex,:]
-			# if self.kin.isOutOfJointLims(q_to_check, params.getJointLimsMax()[stanceIndex,:], params.getJointLimsMin()[stanceIndex,:]):
-			if self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
+			q_to_check = np.concatenate([list(q[leg*3 : leg*3+3]) for leg in stanceIndex]) # To check 3 or 4 feet stance
+
+			# if (not self.kin.hyqreal_ik_success) or self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
+			if (not self.kin.hyqreal_ik_success) or \
+					self.kin.isOutOfJointLims(q_to_check, params.getJointLimsMax()[stanceIndex,:],
+											  params.getJointLimsMin()[stanceIndex,:]): # kin.hyqreal_ik_success is always true for Hyq
 				c_t_feasible = False
 			else:
 				cxy_opt = [c_t[0], c_t[1]]
@@ -155,11 +155,13 @@ class NonlinearProjectionBretl:
 			c_t += dir_step * vdir
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
-			# q_to_check = np.concatenate([list(q[leg * 3: leg * 3 + 3]) for leg in stanceIndex])
+			q_to_check = np.concatenate([list(q[leg * 3: leg * 3 + 3]) for leg in stanceIndex]) # To check 3 or 4 feet stance
 
 			# If new point is on the same side (feasible or infeasible region) as last point, continue in same direction
-			# if not self.kin.isOutOfJointLims(q_to_check, params.getJointLimsMax()[stanceIndex,:], params.getJointLimsMin()[stanceIndex,:]):
-			if not self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
+			# if self.kin.hyqreal_ik_success and (not self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin())):
+			if self.kin.hyqreal_ik_success and \
+					(not self.kin.isOutOfJointLims(q_to_check, params.getJointLimsMax()[stanceIndex,:],
+												   params.getJointLimsMin()[stanceIndex,:])):
 				c_t_feasible = True
 				cxy_opt = [c_t[0], c_t[1]]
 			else:
@@ -171,7 +173,7 @@ class NonlinearProjectionBretl:
 				dir_step = -dir_step / 2
 
 			i += 1
-			# print "new dir_step: ", dir_step
+		# print "new dir_step: ", dir_step
 
 		return cxy_opt
 
@@ -253,4 +255,5 @@ class NonlinearProjectionBretl:
 			else:
 				print "Feasible!"
 		# print "size: ", len(vertices)
+		print "Done!"
 		return vertices, computation_time

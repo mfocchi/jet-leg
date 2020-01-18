@@ -169,24 +169,24 @@ def talker(robotName):
     ng = 4
     params.setNumberOfFrictionConesEdges(ng)
 
-    ''' joint position limits for each leg (this code assumes a hyq-like design, i.e. three joints per leg)
-    HAA = Hip Abduction Adduction
-    HFE = Hip Flextion Extension
-    KFE = Knee Flextion Extension
-    '''
-    LF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
-    LF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
-    RF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
-    RF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
-    LH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
-    LH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
-    RH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
-    RH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
-    joint_limits_max = np.array([LF_q_lim_max, RF_q_lim_max, LH_q_lim_max, RH_q_lim_max])
-    joint_limits_min = np.array([LF_q_lim_min, RF_q_lim_min, LH_q_lim_min, RH_q_lim_min])
-
-    params.setJointLimsMax(joint_limits_max)
-    params.setJointLimsMin(joint_limits_min)
+    # ''' joint position limits for each leg (this code assumes a hyq-like design, i.e. three joints per leg)
+    # HAA = Hip Abduction Adduction
+    # HFE = Hip Flextion Extension
+    # KFE = Knee Flextion Extension
+    # '''
+    # LF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
+    # LF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
+    # RF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
+    # RF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
+    # LH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
+    # LH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
+    # RH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
+    # RH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
+    # joint_limits_max = np.array([LF_q_lim_max, RF_q_lim_max, LH_q_lim_max, RH_q_lim_max])
+    # joint_limits_min = np.array([LF_q_lim_min, RF_q_lim_min, LH_q_lim_min, RH_q_lim_min])
+    #
+    # params.setJointLimsMax(joint_limits_max)
+    # params.setJointLimsMin(joint_limits_min)
 
     while not ros.is_shutdown():
 
@@ -211,21 +211,22 @@ def talker(robotName):
         #                            'ONLY_FRICTION',
         #                            'ONLY_FRICTION'])
         IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
+        # print "IAR: ", IAR
         # print"IAR computation_time", computation_time
 
-        # reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
+        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
         # print "computation_time_joints: ", computation_time_joint
 
-        # pIAR = Polygon(IAR)
-        # reachable_feasible_polygon = np.array([])
-        # if reachability_polygon.size > 0:
-        #     preachability_polygon = Polygon(reachability_polygon)
-        #     reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
-        #     try:
-        #         reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
-        #     except AttributeError:
-        #         print "Shape not a Polygon."
-        #         reachable_feasible_polygon = np.array([])
+        pIAR = Polygon(IAR)
+        reachable_feasible_polygon = np.array([])
+        if reachability_polygon.size > 0:
+            preachability_polygon = Polygon(reachability_polygon)
+            reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
+            try:
+                reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
+            except AttributeError:
+                print "Shape not a Polygon."
+                reachable_feasible_polygon = np.array([])
 
                # if IAR is not False:
                #     p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
@@ -248,8 +249,8 @@ def talker(robotName):
         # print "friction time: ", computation_time
         p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index,
                                   foothold_params.ack_optimization_done)
-        # p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
-        #                           foothold_params.ack_optimization_done)
+        p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
+                                  foothold_params.ack_optimization_done)
         p.send_support_region(name, p.fillPolygon(frictionRegion))
 
         # FOOTHOLD PLANNING
@@ -330,7 +331,7 @@ def talker(robotName):
 if __name__ == '__main__':
     
     try:
-        robot_name = 'hyq'
+        robot_name = 'hyqreal'
         talker(robot_name)
     except ros.ROSInterruptException:
         pass
