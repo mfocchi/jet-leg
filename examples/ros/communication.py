@@ -194,7 +194,7 @@ def talker(robotName):
         first = time.time()
         params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
         foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
-        #params.getFutureStanceFeet(p.hyq_debug_msg)
+        #params.getFutureStanceFeetFlags(p.hyq_debug_msg)
         params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
         # print "CoM: ", params.getCoMPosWF()
         # print "time: ", time.time() - first
@@ -210,23 +210,23 @@ def talker(robotName):
         #                            'ONLY_FRICTION',
         #                            'ONLY_FRICTION',
         #                            'ONLY_FRICTION'])
-        IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
+        # IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
         # print "IAR: ", IAR
         # print"IAR computation_time", computation_time
 
-        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
+        # reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
         # print "computation_time_joints: ", computation_time_joint
 
-        pIAR = Polygon(IAR)
-        reachable_feasible_polygon = np.array([])
-        if reachability_polygon.size > 0:
-            preachability_polygon = Polygon(reachability_polygon)
-            reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
-            try:
-                reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
-            except AttributeError:
-                print "Shape not a Polygon."
-                reachable_feasible_polygon = np.array([])
+        # pIAR = Polygon(IAR)
+        # reachable_feasible_polygon = np.array([])
+        # if reachability_polygon.size > 0:
+        #     preachability_polygon = Polygon(reachability_polygon)
+        #     reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
+        #     try:
+        #         reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
+        #     except AttributeError:
+        #         print "Shape not a Polygon."
+        #         reachable_feasible_polygon = np.array([])
 
                # if IAR is not False:
                #     p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
@@ -244,14 +244,14 @@ def talker(robotName):
                                        constraint_mode_IP])
         params.setNumberOfFrictionConesEdges(ng)
 
-        frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
+        # frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
         # print "frictionRegion: ", frictionRegion
         # print "friction time: ", computation_time
-        p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index,
-                                  foothold_params.ack_optimization_done)
-        p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
-                                  foothold_params.ack_optimization_done)
-        p.send_support_region(name, p.fillPolygon(frictionRegion))
+        # p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index,
+        #                           foothold_params.ack_optimization_done)
+        # p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
+        #                           foothold_params.ack_optimization_done)
+        # p.send_support_region(name, p.fillPolygon(frictionRegion))
 
         # FOOTHOLD PLANNING
    
@@ -275,6 +275,10 @@ def talker(robotName):
             print '============================================================'
             print 'current swing ', params.actual_swing            
             print '============================================================'
+
+            params.getFutureStanceFeetFlags(p.hyq_debug_msg)
+
+            print "FUTURE STANCE LEGS: ", params.stanceFeet
 
             # Select foothold option with maximum feasible region from among all possible (default is 9) options
             foothold_params.option_index, stackedResidualRadius, actuationRegions, mapFootHoldIdxToPolygonIdx = footHoldPlanning.selectMaximumFeasibleArea( foothold_params, params)
@@ -331,7 +335,7 @@ def talker(robotName):
 if __name__ == '__main__':
     
     try:
-        robot_name = 'hyqreal'
+        robot_name = 'hyq'
         talker(robot_name)
     except ros.ROSInterruptException:
         pass
