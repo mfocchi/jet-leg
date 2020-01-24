@@ -50,7 +50,7 @@ class HyQSim(threading.Thread):
         threading.Thread.__init__(self)
 
         self.clock_sub_name = 'clock'
-        self.hyq_wbs_sub_name = "/hyq/robot_states"
+
         self.hyq_actuation_params_sub_name = "/feasible_region/robot_states"
         self.hyq_actuation_footholds_params_sub_name = "/feasible_region/foothold"
         self.hyq_wbs = dict()
@@ -60,6 +60,8 @@ class HyQSim(threading.Thread):
         self.reachable_feasible_topic_name = "/feasible_region/reachble_feasible_region_polygon"
         self.support_region_topic_name = "/feasible_region/support_region"
         self.force_polygons_topic_name = "/feasible_region/force_polygons"
+        self.robot_name = ros.get_param('/robot_name')
+        # self.hyq_wbs_sub_name = "/"+self.robot_name+"/robot_states" not used
         print ros.get_namespace()
         self.sim_time  = 0.0
 
@@ -137,16 +139,17 @@ class HyQSim(threading.Thread):
             vertices = np.hstack([vertices, point])
         return vertices
 
-def talker(robotName):
-    compDyn = ComputationalDynamics(robotName)
-    footHoldPlanning = FootHoldPlanning(robotName)
-    joint_projection = nonlinear_projection.NonlinearProjectionBretl(robot_name)
-    math = Math()
-
+def talker():
     # Create a communication thread
     p = HyQSim()
     p.start()  # Start thread
     p.register_node()
+    compDyn = ComputationalDynamics(p.robot_name)
+    footHoldPlanning = FootHoldPlanning(p.robot_name)
+    joint_projection = nonlinear_projection.NonlinearProjectionBretl(p.robot_name)
+    math = Math()
+
+
 
     name = "Actuation_region"
     force_polytopes_name = "force_polytopes"
@@ -335,8 +338,8 @@ def talker(robotName):
 if __name__ == '__main__':
     
     try:
-        robot_name = 'hyq'
-        talker(robot_name)
+        talker()
+
     except ros.ROSInterruptException:
         pass
     
