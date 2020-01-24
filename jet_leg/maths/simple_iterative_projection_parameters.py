@@ -22,8 +22,8 @@ class IterativeProjectionParameters:
 		self.footPosWRF = [0.3, -0.2, -.0]
 		self.footPosWLH = [-0.3, 0.2, -.0]
 		self.footPosWRH = [-0.3, -0.2, -.0]
-		self.externalForceWF = [0., 0., 0.]
-		self.externalTorqueWF = [0., 0., 0.]
+		self.externalForceWF = np.array([0., 0., 0.])
+		self.externalTorqueWF = np.array([0., 0., 0.])
 
 		self.roll = 0.0
 		self.pitch = 0.0
@@ -76,6 +76,8 @@ class IterativeProjectionParameters:
 
 		self.actual_swing = 0
 
+		self.plane_normal = [0, 0, 1]
+
 		self.desired_acceleration = [0,0,0]
 
 	def setContactsPosBF(self, contactsBF):
@@ -124,6 +126,9 @@ class IterativeProjectionParameters:
 	def setTotalMass(self, mass):
 		self.robotMass = mass
 
+	def set_plane_normal(self, plane_normal):
+		self.plane_normal = plane_normal
+
 	def getContactsPosWF(self):
 		return self.contactsWF
 
@@ -145,6 +150,12 @@ class IterativeProjectionParameters:
 	def getJointLimsMin(self):
 		return self.joint_limits_min
 
+	def get_external_force(self):
+		return self.externalForceWF
+
+	def get_external_torque(self):
+		return self.externalTorqueWF
+
 	def getStanceFeet(self):
 		return self.stanceFeet
 
@@ -165,6 +176,12 @@ class IterativeProjectionParameters:
 
 	def getTotalMass(self):
 		return self.robotMass
+
+	def get_plane_normal(self):
+		return self.plane_normal
+
+	def get_terrain_plane_z_intercept(self):
+		return self.math.plane_z_intercept(self.comPositionWF, self.plane_normal)
 
 	def getStanceIndex(self, stanceLegs):
 		stanceIdx = []
@@ -205,8 +222,8 @@ class IterativeProjectionParameters:
 		self.comPositionBF = received_data.off_CoM
 
 		# External wrench
-		self.externalForceWF = received_data.ext_wrench[0:3]
-		self.externalTorqueWF = received_data.ext_wrench[3:6]
+		self.externalForceWF = np.array(received_data.ext_wrench[0:3])
+		self.externalTorqueWF = np.array(received_data.ext_wrench[3:6])
 
 # 		# print 'ext force ',self.externalForceWF
 
@@ -217,6 +234,8 @@ class IterativeProjectionParameters:
 		self.robotMass = received_data.robot_mass
 
 		self.friction = received_data.mu_estimate
+
+		self.plane_normal = received_data.plane_normal
 #
 		self.roll = received_data.roll
 		self.pitch = received_data.pitch

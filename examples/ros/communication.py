@@ -174,7 +174,7 @@ class HyQSim(threading.Thread):
             point = Point()
             point.x = polygon[i][0]
             point.y = polygon[i][1]
-            point.z = 0.0  #is the centroidal frame
+            point.z = polygon[i][2] #is the centroidal frame
             vertices = np.hstack([vertices, point])
         return vertices
 
