@@ -146,12 +146,12 @@ class HyQSim(threading.Thread):
         output.polygons = polygons
         self.pub_force_polygons.publish(output)
 
-    def send_support_region(self, name, vertices):
+    def send_friction_region(self, name, vertices):
         output = Polygon3D()
         output.vertices = vertices
         self.pub_support_region.publish(output)
 
-    def send_actuation_polygons(self, name, vertices, option_index, ack_optimization_done):
+    def send_feasible_polygons(self, name, vertices, option_index, ack_optimization_done):
         output = Polygon3D()
         output.vertices = vertices
         output.option_index = option_index
@@ -183,6 +183,9 @@ def talker():
     p = HyQSim()
     p.start()  # Start thread
     p.register_node()
+    # start config node
+    p.config_server()
+
     compDyn = ComputationalDynamics(p.robot_name)
     footHoldPlanning = FootHoldPlanning(p.robot_name)
     joint_projection = nonlinear_projection.NonlinearProjectionBretl(p.robot_name)
@@ -230,141 +233,148 @@ def talker():
     # params.setJointLimsMax(joint_limits_max)
     # params.setJointLimsMin(joint_limits_min)
 
+
     while not ros.is_shutdown():
 
         # Save foothold planning and IP parameters from "debug" topic
         first = time.time()
         params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
         foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
-        #params.getFutureStanceFeetFlags(p.hyq_debug_msg)
-        params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
+
+        if p.com_optimization or p.foothold_optimization:
+            params.getFutureStanceFeetFlags(p.hyq_debug_msg)
+        else:
+            params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
         # print "CoM: ", params.getCoMPosWF()
         # print "time: ", time.time() - first
-        
-        # USE THIS ONLY TO PLOT THE ACTUAL REGION FOR A VIDEO FOR THE PAPER DO NOT USE FOR COM PLANNING
-        constraint_mode_IP = 'FRICTION_AND_ACTUATION'
-        # constraint_mode_IP = 'ONLY_ACTUATION'
-        params.setConstraintModes([constraint_mode_IP,
-                           constraint_mode_IP,
-                           constraint_mode_IP,
-                           constraint_mode_IP])
-        # params.setConstraintModes(['ONLY_FRICTION',
-        #                            'ONLY_FRICTION',
-        #                            'ONLY_FRICTION',
-        #                            'ONLY_FRICTION'])
-        # IAR, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
-        # print "IAR: ", IAR
-        # print"IAR computation_time", computation_time
 
-        # reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
-        # print "computation_time_joints: ", computation_time_joint
+        if (p.plotFrictionRegion):
+            constraint_mode_IP = 'ONLY_FRICTION'
+            params.setConstraintModes([constraint_mode_IP,
+                                           constraint_mode_IP,
+                                           constraint_mode_IP,
+                                           constraint_mode_IP])
+            params.setNumberOfFrictionConesEdges(ng)
+            frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
+            p.send_friction_region(name, p.fillPolygon(frictionRegion))
+            # print "frictionRegion: ", frictionRegion
+            # print "friction time: ", computation_time
 
-        # pIAR = Polygon(IAR)
-        # reachable_feasible_polygon = np.array([])
-        # if reachability_polygon.size > 0:
-        #     preachability_polygon = Polygon(reachability_polygon)
-        #     reachable_feasible_polygon = pIAR.intersection(preachability_polygon)
-        #     try:
-        #         reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
-        #     except AttributeError:
-        #         print "Shape not a Polygon."
-        #         reachable_feasible_polygon = np.array([])
+        if (p.plotFeasibleRegionFlag):
+               # USE THIS ONLY TO PLOT THE ACTUAL REGION FOR A VIDEO FOR THE PAPER DO NOT USE FOR COM PLANNING
+            constraint_mode_IP = 'FRICTION_AND_ACTUATION'
+            # constraint_mode_IP = 'ONLY_ACTUATION'
+            params.setConstraintModes([constraint_mode_IP,
+                               constraint_mode_IP,
+                               constraint_mode_IP,
+                               constraint_mode_IP])
+            params.setNumberOfFrictionConesEdges(ng)
+            FEASIBLE_REGION, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
+            # print "FEASIBLE_REGION: ", FEASIBLE_REGION
+            # print"FEASIBLE_REGION computation_time", computation_time
+            #safety measure use old when you cannot compute
+            if FEASIBLE_REGION is not False:
+               p.send_feasible_polygons(name, p.fillPolygon(FEASIBLE_REGION), foothold_params.option_index, foothold_params.ack_optimization_done)
+               old_FEASIBLE_REGION = FEASIBLE_REGION
+            else:
+               print 'Could not compute the feasible region'
+               p.send_feasible_polygons(name, p.fillPolygon(old_FEASIBLE_REGION), foothold_params.option_index,  foothold_params.ack_optimization_done)
 
-               # if IAR is not False:
-               #     p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index, foothold_params.ack_optimization_done)
-               #     old_IAR = IAR
-               # else:
-               #     print 'Could not compute the feasible region'
-               #     p.send_actuation_polygons(name, p.fillPolygon(old_IAR), foothold_params.option_index,
-               #
-               #                               foothold_params.ack_optimization_done)
-                                     
-        constraint_mode_IP = 'ONLY_FRICTION'
-        params.setConstraintModes([constraint_mode_IP,
-                                       constraint_mode_IP,
-                                       constraint_mode_IP,
-                                       constraint_mode_IP])
-        params.setNumberOfFrictionConesEdges(ng)
+        if (p.plotReachableFeasibleRegionFlag and not p.plotExtendedRegionFlag):
+            reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
+            p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
+                                   foothold_params.ack_optimization_done)
 
-        # frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
-        # print "frictionRegion: ", frictionRegion
-        # print "friction time: ", computation_time
-        # p.send_actuation_polygons(name, p.fillPolygon(IAR), foothold_params.option_index,
-        #                           foothold_params.ack_optimization_done)
-        # p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
-        #                           foothold_params.ack_optimization_done)
-        # p.send_support_region(name, p.fillPolygon(frictionRegion))
+        if (p.plotExtendedRegionFlag):
+            EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
+            reachable_feasible_polygon = np.array([])
+            reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
+            if reachability_polygon.size > 0:
+                preachability_polygon = Polygon(reachability_polygon)
+                reachable_feasible_polygon = EXTENDED_FEASIBLE_REGION.intersection(preachability_polygon)
+
+                try:
+                    reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
+
+                except AttributeError:
+                    print "Shape not a Polygon."
+                    p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon), foothold_params.option_index,
+                                                   foothold_params.ack_optimization_done)
+                else:
+                    old_reachable_feasible_polygon = reachable_feasible_polygon
+                    p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
+                                                   foothold_params.ack_optimization_done)
 
         # FOOTHOLD PLANNING
    
-        
-        #print 'opt started?', foothold_params.optimization_started
-        #print 'ack opt done', foothold_params.ack_optimization_done
-#        foothold_params.ack_optimization_done = True 
-        actuationRegions = []
-#        print 'robot mass', params.robotMass
-        if (foothold_params.optimization_started == False):
-            foothold_params.ack_optimization_done = False
+        if (p.foothold_optimization):
+            #print 'opt started?', foothold_params.optimization_started
+            #print 'ack opt done', foothold_params.ack_optimization_done
+    #        foothold_params.ack_optimization_done = True
+            feasibleRegions = []
+    #        print 'robot mass', params.robotMass
+            if (foothold_params.optimization_started == False):
+                foothold_params.ack_optimization_done = False
 
-        ''' The optimization-done-flag is set by the planner. It is needed to tell the controller whether the optimization 
-        is finished or not. When this flag is true the controller will read the result of the optimization that has read 
-        from the planner'''
-        # print 'optimization done flag',foothold_params.ack_optimization_done
-        ''' The optimization-started-flag is set by the controller. It is needed to tell the planner that a new optimization should start.
-        When this flag is true the planner (in jetleg) will start a new computation of the feasible region.'''
-        # print 'optimization started flag', foothold_params.optimization_started
-        if foothold_params.optimization_started and not foothold_params.ack_optimization_done:
-            print '============================================================'
-            print 'current swing ', params.actual_swing            
-            print '============================================================'
+            ''' The optimization-done-flag is set by the planner. It is needed to tell the controller whether the optimization 
+            is finished or not. When this flag is true the controller will read the result of the optimization that has read 
+            from the planner'''
+            # print 'optimization done flag',foothold_params.ack_optimization_done
+            ''' The optimization-started-flag is set by the controller. It is needed to tell the planner that a new optimization should start.
+            When this flag is true the planner (in jetleg) will start a new computation of the feasible region.'''
+            # print 'optimization started flag', foothold_params.optimization_started
+            if foothold_params.optimization_started and not foothold_params.ack_optimization_done:
+                print '============================================================'
+                print 'current swing ', params.actual_swing
+                print '============================================================'
 
-            params.getFutureStanceFeetFlags(p.hyq_debug_msg)
+                params.getFutureStanceFeetFlags(p.hyq_debug_msg)
 
-            print "FUTURE STANCE LEGS: ", params.stanceFeet
+                print "FUTURE STANCE LEGS: ", params.stanceFeet
 
-            # Select foothold option with maximum feasible region from among all possible (default is 9) options
-            foothold_params.option_index, stackedResidualRadius, actuationRegions, mapFootHoldIdxToPolygonIdx = footHoldPlanning.selectMaximumFeasibleArea( foothold_params, params)
+                # Select foothold option with maximum feasible region from among all possible (default is 9) options
+                foothold_params.option_index, stackedResidualRadius, feasibleRegions, mapFootHoldIdxToPolygonIdx = footHoldPlanning.selectMaximumFeasibleArea( foothold_params, params)
 
-            if actuationRegions is False:
-                foothold_params.option_index = -1
-            else:
-                print 'min radius ', foothold_params.minRadius, 'residual radius ', stackedResidualRadius
-                #print 'feet options', foothold_params.footOptions
-                print 'final index', foothold_params.option_index, 'index list', mapFootHoldIdxToPolygonIdx
-                
-            foothold_params.ack_optimization_done = 1
+                if feasibleRegions is False:
+                    foothold_params.option_index = -1
+                else:
+                    print 'min radius ', foothold_params.minRadius, 'residual radius ', stackedResidualRadius
+                    #print 'feet options', foothold_params.footOptions
+                    print 'final index', foothold_params.option_index, 'index list', mapFootHoldIdxToPolygonIdx
 
-            #         ONLY_ACTUATION, ONLY_FRICTION or FRICTION_AND_ACTUATION
-            #        3 - FRICTION REGION
-            constraint_mode_IP = 'ONLY_FRICTION'
-            params.setConstraintModes([constraint_mode_IP,
-                                       constraint_mode_IP,
-                                       constraint_mode_IP,
-                                       constraint_mode_IP])
-            params.setNumberOfFrictionConesEdges(ng)
+                foothold_params.ack_optimization_done = 1
 
-            params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index] # variable doesn't change in framework. Needs fix
+                #         ONLY_ACTUATION, ONLY_FRICTION or FRICTION_AND_ACTUATION
+                #        3 - FRICTION REGION
+                constraint_mode_IP = 'ONLY_FRICTION'
+                params.setConstraintModes([constraint_mode_IP,
+                                           constraint_mode_IP,
+                                           constraint_mode_IP,
+                                           constraint_mode_IP])
+                params.setNumberOfFrictionConesEdges(ng)
 
-            #        uncomment this if you dont want to use the vars read in iterative_proJ_params
-            #        params.setContactNormals(normals)
-            #        params.setFrictionCoefficient(mu)
-            #        params.setTrunkMass(trunk_mass)
-            #        IP_points, actuation_polygons, comp_time = comp_dyn.support_region_bretl(stanceLegs, contacts, normals, trunk_mass)
+                params.contactsWF[params.actual_swing] = foothold_params.footOptions[foothold_params.option_index] # variable doesn't change in framework. Needs fix
 
-            frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
+                #        uncomment this if you dont want to use the vars read in iterative_proJ_params
+                #        params.setContactNormals(normals)
+                #        params.setFrictionCoefficient(mu)
+                #        params.setTrunkMass(trunk_mass)
+                #        IP_points, actuation_polygons, comp_time = comp_dyn.support_region_bretl(stanceLegs, contacts, normals, trunk_mass)
 
-            print 'friction region is: ',frictionRegion
+                frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
 
-            p.send_support_region(name, p.fillPolygon(frictionRegion))
+                print 'friction region is: ',frictionRegion
 
-            #this sends the data back to ros that contains the foot hold choice (used for stepping) and the corrspondent region (that will be used for com planning TODO update with the real footholds)
-            if (actuationRegions is not False) and (np.size(actuationRegions) is not 0):
-                print 'sending actuation region'
-                p.send_actuation_polygons(name, p.fillPolygon(actuationRegions[-1]), foothold_params.option_index, foothold_params.ack_optimization_done)
-                # print actuationRegions[-1]
-            else:
-                #if it cannot compute anything it will return the frictin region
-                p.send_actuation_polygons(name, p.fillPolygon(frictionRegion), foothold_params.option_index, foothold_params.ack_optimization_done)
+                p.send_friction_region(name, p.fillPolygon(frictionRegion))
+
+                #this sends the data back to ros that contains the foot hold choice (used for stepping) and the corrspondent region (that will be used for com planning TODO update with the real footholds)
+                if (feasibleRegions is not False) and (np.size(feasibleRegions) is not 0):
+                    print 'sending actuation region'
+                    p.send_feasible_polygons(name, p.fillPolygon(feasibleRegions[-1]), foothold_params.option_index, foothold_params.ack_optimization_done)
+                    # print feasibleRegions[-1]
+                else:
+                    #if it cannot compute anything it will return the frictin region
+                    p.send_feasible_polygons(name, p.fillPolygon(frictionRegion), foothold_params.option_index, foothold_params.ack_optimization_done)
 
 
         time.sleep(0.001)

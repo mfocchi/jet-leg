@@ -255,5 +255,5 @@ class NonlinearProjectionBretl:
 			else:
 				print "Feasible!"
 		# print "size: ", len(vertices)
-		print "Done!"
+		#print "Done!"
 		return vertices, computation_time
