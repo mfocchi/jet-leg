@@ -35,6 +35,8 @@ from jet_leg.optimization.foothold_planning import FootHoldPlanning
 from jet_leg.plotting.plotting_tools import Plotter
 import matplotlib.pyplot as plt
 
+#services
+from feasible_region.srv import Config, ConfigResponse
 
 np.set_printoptions(precision = 3, linewidth = 200, suppress = True)
 np.set_printoptions(threshold=np.inf)
@@ -65,6 +67,18 @@ class HyQSim(threading.Thread):
         print ros.get_namespace()
         self.sim_time  = 0.0
 
+
+        self.plotFeasibleRegionFlag = False
+        self.plotExtendedRegionFlag = False
+        self.plotShrinkedActuationRegionFlag = False
+        self.plotReachableFeasibleRegionFlag = False
+        self.plotFrictionRegion = False
+        self.plotForcePolygonsFlag = False
+
+        self.com_optimization = False
+        self.foothold_optimization = False
+        self.com_optimization_type = 0
+
     def run(self):
         print "Run!"
         self.sub_clock = ros.Subscriber(self.clock_sub_name, Clock, callback=self._reg_sim_time, queue_size=1000)
@@ -75,6 +89,31 @@ class HyQSim(threading.Thread):
         self.pub_reachable_feasible_polygon = ros.Publisher(self.reachable_feasible_topic_name, Polygon3D, queue_size=10000)
         self.pub_support_region = ros.Publisher(self.support_region_topic_name, Polygon3D, queue_size=1000)
         self.pub_force_polygons = ros.Publisher(self.force_polygons_topic_name, LegsPolygons, queue_size=1000)
+
+    def config_server(self):
+
+        #advertise service
+        service = ros.Service('/feasible_region/set_config', Config, self.handle_set_feasible_region_config)
+        print "Feasible Region Config Server initialized"
+
+
+    def handle_set_feasible_region_config(self, req):
+        print "Returning [vis opt: %s , com %s , comtype: %s foothold: %s]" % (req.visualization_options, req.com_optimization, req.com_optimization_type, req.foothold_optimization)
+        self.com_optimization = req.com_optimization
+        self.foothold_optimization = req.foothold_optimization
+        self.com_optimization_type = req.com_optimization_type
+        if (len(req.visualization_options) < 6):
+            print  "wrong visualization option size is :", len(req.visualization_options)
+            return ConfigResponse(False)
+
+
+        self.plotFeasibleRegionFlag = req.visualization_options[0] == "1"
+        self.plotShrinkedActuationRegionFlag = req.visualization_options[1] == "1"
+        self.plotReachableFeasibleRegionFlag = req.visualization_options[2] == "1"
+        self.plotExtendedRegionFlag = req.visualization_options[3] == "1"
+        self.plotFrictionRegion = req.visualization_options[4] == "1"
+        self.plotForcePolygonsFlag = req.visualization_options[5] == "1"
+        return ConfigResponse(True)
 
     def _reg_sim_time(self, time):
 
