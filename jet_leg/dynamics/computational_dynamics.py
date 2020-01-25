@@ -179,20 +179,20 @@ class ComputationalDynamics:
         return eq, ineq, actuation_polygons, isIKoutOfWorkSpace
 
 
-    def compute_A22_block(self, gravity_vec, ext_force, linear_momentum_dot, plane_normal):
+    def compute_A22_block(self, gravity_term, ext_force, linear_momentum_dot, plane_normal):
 
         A22 = np.zeros((3,2))
 
         A22[0][0] = plane_normal[0]/plane_normal[2]*ext_force[1] + \
                     - plane_normal[0]/plane_normal[2]*linear_momentum_dot[0]
-        A22[0][1] = - gravity_vec + plane_normal[1]/plane_normal[2]*ext_force[1] + \
+        A22[0][1] = - gravity_term + plane_normal[1]/plane_normal[2]*ext_force[1] + \
                     ext_force[2] - plane_normal[1]/plane_normal[2]*linear_momentum_dot[1] - linear_momentum_dot[2]
         A22[1][0] = -plane_normal[0]/plane_normal[2]*ext_force[0] - ext_force[2] + \
-                    plane_normal[0]/plane_normal[2]*linear_momentum_dot[0] + linear_momentum_dot[2] + gravity_vec
+                    plane_normal[0]/plane_normal[2]*linear_momentum_dot[0] + linear_momentum_dot[2] + gravity_term
         A22[1][1] = - plane_normal[1]/plane_normal[2]*ext_force[0] + \
                     plane_normal[1]/plane_normal[2]*linear_momentum_dot[0]
-        A22[2][0] = -ext_force[1] - linear_momentum_dot[1]
-        A22[2][1] = ext_force[0] + linear_momentum_dot[0]
+        A22[2][0] = ext_force[1] - linear_momentum_dot[1]
+        A22[2][1] = -ext_force[0] + linear_momentum_dot[0]
 
         return A22
 

@@ -210,6 +210,15 @@ class NonlinearProjectionBretl:
 
 		return polygon
 
+	def fill_general_plane_region_z_component(self, vertices, plane_normal, plane_z_intercept):
+
+		vertices_3d = np.ndarray(shape=(vertices.shape[0], 3), dtype=float)
+		for i, vertix in enumerate(vertices):
+			vertices_3d[i] = np.append(vertices[i],
+									   self.math.compute_z_component_of_plane(vertix, plane_normal, plane_z_intercept))
+
+		return vertices_3d
+
 	def project_polytope(self, params, com_wf_check=None, theta_step=20. * pi / 180, dir_step=0.03, max_iter=1000):
 		"""
 		Project a polytope into a 2D polygon using the incremental projection
@@ -228,9 +237,12 @@ class NonlinearProjectionBretl:
 		vertices_list = polygon
 		vertices = [array([v.x, v.y]) for v in vertices_list]
 		if not vertices:
-			return np.array([]), np.array([])
+			return np.array([]), np.array([], np.array([]))
 		else:
 			compressed_vertices = np.compress([True, True], vertices, axis=1)
+			compressed_vertices = self.fill_general_plane_region_z_component(compressed_vertices,
+													   params.get_plane_normal(),
+													   params.get_terrain_plane_z_intercept())
 			vertices = compressed_vertices
 		# print compressed_vertices
 		# try:
