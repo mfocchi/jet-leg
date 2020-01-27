@@ -32,7 +32,7 @@ class Math:
         return G    
 
     def plane_z_intercept(self, point_on_plane, plane_normal):
-        return point_on_plane[2]-0.54 + \
+        return point_on_plane[2] + \
                plane_normal[0] / plane_normal[2] * point_on_plane[0] + \
                plane_normal[1] / plane_normal[2] * point_on_plane[1]
 
