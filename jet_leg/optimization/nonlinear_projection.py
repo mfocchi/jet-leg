@@ -92,7 +92,7 @@ class NonlinearProjectionBretl:
 		for j in np.arange(0, 4):
 			j = int(j)
 			contactsBF[j, :] = np.add(np.dot(self.math.rpyToRot(rpy[0], rpy[1], rpy[2]),
-															(contactsWF[j, :] - comPositionWF)),
+																(contactsWF[j, :] - comPositionWF)),
 															comPositionBF)
 
 		return contactsBF
@@ -235,10 +235,11 @@ class NonlinearProjectionBretl:
 		# polygon.sort_vertices()
 		# vertices_list = polygon.export_vertices()
 		vertices_list = polygon
-		vertices = [array([v.x, v.y]) for v in vertices_list]
-		if not vertices:
-			return np.array([]), np.array([], np.array([]))
+
+		if not vertices_list:
+			return np.array([]), (time.time() - ip_start)
 		else:
+			vertices = [array([v.x, v.y]) for v in vertices_list]
 			compressed_vertices = np.compress([True, True], vertices, axis=1)
 			compressed_vertices = self.fill_general_plane_region_z_component(compressed_vertices,
 													   params.get_plane_normal(),

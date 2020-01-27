@@ -282,8 +282,14 @@ def talker():
 
         if (p.plotReachableFeasibleRegionFlag and not p.plotExtendedRegionFlag):
             reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
-            p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
-                                   foothold_params.ack_optimization_done)
+            if reachability_polygon.size > 0:
+                old_reachable_feasible_polygon = reachability_polygon
+                p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
+                                    foothold_params.ack_optimization_done)
+            else:
+                p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
+                                                   foothold_params.option_index,
+                                                   foothold_params.ack_optimization_done)
 
         if (p.plotExtendedRegionFlag):
             EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
@@ -302,7 +308,13 @@ def talker():
                                                    foothold_params.ack_optimization_done)
                 else:
                     old_reachable_feasible_polygon = reachable_feasible_polygon
+                    print "BEFORE: ", old_reachable_feasible_polygon
                     p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
+                                                   foothold_params.ack_optimization_done)
+            else:
+                print "AFTER: ", old_reachable_feasible_polygon
+                p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
+                                                   foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
 
         # FOOTHOLD PLANNING
