@@ -190,23 +190,17 @@ class NonlinearProjectionBretl:
 		comPosWF_0 = params.getCoMPosWF()
 		polygon = []
 
-		# Check if current configuration is already feasible
-		contactsBF = self.getcontactsBF(params, comPosWF_0)
-		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
-		if self.kin.isOutOfWorkSpace(contactsBF, params.getJointLimsMax(), params.getJointLimsMin(), foot_vel):
-			print "Couldn't compute a reachable region! Current configuration is already out of joint limits!"
-		else:
-			# polygon = Polygon()
-			theta = 0
+		# polygon = Polygon()
+		theta = 0
 
-			while theta < 360. * pi /180.:
-				# print "theta: ", theta
-				
-				# Compute region for the current CoM position (in world frame)
-				v = Vertex(self.compute_vertix(comPosWF_0[0], comPosWF_0[1], comPosWF_0[2], params, theta, dir_step, max_iter))
-				polygon.append(v)
+		while theta < 360. * pi /180.:
+			# print "theta: ", theta
 
-				theta += theta_step  # increase search angle by step rad
+			# Compute region for the current CoM position (in world frame)
+			v = Vertex(self.compute_vertix(comPosWF_0[0], comPosWF_0[1], comPosWF_0[2], params, theta, dir_step, max_iter))
+			polygon.append(v)
+
+			theta += theta_step  # increase search angle by step rad
 
 		return polygon
 
@@ -231,6 +225,24 @@ class NonlinearProjectionBretl:
 		"""
 
 		ip_start = time.time()
+
+		# Check if current configuration is already feasible
+		stanceIndex = params.getStanceIndex(params.getStanceFeet())
+		contactsBF = self.getcontactsBF(params, params.getCoMPosWF())
+		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
+
+		if self.kin.isOutOfWorkSpace(contactsBF, params.getJointLimsMax(), params.getJointLimsMin(), stanceIndex, foot_vel):
+			print "Couldn't compute a reachable region! Current configuration is already out of joint limits!"
+			return np.array([]), (time.time() - ip_start)
+
+		if com_wf_check is not None:
+
+			contactsBF_check = self.getcontactsBF(params, com_wf_check)
+			if self.kin.isOutOfWorkSpace(contactsBF_check, params.getJointLimsMax(), params.getJointLimsMin(), stanceIndex, foot_vel):
+				print "Ouch!"
+				return np.array([]), (time.time() - ip_start)
+
+		# Compute region
 		polygon = self.compute_polygon(params, theta_step, dir_step, max_iter)
 		# polygon.sort_vertices()
 		# vertices_list = polygon.export_vertices()
@@ -259,14 +271,6 @@ class NonlinearProjectionBretl:
 		# compressed_vertices = self.geom.clockwise_sort(compressed_vertices)
 		computation_time = (time.time() - ip_start)
 
-		if com_wf_check is not None:
-			foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
-			contactsBF_check = self.getcontactsBF(params, com_wf_check)
-			# print "q: ", self.kin.inverse_kin(contactsBF_check, foot_vel)
-			if self.kin.isOutOfWorkSpace(contactsBF_check, params.getJointLimsMax(), params.getJointLimsMin(), foot_vel):
-				print "Ouch!"
-			else:
-				print "Feasible!"
 		# print "size: ", len(vertices)
 		#print "Done!"
 		return vertices, computation_time

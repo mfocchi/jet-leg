@@ -134,7 +134,7 @@ class hyqrealKinematics():
         return not np.all(np.less_equal(q, joint_limits_max)) \
                or not np.all(np.greater_equal(q, joint_limits_min))
 
-    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, foot_vel):
+    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel):
         [q, success] = self.fixedBaseInverseKinematics(contactsBF_check)
         # print "q:", q
 

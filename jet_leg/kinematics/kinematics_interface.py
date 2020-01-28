@@ -56,9 +56,9 @@ class KinematicsInterface:
             return self.hyqrealKin.isOutOfJointLims(joint_positions, joint_limits_max, joint_limits_min)
 
 
-    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, foot_vel):
+    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel):
 
         if self.robotName == 'hyq':
-            return self.hyqKin.isOutOfWorkSpace(contactsBF_check, joint_limits_max, joint_limits_min, foot_vel)
+            return self.hyqKin.isOutOfWorkSpace(contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel)
         elif self.robotName == 'hyqreal':
-            return self.hyqrealKin.isOutOfWorkSpace(contactsBF_check, joint_limits_max, joint_limits_min, foot_vel)
+            return self.hyqrealKin.isOutOfWorkSpace(contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel)
