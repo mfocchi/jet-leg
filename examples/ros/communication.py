@@ -174,9 +174,21 @@ class HyQSim(threading.Thread):
             point = Point()
             point.x = polygon[i][0]
             point.y = polygon[i][1]
-            point.z = polygon[i][2] #is the centroidal frame
+            point.z = 0 #is the centroidal frame
             vertices = np.hstack([vertices, point])
         return vertices
+
+    def computeFeasibleRegion(self, params, ng, compDyn):
+        constraint_mode_IP = 'FRICTION_AND_ACTUATION'
+        # constraint_mode_IP = 'ONLY_ACTUATION'
+        params.setConstraintModes([constraint_mode_IP,
+                                   constraint_mode_IP,
+                                   constraint_mode_IP,
+                                   constraint_mode_IP])
+        params.setNumberOfFrictionConesEdges(ng)
+        FEASIBLE_REGION, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
+
+        return FEASIBLE_REGION, actuation_polygons_array, computation_time
 
 def talker():
     # Create a communication thread
@@ -241,6 +253,14 @@ def talker():
         params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
         foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
 
+        # print "CoMWF: ", params.getCoMPosWF()
+        # print "CoMBF: ", params.getCoMPosBF()
+        # print "rpy: ", params.getOrientation()
+        # print "contacts: ", params.getContactsPosWF()
+        # print "robotMass: ", params.robotMass
+        # print "planeNormal: ", params.get_plane_normal()
+        # print "torqueLims: ", params.getTorqueLims()
+
         if p.com_optimization or p.foothold_optimization:
             params.getFutureStanceFeetFlags(p.hyq_debug_msg)
         else:
@@ -260,28 +280,23 @@ def talker():
             # print "frictionRegion: ", frictionRegion
             # print "friction time: ", computation_time
 
-        if (p.plotFeasibleRegionFlag):
+        if (p.plotFeasibleRegionFlag or p.plotExtendedRegionFlag):
                # USE THIS ONLY TO PLOT THE ACTUAL REGION FOR A VIDEO FOR THE PAPER DO NOT USE FOR COM PLANNING
-            constraint_mode_IP = 'FRICTION_AND_ACTUATION'
-            # constraint_mode_IP = 'ONLY_ACTUATION'
-            params.setConstraintModes([constraint_mode_IP,
-                               constraint_mode_IP,
-                               constraint_mode_IP,
-                               constraint_mode_IP])
-            params.setNumberOfFrictionConesEdges(ng)
-            FEASIBLE_REGION, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
+            FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn)
             # print "FEASIBLE_REGION: ", FEASIBLE_REGION
             # print"FEASIBLE_REGION computation_time", computation_time
             #safety measure use old when you cannot compute
-            if FEASIBLE_REGION is not False:
-               p.send_feasible_polygons(name, p.fillPolygon(FEASIBLE_REGION), foothold_params.option_index, foothold_params.ack_optimization_done)
-               old_FEASIBLE_REGION = FEASIBLE_REGION
-            else:
-               print 'Could not compute the feasible region'
-               p.send_feasible_polygons(name, p.fillPolygon(old_FEASIBLE_REGION), foothold_params.option_index,  foothold_params.ack_optimization_done)
+            if (p.plotFeasibleRegionFlag):
+                if FEASIBLE_REGION is not False:
+                   p.send_feasible_polygons(name, p.fillPolygon(FEASIBLE_REGION), foothold_params.option_index, foothold_params.ack_optimization_done)
+                   old_FEASIBLE_REGION = FEASIBLE_REGION
+                else:
+                   print 'Could not compute the feasible region'
+                   p.send_feasible_polygons(name, p.fillPolygon(old_FEASIBLE_REGION), foothold_params.option_index,  foothold_params.ack_optimization_done)
 
         if (p.plotReachableFeasibleRegionFlag and not p.plotExtendedRegionFlag):
             reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
+            print "reachable region computation_time: ", computation_time_joint
             if reachability_polygon.size > 0:
                 old_reachable_feasible_polygon = reachability_polygon
                 p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
@@ -292,6 +307,8 @@ def talker():
                                                    foothold_params.ack_optimization_done)
 
         if (p.plotExtendedRegionFlag):
+            FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn)
+
             EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
             reachable_feasible_polygon = np.array([])
             reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
@@ -308,11 +325,9 @@ def talker():
                                                    foothold_params.ack_optimization_done)
                 else:
                     old_reachable_feasible_polygon = reachable_feasible_polygon
-                    print "BEFORE: ", old_reachable_feasible_polygon
                     p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
             else:
-                print "AFTER: ", old_reachable_feasible_polygon
                 p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
                                                    foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
