@@ -73,13 +73,11 @@ class ComputationalDynamics:
 
         extForce = iterative_projection_params.get_external_force()
         extTorque = iterative_projection_params.get_external_torque()
-        # acceleration = iterative_projection_params.desired_acceleration
-        # linear_momentum_dot = [robotMass*x for x in acceleration]
+        acceleration = iterative_projection_params.desired_acceleration
+        # linear_momentum_dot = robotMass*acceleration
         linear_momentum_dot = [0., 0., 0.]
         angular_momentum_dot = [0., 0., 0.]
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
-        # print "externalForceWF: ", extForce
-        # print "externalTorqueWF: ", extTorque
 
         for j in range(0,contactsNumber):
 
@@ -139,8 +137,8 @@ class ComputationalDynamics:
 
         extForce = iterative_projection_params.get_external_force()
         extTorque = iterative_projection_params.get_external_torque()
-        # acceleration = iterative_projection_params.desired_acceleration
-        # linear_momentum_dot = [robotMass*x for x in acceleration]
+        acceleration = iterative_projection_params.desired_acceleration
+        # linear_momentum_dot = robotMass*acceleration
         linear_momentum_dot = np.array([0., 0., 0.])
         angular_momentum_dot = np.array([0., 0., 0.])
         plane_normal = iterative_projection_params.get_plane_normal()
@@ -166,7 +164,7 @@ class ComputationalDynamics:
         A22 = self.compute_A22_block(g*robotMass, extForce, linear_momentum_dot, plane_normal)
         A = np.hstack((G, np.vstack((A21_zeros, A22))))
 
-        t_linear = np.add(-np.add(np.array([0.0, 0.0, -g*robotMass]), linear_momentum_dot), -extForce)
+        t_linear = np.add(np.add(-np.array([0.0, 0.0, -g*robotMass]), linear_momentum_dot), -extForce)
         t_angular = self.compute_t_angular_vector(projection_plane_z_intercept, extForce, extTorque,
                                                   linear_momentum_dot, angular_momentum_dot)
         t = np.concatenate([t_linear, t_angular])
@@ -184,7 +182,7 @@ class ComputationalDynamics:
         A22 = np.zeros((3,2))
 
         A22[0][0] = plane_normal[0]/plane_normal[2]*ext_force[1] + \
-                    - plane_normal[0]/plane_normal[2]*linear_momentum_dot[0]
+                    - plane_normal[0]/plane_normal[2]*linear_momentum_dot[1]
         A22[0][1] = - gravity_term + plane_normal[1]/plane_normal[2]*ext_force[1] + \
                     ext_force[2] - plane_normal[1]/plane_normal[2]*linear_momentum_dot[1] - linear_momentum_dot[2]
         A22[1][0] = -plane_normal[0]/plane_normal[2]*ext_force[0] - ext_force[2] + \

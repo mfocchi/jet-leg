@@ -81,7 +81,7 @@ class IterativeProjectionParameters:
 		# CoM height (projected along z axis)
 		self.current_CoM_height = 0
 
-		self.desired_acceleration = [0,0,0]
+		self.desired_acceleration = np.array([0,0,0])
 
 	def setContactsPosBF(self, contactsBF):
 		self.contactsBF = contactsBF
@@ -256,7 +256,7 @@ class IterativeProjectionParameters:
 #
 		self.actual_swing = received_data.actual_swing # variable doesn't change in framework. Needs fix
 
-		self.desired_acceleration = received_data.desired_acceleration
+		self.desired_acceleration = np.array(received_data.desired_acceleration)
 
 	def getFutureStanceFeetFlags(self, received_data):
 
