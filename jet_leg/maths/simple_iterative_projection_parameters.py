@@ -186,6 +186,10 @@ class IterativeProjectionParameters:
 	def get_current_CoM_height(self):
 		return self.current_CoM_height
 
+	def get_CoM_plane_z_intercept(self):
+		point_on_plane = self.comPositionWF
+		return self.math.plane_z_intercept(point_on_plane, self.plane_normal)
+
 	def get_terrain_plane_z_intercept(self):
 		point_on_plane = self.comPositionWF - np.array([0,0,self.current_CoM_height])
 		return self.math.plane_z_intercept(point_on_plane, self.plane_normal)
@@ -245,7 +249,6 @@ class IterativeProjectionParameters:
 		self.plane_normal = received_data.plane_normal
 
 		self.current_CoM_height = received_data.actual_CoM_height
-		print self.current_CoM_height
 #
 		self.roll = received_data.roll
 		self.pitch = received_data.pitch

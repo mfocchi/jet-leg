@@ -144,7 +144,7 @@ class ComputationalDynamics:
         linear_momentum_dot = np.array([0., 0., 0.])
         angular_momentum_dot = np.array([0., 0., 0.])
         plane_normal = iterative_projection_params.get_plane_normal()
-        projection_plane_z_intercept = iterative_projection_params.get_terrain_plane_z_intercept()
+        projection_plane_z_intercept = iterative_projection_params.get_CoM_plane_z_intercept()
 
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
         G = np.zeros((6, 0))
