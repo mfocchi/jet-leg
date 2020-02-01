@@ -85,6 +85,7 @@ params.setJointLimsMin(joint_limits_min)
 params.setActiveContacts(stanceFeet)
 
 com_check = np.array([0.3, -0.1, 0.5])
+com_check = None
 # polygon, computation_time = projection.project_polytope(params, com_check)
 polygon, computation_time = projection.project_polytope(params, com_check, 20. * np.pi / 180, 0.03)
 # polygon, computation_time = projection.project_polytope(params)

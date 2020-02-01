@@ -97,7 +97,7 @@ class NonlinearProjectionBretl:
 
 		return contactsBF
 
-	def compute_vertix(self, com_pos_x, com_pos_y, com_pos_z, params, theta, min_dir_step, max_iter):
+	def compute_vertix(self, com_pos_x, com_pos_y, plane_normal, CoM_plane_z_intercept, params, theta, min_dir_step, max_iter):
 		"""
 		Compute vertix of projected polygon in vdir direction.
 
@@ -111,10 +111,10 @@ class NonlinearProjectionBretl:
 
 		# Search for a CoM position in direction vdir
 
-		vdir = array([cos(theta), sin(theta), 0])
+		vdir = array([cos(theta), sin(theta)])
 
-		c_t = [com_pos_x, com_pos_y, com_pos_z]  # CoM to be tested
-		cxy_opt = c_t[:2]  # Optimal CoM so far
+		c_t_xy = [com_pos_x, com_pos_y]  # CoM to be tested
+		cxy_opt = c_t_xy  # Optimal CoM so far
 		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
 		stanceIndex = params.getStanceIndex(params.getStanceFeet())
 
@@ -129,7 +129,9 @@ class NonlinearProjectionBretl:
 
 		while c_t_feasible and i < max_iter:
 
-			c_t += dir_step * vdir  # Iterate along direction vector by step cm
+			c_t_xy += dir_step * vdir  # Iterate along direction vector by step cm
+			z_coordinate = self.math.compute_z_component_of_plane(c_t_xy, plane_normal, CoM_plane_z_intercept)
+			c_t = np.append(c_t_xy, z_coordinate)
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
 			q_to_check = np.concatenate([list(q[leg*3 : leg*3+3]) for leg in stanceIndex]) # To check 3 or 4 feet stance
@@ -152,7 +154,9 @@ class NonlinearProjectionBretl:
 		while abs(dir_step) >= min_dir_step and i < max_iter:
 
 			old_c_t_feasible = c_t_feasible
-			c_t += dir_step * vdir
+			c_t_xy += dir_step * vdir
+			z_coordinate = self.math.compute_z_component_of_plane(c_t_xy, plane_normal, CoM_plane_z_intercept)
+			c_t = np.append(c_t_xy, z_coordinate)
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
 			q_to_check = np.concatenate([list(q[leg * 3: leg * 3 + 3]) for leg in stanceIndex]) # To check 3 or 4 feet stance
@@ -188,6 +192,8 @@ class NonlinearProjectionBretl:
 		"""
 
 		comPosWF_0 = params.getCoMPosWF()
+		plane_normal = params.get_plane_normal()
+		CoM_plane_z_intercept = params.get_CoM_plane_z_intercept()
 		polygon = []
 
 		# polygon = Polygon()
@@ -197,7 +203,7 @@ class NonlinearProjectionBretl:
 			# print "theta: ", theta
 
 			# Compute region for the current CoM position (in world frame)
-			v = Vertex(self.compute_vertix(comPosWF_0[0], comPosWF_0[1], comPosWF_0[2], params, theta, dir_step, max_iter))
+			v = Vertex(self.compute_vertix(comPosWF_0[0], comPosWF_0[1], plane_normal, CoM_plane_z_intercept, params, theta, dir_step, max_iter))
 			polygon.append(v)
 
 			theta += theta_step  # increase search angle by step rad
