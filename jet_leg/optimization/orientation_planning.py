@@ -84,7 +84,7 @@ class Orientation_Planning:
 					print "Feasible region is false"
 					continue
 
-				reachability_polygon, computation_time_joint = self.kinProj.project_polytope(params, target_CoM_WF, 20. * np.pi / 180, 0.03)
+				reachability_polygon, computation_time_joint = self.kinProj.project_polytope(params, target_CoM_WF, 25 * np.pi / 180, 0.03)
 				if reachability_polygon.size <= 0:
 					feasible_regions.append(False)
 					min_distances.append(False)
