@@ -27,7 +27,7 @@ class OrientationPlanningInterface:
 		self.stride = 3
 
 		# Default orientation to optimize around
-		self.default_orientation = [0., 0., 0.]  # used only for foothold planning
+		self.default_orientation = np.array([])  # used only for foothold planning
 		# Target CoM based on reachability heuristic
 		self.target_CoM_WF = [0.,0.,0.]
 
@@ -46,7 +46,7 @@ class OrientationPlanningInterface:
 		# For each orientation axis. Total options = (no_of_angle_choices + 1) * 2
 		self.no_of_angle_choices = 0
 
-		self.optimization_started = False
+		self.orient_optimization_started = False
 
 		# outputs
 		self.option_index = 0
@@ -63,12 +63,11 @@ class OrientationPlanningInterface:
 
 	def getParamsFromRosDebugTopic(self, received_data):
 
-		for dir in range(0, 3):
-			self.default_orientation[dir] = received_data.default_orientation[dir]
+		self.default_orientation = np.array(received_data.default_orientation)
 
 		for dir in range(0, 3):
 			self.target_CoM_WF[dir] = received_data.target_CoM_WF[dir]
 
 		self.no_of_angle_choices = received_data.no_of_angle_choices
 
-		self.optimization_started = received_data.optimization_started
+		self.orient_optimization_started = received_data.orient_optimization_started

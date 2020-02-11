@@ -20,17 +20,20 @@ from geometry_msgs.msg import Point
 
 #from dls_msgs.msg import SimpleDoubleArray, StringDoubleArray, Polygon3D, LegsPolygons
 from dls_msgs.msg import  StringDoubleArray
-from feasible_region.msg import RobotStates, Foothold
-from feasible_region.msg import  Polygon3D, LegsPolygons
-from shapely.geometry import Polygon
+from feasible_region.msg import RobotStates, Foothold, OrientationRequest
+from feasible_region.msg import  Polygon3D, LegsPolygons, OptimalOrientation
+from shapely.geometry import Polygon, LineString
+import message_filters
 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
 from jet_leg.maths.math_tools import Math
 from jet_leg.maths.simple_iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization.simple_foothold_planning_interface import FootholdPlanningInterface
+from jet_leg.optimization.orientation_planning_interface import OrientationPlanningInterface
 from jet_leg.optimization import nonlinear_projection
 
 from jet_leg.optimization.foothold_planning import FootHoldPlanning
+from jet_leg.optimization.orientation_planning import OrientationPlanning
 
 from jet_leg.plotting.plotting_tools import Plotter
 import matplotlib.pyplot as plt
@@ -55,13 +58,16 @@ class HyQSim(threading.Thread):
 
         self.hyq_actuation_params_sub_name = "/feasible_region/robot_states"
         self.hyq_actuation_footholds_params_sub_name = "/feasible_region/foothold"
+        self.hyq_orientation_request_params_sub_name = "/feasible_region/orientation_request"
         self.hyq_wbs = dict()
         self.hyq_debug_msg = RobotStates()
         self.hyq_footholds_msg = Foothold()
+        self.hyq_orientation_request_msg = OrientationRequest()
         self.actuation_polygon_topic_name = "/feasible_region/actuation_polygon"
         self.reachable_feasible_topic_name = "/feasible_region/reachble_feasible_region_polygon"
         self.support_region_topic_name = "/feasible_region/support_region"
         self.force_polygons_topic_name = "/feasible_region/force_polygons"
+        self.optimal_orientation_topic_name = "/feasible_region/optimal_orientation"
         self.robot_name = ros.get_param('/robot_name')
         # self.hyq_wbs_sub_name = "/"+self.robot_name+"/robot_states" not used
         print ros.get_namespace()
@@ -79,13 +85,26 @@ class HyQSim(threading.Thread):
         self.foothold_optimization = False
         self.com_optimization_type = 0
 
+        self.orient_ack_optimization_done = False # Not used
+
     def run(self):
         print "Run!"
         self.sub_clock = ros.Subscriber(self.clock_sub_name, Clock, callback=self._reg_sim_time, queue_size=1000)
-        self.sub_actuation_params = ros.Subscriber(self.hyq_actuation_params_sub_name, RobotStates, callback=self.callback_hyq_debug, queue_size=5, buff_size=3000)
-        self.sub_actuation_footholds_params = ros.Subscriber(self.hyq_actuation_footholds_params_sub_name, Foothold,
-                                                   callback=self.callback_hyq_footholds, queue_size=5, buff_size=1500)
+        self.sub_actuation_params = ros.Subscriber(self.hyq_actuation_params_sub_name, RobotStates, callback=self.callback_hyq_debug, queue_size=1, buff_size=3000)
+        # self.sub_actuation_footholds_params = ros.Subscriber(self.hyq_actuation_footholds_params_sub_name, Foothold,
+        #                                            callback=self.callback_hyq_footholds, queue_size=1, buff_size=500)
+        # self.sub_orientation_request_params = ros.Subscriber(self.hyq_orientation_request_params_sub_name, OrientationRequest,
+        #                                            callback=self.callback_hyq_orientation, queue_size=1, buff_size=500)
+        # self.sub_actuation_params = message_filters.Subscriber(self.hyq_actuation_params_sub_name, RobotStates, queue_size=1, buff_size=3000)
+        # self.sub_actuation_footholds_params = message_filters.Subscriber(self.hyq_actuation_footholds_params_sub_name, Foothold, queue_size=1, buff_size=1000)
+        # self.sub_orientation_request_params = message_filters.Subscriber(self.hyq_orientation_request_params_sub_name,
+        #                                                      OrientationRequest, queue_size=1, buff_size=1000)
+        #
+        # self.ts = message_filters.ApproximateTimeSynchronizer([self.sub_actuation_params, self.sub_actuation_footholds_params, self.sub_orientation_request_params], 10, 1)
+        # self.ts.registerCallback(self.callback_synchronizer)
+
         self.pub_feasible_polygon = ros.Publisher(self.actuation_polygon_topic_name, Polygon3D, queue_size=10000)
+        self.pub_optimal_orientation = ros.Publisher(self.optimal_orientation_topic_name, OptimalOrientation, queue_size=1)
         self.pub_reachable_feasible_polygon = ros.Publisher(self.reachable_feasible_topic_name, Polygon3D, queue_size=10000)
         self.pub_support_region = ros.Publisher(self.support_region_topic_name, Polygon3D, queue_size=1000)
         self.pub_force_polygons = ros.Publisher(self.force_polygons_topic_name, LegsPolygons, queue_size=1000)
@@ -123,11 +142,19 @@ class HyQSim(threading.Thread):
     def _reg_sim_wbs(self, msg):
         self.hyq_wbs = copy.deepcopy(msg)
 
+    def callback_synchronizer(self, robot_states_msg, foothold_msg, orient_req_msg):
+        self.hyq_debug_msg = copy.deepcopy(robot_states_msg)
+        self.hyq_footholds_msg = copy.deepcopy(foothold_msg)
+        self.hyq_orientation_request_msg = copy.deepcopy(orient_req_msg)
+
     def callback_hyq_debug(self, msg):
-       self.hyq_debug_msg = copy.deepcopy(msg)
+        self.hyq_debug_msg = copy.deepcopy(msg)
 
     def callback_hyq_footholds(self, msg):
        self.hyq_footholds_msg = copy.deepcopy(msg)
+
+    def callback_hyq_orientation(self, msg):
+        self.hyq_orientation_request_msg = copy.deepcopy(msg)
 
     def register_node(self):
         ros.init_node('sub_pub_node_python', anonymous=False)
@@ -165,6 +192,15 @@ class HyQSim(threading.Thread):
         output.ack_optimization_done = ack_optimization_done
         self.pub_reachable_feasible_polygon.publish(output)
 
+    def send_optimal_orientation(self, name, optimal_orientation, optimization_success, ack_optimization_done):
+        output = OptimalOrientation()
+        output.optimal_orientation[0] = optimal_orientation[0]
+        output.optimal_orientation[1] = optimal_orientation[1]
+        output.optimal_orientation[2] = optimal_orientation[2]
+        output.optimization_success = optimization_success
+        output.ack_optimization_done = ack_optimization_done
+        self.pub_optimal_orientation.publish(output)
+
     def fillPolygon(self, polygon):
         # print 'polygon ', polygon
         num_actuation_vertices = np.size(polygon, 0)
@@ -200,6 +236,7 @@ def talker():
 
     compDyn = ComputationalDynamics(p.robot_name)
     footHoldPlanning = FootHoldPlanning(p.robot_name)
+    orient_planning = OrientationPlanning(p.robot_name)
     joint_projection = nonlinear_projection.NonlinearProjectionBretl(p.robot_name)
     math = Math()
 
@@ -211,14 +248,19 @@ def talker():
     # Create parameter objects
     params = IterativeProjectionParameters()
     foothold_params = FootholdPlanningInterface()
+    orient_params = OrientationPlanningInterface()
     i = 0
 
     p.get_sim_wbs()
     # Save foothold planning and IP parameters from "debug" topic
     first = time.time()
-    print p.hyq_debug_msg.tau_lim.data[0]
+    # print p.hyq_debug_msg.tau_lim.data[0]
+    time.sleep(1)
     params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
-    foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
+    # foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
+    # orient_params.getParamsFromRosDebugTopic(p.hyq_orientation_request_msg)
+    foothold_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
+    orient_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
     params.getFutureStanceFeetFlags(p.hyq_debug_msg)
     print "time: ", time.time() - first
 
@@ -226,24 +268,11 @@ def talker():
     ng = 4
     params.setNumberOfFrictionConesEdges(ng)
 
-    # ''' joint position limits for each leg (this code assumes a hyq-like design, i.e. three joints per leg)
-    # HAA = Hip Abduction Adduction
-    # HFE = Hip Flextion Extension
-    # KFE = Knee Flextion Extension
-    # '''
-    # LF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
-    # LF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
-    # RF_q_lim_max = [0.44, 1.2217, -0.3491]  # HAA, HFE, KFE
-    # RF_q_lim_min = [-1.22, -0.8727, -2.4435]  # HAA, HFE, KFE
-    # LH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
-    # LH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
-    # RH_q_lim_max = [0.44, 0.8727, 2.4435]  # HAA, HFE, KFE
-    # RH_q_lim_min = [-1.22, -1.2217, 0.3491]  # HAA, HFE, KFE
-    # joint_limits_max = np.array([LF_q_lim_max, RF_q_lim_max, LH_q_lim_max, RH_q_lim_max])
-    # joint_limits_min = np.array([LF_q_lim_min, RF_q_lim_min, LH_q_lim_min, RH_q_lim_min])
-    #
-    # params.setJointLimsMax(joint_limits_max)
-    # params.setJointLimsMin(joint_limits_min)
+    plt.close()
+    plt.figure()
+    plotter = Plotter()
+    plt.ion()
+    # plt.show()
 
 
     while not ros.is_shutdown():
@@ -251,7 +280,10 @@ def talker():
         # Save foothold planning and IP parameters from "debug" topic
         first = time.time()
         params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
-        foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
+        # foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
+        # orient_params.getParamsFromRosDebugTopic(p.hyq_orientation_request_msg)
+        foothold_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
+        orient_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
 
         # print "CoMWF: ", params.getCoMPosWF()
         # print "CoMBF: ", params.getCoMPosBF()
@@ -259,7 +291,7 @@ def talker():
         # print "contacts: ", params.getContactsPosWF()
         # print "robotMass: ", params.robotMass
         # print "planeNormal: ", params.get_plane_normal()
-        # print "torqueLims: ", params.getTorqueLims()
+        # print "normals: ", params.getNormals()
 
         if p.com_optimization or p.foothold_optimization:
             params.getFutureStanceFeetFlags(p.hyq_debug_msg)
@@ -267,6 +299,7 @@ def talker():
             params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
         # print "CoM: ", params.getCoMPosWF()
         # print "time: ", time.time() - first
+        # print "Stance feet: ", params.stanceFeet
 
         if (p.plotFrictionRegion):
             constraint_mode_IP = 'ONLY_FRICTION'
@@ -296,13 +329,13 @@ def talker():
 
         if (p.plotReachableFeasibleRegionFlag and not p.plotExtendedRegionFlag):
             reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
-            print "reachable region computation_time: ", computation_time_joint
+            # print "reachable region computation_time: ", computation_time_joint
             if reachability_polygon.size > 0:
                 old_reachable_feasible_polygon = reachability_polygon
                 p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon), foothold_params.option_index,
                                     foothold_params.ack_optimization_done)
             else:
-                p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
+                p.send_reachable_feasible_polygons(name, p.fillPolygon([]),
                                                    foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
 
@@ -340,7 +373,7 @@ def talker():
     #        foothold_params.ack_optimization_done = True
             feasibleRegions = []
     #        print 'robot mass', params.robotMass
-            if (foothold_params.optimization_started == False):
+            if (foothold_params.foothold_optimization_started == False):
                 foothold_params.ack_optimization_done = False
 
             ''' The optimization-done-flag is set by the planner. It is needed to tell the controller whether the optimization 
@@ -349,8 +382,8 @@ def talker():
             # print 'optimization done flag',foothold_params.ack_optimization_done
             ''' The optimization-started-flag is set by the controller. It is needed to tell the planner that a new optimization should start.
             When this flag is true the planner (in jetleg) will start a new computation of the feasible region.'''
-            # print 'optimization started flag', foothold_params.optimization_started
-            if foothold_params.optimization_started and not foothold_params.ack_optimization_done:
+            # print 'optimization started flag', foothold_params.foothold_optimization_started
+            if foothold_params.foothold_optimization_started and not foothold_params.ack_optimization_done:
                 print '============================================================'
                 print 'current swing ', params.actual_swing
                 print '============================================================'
@@ -403,9 +436,89 @@ def talker():
                     #if it cannot compute anything it will return the frictin region
                     p.send_feasible_polygons(name, p.fillPolygon(frictionRegion), foothold_params.option_index, foothold_params.ack_optimization_done)
 
+        # ORIENTATION PLANNING
 
-        time.sleep(0.001)
-        i+=1
+        ''' The optimization-done-flag is set by the planner. It is needed to tell the controller whether the optimization 
+        					is finished or not. When this flag is true the controller will read the result of the optimization that has read 
+        					from the planner'''
+        ''' The optimization-started-flag is set by the controller. It is needed to tell the planner that a new optimization should start.
+		When this flag is true the planner (in jetleg) will start a new computation of the feasible region.'''
+        if(orient_params.orient_optimization_started == False):
+            orient_params.ack_optimization_done = False
+
+
+        # print "orientation_start: ", orient_params.orient_optimization_started
+        # print "optimization_done: ", orient_params.ack_optimization_done
+        # print "internal optim_done: ", p.orient_ack_optimization_done
+
+        if orient_params.orient_optimization_started and not orient_params.ack_optimization_done:
+
+            params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
+            print "Stance Feet: ", params.stanceFeet
+            print "Current orientation is: ", params.getOrientation()
+            print "Default orientation is: ", orient_params.get_default_orientation()
+            # print "normals: ", params.getNormals()
+            print "Current CoM is: ", params.getCoMPosWF()
+            # print "Target CoM is: ", orient_params.target_CoM_WF
+
+            first_time = time.time()
+            feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = orient_planning.optimize_orientation(orient_params, params)
+            print "Optimization time: ", time.time() - first_time
+            optimization_success = True if optimal_index > -1 else False
+
+            # time.sleep(5)
+            orient_params.ack_optimization_done = p.orient_ack_optimization_done = True
+
+            print "Optimal orientation is: ", optimal_orientation
+
+            print "Sending optimal orientation..."
+            p.send_optimal_orientation(name, optimal_orientation, optimization_success, orient_params.ack_optimization_done)
+
+
+            line = LineString([params.getCoMPosWF(), orient_params.target_CoM_WF])
+            line = np.array(list(line.coords))
+
+            stanceFeet = params.getStanceFeet()
+            nc = np.sum(stanceFeet)
+            stanceID = params.getStanceIndex(stanceFeet)
+            contactsWF = params.getContactsPosWF()
+
+            # # Uncomment this section to plot orientation choices
+            # plt.clf()
+            # for count, feasible_region in enumerate(feasible_regions):
+            #
+            #     plt.subplot(5, 5, count + 1)
+            #     plt.grid()
+            #     plt.title("Distance: {} \n  Area: {}".format(min_distances[count], max_areas[count]))
+            #
+            #     """ contact points """
+            #     for j in range(0,nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
+            #         idx = int(stanceID[j])
+            #         ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
+            #         h1 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=5, label='stance feet')
+            #     if min_distances[count] is not False:
+            #         try:
+            #             polygon = np.array(feasible_regions[count].exterior.coords)
+            #         except AttributeError:
+            #             print "Shape not a Polygon."
+            #         else:
+            #             if count == optimal_index:
+            #                 h2 = plotter.plot_polygon(np.transpose(polygon), '--g', 'Support Region')
+            #             else:
+            #                 h2 = plotter.plot_polygon(np.transpose(polygon), '--b', 'Support Region')
+            #             plt.plot(np.transpose(line)[:][0], np.transpose(line)[:][1], linestyle='-', linewidth=4)
+            #
+            # # wm = plt.get_current_fig_manager()
+            # # wm.window.state('zoomed')
+            # # plt.show(block=False)
+            # # plt.tight_layout()
+            # plt.subplots_adjust(left=0.12,bottom=0.05,right=0.9,top=0.95,wspace=0.4,hspace=0.4)
+            # plt.draw()
+            # plt.pause(0.001)
+            # plt.clf()
+            # # Since plotting takes time, a reset signal from the framework could be missed.
+            # orient_params.ack_optimization_done = False
+
         
     print 'de registering...'
     p.deregister_node()

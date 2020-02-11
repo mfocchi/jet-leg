@@ -63,7 +63,7 @@ class FootholdPlanningInterface:
 		self.sample_contacts = np.zeros((4, 3))
 
 		self.minRadius = 0.
-		self.optimization_started = False
+		self.foothold_optimization_started = False
 		# outputs
 		self.option_index = 0
 		self.ack_optimization_done = False
@@ -81,6 +81,6 @@ class FootholdPlanningInterface:
 
 		# print self.footOptions
 
-		self.optimization_started = received_data.optimization_started
+		self.foothold_optimization_started = received_data.foothold_optimization_started
 
 		self.minRadius = received_data.min_radius
