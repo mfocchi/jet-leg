@@ -56,7 +56,7 @@ class OrientationPlanning:
 
 		#        print numberOfFeetOptions
 
-		alpha = 0.0872665 # Increment of 5 degrees
+		delta_angle = 0.0872665 # Increment of 5 degrees
 		target_CoM_WF = orient_plan_params.get_target_CoM_WF()
 
 		# Initialize return variables
@@ -68,10 +68,14 @@ class OrientationPlanning:
 		min_distances = []
 		max_areas= []
 
-		delta_roll = -0.174533  # -10 degrees
-		for roll_index in range(orient_plan_params.no_of_angle_choices+1):
-			delta_pitch = -0.174533  # -10 degrees
-			for pitch_index in range(orient_plan_params.no_of_angle_choices+1):
+		first_roll = -0.174533  # -10 degrees
+		first_pitch = -0.174533  # -10 degrees
+
+		roll_list = [first_roll + i*delta_angle for i in range(orient_plan_params.no_of_angle_choices+1)]
+		pitch_list = [first_pitch + i*delta_angle for i in range(orient_plan_params.no_of_angle_choices+1)]
+
+		for new_roll in roll_list:
+			for new_pitch in pitch_list:
 
 				new_orientation = default_orientation + np.array([new_roll, new_pitch, 0])
 				# This is all to get the contactsBF and use it then in joint projection (to find contactsWF)
@@ -138,8 +142,6 @@ class OrientationPlanning:
 					old_distance = distance
 					old_area = area
 
-				delta_pitch += alpha
-			delta_roll += alpha
 					# optimal_orientation = new_orientation
 					# optimal_index = len(feasible_regions) - 1
 					# print "optimal_index: ", optimal_index
