@@ -25,13 +25,14 @@ from jet_leg.maths.math_tools import Math
 from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 from shapely.geometry import Polygon, LineString, LinearRing
+from shapely.geos import TopologicalError
 
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 sys.stderr = stderr
 
 
-class Orientation_Planning:
+class OrientationPlanning:
 	def __init__(self, robot_name):
 		self.robotName = robot_name
 		self.compGeo = ComputationalGeometry()
@@ -59,48 +60,66 @@ class Orientation_Planning:
 		target_CoM_WF = orient_plan_params.get_target_CoM_WF()
 
 		# Initialize return variables
-		optimal_orientation = orient_plan_params.get_default_orientation()
+		optimal_orientation = default_orientation = orient_plan_params.get_default_orientation()
 		optimal_distance = old_distance = -1
+		old_area = -1
+		optimal_index = -1
 		feasible_regions = []
 		min_distances = []
+		max_areas= []
 
 		delta_roll = -0.174533  # -10 degrees
 		for roll_index in range(orient_plan_params.no_of_angle_choices+1):
 			delta_pitch = -0.174533  # -10 degrees
 			for pitch_index in range(orient_plan_params.no_of_angle_choices+1):
 
-				print "loop: roll ", roll_index, " pitch ", pitch_index
-				new_orientation = orient_plan_params.get_default_orientation() + [delta_roll, delta_pitch, 0]
-				print "roll value: ", new_orientation[0], " pitch value: ", new_orientation[1], "yaw value: ", new_orientation[2]
+				new_orientation = default_orientation + np.array([new_roll, new_pitch, 0])
 				# This is all to get the contactsBF and use it then in joint projection (to find contactsWF)
 				params.setOrientation(new_orientation)
 
 				# Compute feasible region, reachable region, and intersection
 
-				feasible_region, actuation_polygons, computation_time = self.compDyn.iterative_projection_bretl(params)
+				feasible_region, actuation_polygons, computation_time = self.compDyn.try_iterative_projection_bretl(params)
 				if feasible_region is False:
 					feasible_regions.append(False)
 					min_distances.append(False)
-					print "Feasible region is false"
+					max_areas.append("FR False")
+					# print "Feasible region is false"
 					continue
 
 				reachability_polygon, computation_time_joint = self.kinProj.project_polytope(params, target_CoM_WF, 25 * np.pi / 180, 0.03)
 				if reachability_polygon.size <= 0:
 					feasible_regions.append(False)
 					min_distances.append(False)
-					print "Kinematic reach region is false"
+					max_areas.append("Reach False")
+					# print "Kinematic reach region is false"
 					continue
 
 				extended_feasible_region = Polygon(feasible_region)
 				p_reachability_polygon = Polygon(reachability_polygon)
-				reachable_feasible_polygon = extended_feasible_region.intersection(p_reachability_polygon)
+				try:
+					reachable_feasible_polygon = extended_feasible_region.intersection(p_reachability_polygon)
+				except TopologicalError:
+					feasible_regions.append(False)
+					min_distances.append(False)
+					max_areas.append("Intersec Fail")
+					continue
+
+				area = reachable_feasible_polygon.area
 
 				# Exclude if path from current CoM to target one lies outside region
 				l_CoM_path = LineString([params.getCoMPosWF(), target_CoM_WF])
-				if not l_CoM_path.within(reachable_feasible_polygon):
-					feasible_regions.append(reachable_feasible_polygon)
-					min_distances.append(-1)
-					print "Path outside of region"
+				try:
+					if not l_CoM_path.within(reachable_feasible_polygon):
+						feasible_regions.append(reachable_feasible_polygon)
+						min_distances.append(-1)
+						max_areas.append(area)
+						# print "Path outside of region"
+						continue
+				except TopologicalError:
+					feasible_regions.append(False)
+					min_distances.append(False)
+					max_areas.append("Extended !=Polygon")
 					continue
 
 
@@ -110,16 +129,22 @@ class Orientation_Planning:
 
 				feasible_regions.append(reachable_feasible_polygon)
 				min_distances.append(distance)
+				max_areas.append(area)
 
 				# Update optimal distance
-				if distance >= old_distance:
-					optimal_orientation, optimal_distance = new_orientation, distance
-					print "better_orientation: ", new_orientation, ", better_distance: ", distance
-					print "better_region: ", np.array(reachable_feasible_polygon.exterior.coords)
+				if distance - old_distance > 0.02 or (abs(distance - old_distance) < 0.02 and area > old_area):
+					optimal_orientation = new_orientation
+					optimal_index = len(feasible_regions) - 1
 					old_distance = distance
+					old_area = area
 
 				delta_pitch += alpha
 			delta_roll += alpha
+					# optimal_orientation = new_orientation
+					# optimal_index = len(feasible_regions) - 1
+					# print "optimal_index: ", optimal_index
+					# print "better_orientation: ", new_orientation, ", better_distance: ", distance
+					# print "better_region: ", np.array(reachable_feasible_polygon.exterior.coords)
 
-		return optimal_orientation, optimal_distance, feasible_regions, min_distances
+		return feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index
 		# newArea = self.compGeo.computePolygonArea(IAR)
