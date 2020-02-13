@@ -21,6 +21,7 @@ from jet_leg.optimization.nonlinear_projection import NonlinearProjectionBretl
 from jet_leg.maths.simple_iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization.orientation_planning_interface import OrientationPlanningInterface
 from jet_leg.optimization.orientation_planning import OrientationPlanning
+from jet_leg.optimization.orientation_planning_multiprocess import OrientationPlanningMultiProcess
 
 ''' MAIN '''
 
@@ -169,17 +170,17 @@ orient_params.default_orientation = rpy
 orient_params.target_CoM_WF = target_CoM_WF
 orient_params.no_of_angle_choices = no_of_angle_choices
 
-planning = OrientationPlanning(robot_name)
+# planning = OrientationPlanning(robot_name)
+planning_mp = OrientationPlanningMultiProcess(robot_name)
 
 #-----------------------------------------------------------------------------------------------------
 # Optimization
 
 first_time = time.time()
-optimal_orientation, optimal_distance, feasible_regions, min_distances = planning.optimize_orientation(orient_params, params)
+# feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = planning.optimize_orientation(orient_params, params)
+feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = planning_mp.optimize_orientation(orient_params, params)
 print "total time: ", time.time() - first_time
-
-optimal_index = np.argmax(min_distances)
-
+print optimal_index
 line = LineString([params.getCoMPosWF(), orient_params.target_CoM_WF])
 line = np.array(list(line.coords))
 
@@ -193,7 +194,7 @@ for count, feasible_region in enumerate(feasible_regions):
 
 	plt.subplot(5, 5, count+1)
 	plt.grid()
-	plt.title("Distance: {}".format(min_distances[count]))
+	plt.title("Distance: {} \n  Area: {}".format(min_distances[count], max_areas[count]))
 	plt.legend()
 
 	""" contact points """
@@ -201,7 +202,7 @@ for count, feasible_region in enumerate(feasible_regions):
 		idx = int(stanceID[j])
 		''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
 		h1 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=5, label='stance feet')
-	if min_distances[count]:
+	if min_distances[count] is not False:
 		try:
 			polygon = np.array(feasible_regions[count].exterior.coords)
 		except AttributeError:
@@ -215,6 +216,7 @@ for count, feasible_region in enumerate(feasible_regions):
 
 print "Current orientation is: ", [ang*180./np.pi for ang in rpy]
 print "Default orientation is: ", [ang*180./np.pi for ang in default_orientation]
-print "Optimal orientation is: ", [ang*180./np.pi for ang in optimal_orientation], " with distance of: ", optimal_distance
+print "Optimal orientation is: ", [ang*180./np.pi for ang in optimal_orientation], " with distance of: ", min_distances[optimal_index]
 
+plt.subplots_adjust(left=0.12,bottom=0.05,right=0.9,top=0.95,wspace=0.4,hspace=0.4)
 plt.show()

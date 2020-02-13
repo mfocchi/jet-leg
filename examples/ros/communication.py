@@ -33,7 +33,8 @@ from jet_leg.optimization.orientation_planning_interface import OrientationPlann
 from jet_leg.optimization import nonlinear_projection
 
 from jet_leg.optimization.foothold_planning import FootHoldPlanning
-from jet_leg.optimization.orientation_planning import OrientationPlanning
+# from jet_leg.optimization.orientation_planning import OrientationPlanning
+from jet_leg.optimization.orientation_planning_multiprocess import OrientationPlanningMultiProcess
 
 from jet_leg.plotting.plotting_tools import Plotter
 import matplotlib.pyplot as plt
@@ -149,6 +150,8 @@ class HyQSim(threading.Thread):
 
     def callback_hyq_debug(self, msg):
         self.hyq_debug_msg = copy.deepcopy(msg)
+        if (self.hyq_debug_msg.orient_optimization_started == False):
+            self.orient_ack_optimization_done = False
 
     def callback_hyq_footholds(self, msg):
        self.hyq_footholds_msg = copy.deepcopy(msg)
@@ -236,7 +239,8 @@ def talker():
 
     compDyn = ComputationalDynamics(p.robot_name)
     footHoldPlanning = FootHoldPlanning(p.robot_name)
-    orient_planning = OrientationPlanning(p.robot_name)
+    # orient_planning = OrientationPlanning(p.robot_name)
+    orient_planning_mp = OrientationPlanningMultiProcess(p.robot_name)
     joint_projection = nonlinear_projection.NonlinearProjectionBretl(p.robot_name)
     math = Math()
 
@@ -272,8 +276,8 @@ def talker():
     plt.figure()
     plotter = Plotter()
     plt.ion()
-    # plt.show()
-
+    plt.show()
+    i = 0
 
     while not ros.is_shutdown():
 
@@ -462,7 +466,7 @@ def talker():
             # print "Target CoM is: ", orient_params.target_CoM_WF
 
             first_time = time.time()
-            feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = orient_planning.optimize_orientation(orient_params, params)
+            feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = orient_planning_mp.optimize_orientation(orient_params, params)
             print "Optimization time: ", time.time() - first_time
             optimization_success = True if optimal_index > -1 else False
 
@@ -512,12 +516,16 @@ def talker():
             # # wm.window.state('zoomed')
             # # plt.show(block=False)
             # # plt.tight_layout()
-            # plt.subplots_adjust(left=0.12,bottom=0.05,right=0.9,top=0.95,wspace=0.4,hspace=0.4)
+            # # plt.subplots_adjust(left=0.12,bottom=0.05,right=0.9,top=0.95,wspace=0.4,hspace=0.4)
             # plt.draw()
             # plt.pause(0.001)
-            # plt.clf()
-            # # Since plotting takes time, a reset signal from the framework could be missed.
-            # orient_params.ack_optimization_done = False
+            # # if i < 2:
+            # #     # Since plotting takes time, a reset signal from the framework could be missed.
+            # #     orient_params.ack_optimization_done = False
+            # #     i += 1
+            #
+            # if (p.orient_ack_optimization_done == False):
+            #     orient_params.ack_optimization_done = False
 
         
     print 'de registering...'

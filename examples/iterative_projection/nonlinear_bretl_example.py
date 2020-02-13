@@ -11,7 +11,7 @@ from jet_leg.plotting.plotting_tools import Plotter
 import random
 from jet_leg.maths.math_tools import Math
 from jet_leg.kinematics import kinematics_interface
-from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.maths.simple_iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization import nonlinear_projection
 from shapely.geometry import Polygon
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
