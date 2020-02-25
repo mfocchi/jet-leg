@@ -36,6 +36,7 @@ Python dependencies:
 - [Pypoman](git clone git@gitlab.advr.iit.it:dls-lab/pypoman.git) for the manipulation of polyhedrical object
 - [Pinocchio](https://github.com/stack-of-tasks/pinocchio) 
 - Sshapely
+- pathos (multiprocessing)
 The above dependencies can be installed with the following commands:
 ```
 sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy
@@ -43,6 +44,7 @@ CVXOPT_BUILD_GLPK=1 pip install cvxopt --user
 pip install pycddlib --user
 cd pypoman & sudo python setup.py install
 pip install shapely
+pip install pathos
 ```
 You can remove all ``--user`` arguments to install these Python modules system-wide.
 
