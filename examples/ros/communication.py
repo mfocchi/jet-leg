@@ -39,6 +39,11 @@ from jet_leg.optimization.orientation_planning_multiprocess import OrientationPl
 from jet_leg.plotting.plotting_tools import Plotter
 import matplotlib.pyplot as plt
 
+#to rad yaml from a ros package
+import os, rospkg
+rospack = rospkg.RosPack()
+import yaml
+
 #services
 from feasible_region.srv import Config, ConfigResponse
 
@@ -73,20 +78,25 @@ class HyQSim(threading.Thread):
         # self.hyq_wbs_sub_name = "/"+self.robot_name+"/robot_states" not used
         print ros.get_namespace()
         self.sim_time  = 0.0
-
-
+        
         self.plotFeasibleRegionFlag = False
         self.plotExtendedRegionFlag = False
-        self.plotShrinkedActuationRegionFlag = False
         self.plotReachableFeasibleRegionFlag = False
         self.plotFrictionRegion = False
         self.plotForcePolygonsFlag = False
+
+        with open(os.path.join(rospack.get_path("feasible_region"), "config", "feasible_regions_options.yaml"), 'rb')         as stream:
+            data_loaded = yaml.load(stream)
+        visualizationOptions = data_loaded['visualizationOptions']
+        self.parse_vis_options(visualizationOptions)
+        
 
         self.com_optimization = False
         self.foothold_optimization = False
         self.com_optimization_type = 0
 
         self.orient_ack_optimization_done = False # Not used
+
 
     def run(self):
         print "Run!"
@@ -122,18 +132,19 @@ class HyQSim(threading.Thread):
         self.com_optimization = req.com_optimization
         self.foothold_optimization = req.foothold_optimization
         self.com_optimization_type = req.com_optimization_type
-        if (len(req.visualization_options) < 6):
+        if (len(req.visualization_options) < 8):
             print  "wrong visualization option size is :", len(req.visualization_options)
             return ConfigResponse(False)
-
-
-        self.plotFeasibleRegionFlag = req.visualization_options[0] == "1"
-        self.plotShrinkedActuationRegionFlag = req.visualization_options[1] == "1"
-        self.plotReachableFeasibleRegionFlag = req.visualization_options[2] == "1"
-        self.plotExtendedRegionFlag = req.visualization_options[3] == "1"
-        self.plotFrictionRegion = req.visualization_options[4] == "1"
-        self.plotForcePolygonsFlag = req.visualization_options[5] == "1"
+        self.parse_vis_options(req.visualization_options)
         return ConfigResponse(True)
+        
+    def parse_vis_options(self, input):
+        self.plotFeasibleRegionFlag = input[0] == "1"
+        self.plotReachableFeasibleRegionFlag = input[2] == "1"
+        self.plotExtendedRegionFlag = input[3] == "1"
+        self.plotFrictionRegion = input[5] == "1"
+        self.plotForcePolygonsFlag = input[6] == "1"
+        
 
     def _reg_sim_time(self, time):
 
