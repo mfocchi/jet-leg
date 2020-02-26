@@ -23,6 +23,7 @@ from dls_msgs.msg import  StringDoubleArray
 from feasible_region.msg import RobotStates, Foothold, OrientationRequest
 from feasible_region.msg import  Polygon3D, LegsPolygons, OptimalOrientation
 from shapely.geometry import Polygon, LineString
+from shapely.geos import TopologicalError
 import message_filters
 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
@@ -287,7 +288,7 @@ def talker():
     plt.figure()
     plotter = Plotter()
     plt.ion()
-    plt.show()
+    # plt.show()
     i = 0
 
     while not ros.is_shutdown():
@@ -362,12 +363,11 @@ def talker():
             reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
             if reachability_polygon.size > 0:
                 preachability_polygon = Polygon(reachability_polygon)
-                reachable_feasible_polygon = EXTENDED_FEASIBLE_REGION.intersection(preachability_polygon)
 
                 try:
+                    reachable_feasible_polygon = EXTENDED_FEASIBLE_REGION.intersection(preachability_polygon)
                     reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
-
-                except AttributeError:
+                except (AttributeError, TopologicalError), e:
                     print "Shape not a Polygon."
                     p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon), foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
