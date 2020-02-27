@@ -369,14 +369,14 @@ def talker():
                     reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
                 except (AttributeError, TopologicalError), e:
                     print "Shape not a Polygon."
-                    p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon), foothold_params.option_index,
+                    p.send_reachable_feasible_polygons(name, p.fillPolygon([]), foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
                 else:
                     old_reachable_feasible_polygon = reachable_feasible_polygon
                     p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon), foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
             else:
-                p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
+                p.send_reachable_feasible_polygons(name, p.fillPolygon([]),
                                                    foothold_params.option_index,
                                                    foothold_params.ack_optimization_done)
 
