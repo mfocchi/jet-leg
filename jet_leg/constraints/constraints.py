@@ -11,6 +11,7 @@ from jet_leg.kinematics.kinematics_interface import KinematicsInterface
 from scipy.linalg import block_diag
 from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
+from numpy import matlib
 
 class Constraints:    
     def __init__(self, robot_kinematics):
@@ -20,7 +21,9 @@ class Constraints:
         self.dog = DogInterface()
         self.rbd = RigidBodyDynamics()
 
-    def compute_actuation_constraints(self, contactIterator, torque_limits):
+    def compute_actuation_constraints(self, contactIterator, torque_limits, leg_self_weight):
+					
+
 
         J_LF, J_RF, J_LH, J_RH, isOutOfWorkspace = self.kin.get_jacobians()
         #print J_LF, J_RF, J_LH, J_RH
@@ -32,7 +35,7 @@ class Constraints:
         else:
             jacobianMatrices = np.array([J_LF, J_RF, J_LH, J_RH])
 #            print 'Jacobians',jacobianMatrices
-            actuation_polygons = self.computeActuationPolygons(jacobianMatrices, torque_limits)
+            actuation_polygons = self.computeActuationPolygons(jacobianMatrices, torque_limits, leg_self_weight)
 #                print 'actuation polygon ',actuation_polygons
             ''' in the case of the IP alg. the contact force limits must be divided by the mass
             because the gravito inertial wrench is normalized'''
@@ -161,14 +164,15 @@ class Constraints:
         #print constraint, known_term
         return constraint, known_term
 
-    def computeActuationPolygons(self, legsJacobians, torque_limits):
+    def computeActuationPolygons(self, legsJacobians, torque_limits, leg_self_weight):
 
 #        if np.sum(stanceFeet) == 4:
 #            print 'test', torque_limits[0]
-        actuation_polygons = np.array([self.computeLegActuationPolygon(legsJacobians[0], torque_limits[0]),
-                                       self.computeLegActuationPolygon(legsJacobians[1], torque_limits[1]),
-                                       self.computeLegActuationPolygon(legsJacobians[2], torque_limits[2]), 
-                                        self.computeLegActuationPolygon(legsJacobians[3], torque_limits[3])])
+
+        actuation_polygons = np.array([self.computeLegActuationPolygon(legsJacobians[0], torque_limits[0], leg_self_weight[0]),
+                                       self.computeLegActuationPolygon(legsJacobians[1], torque_limits[1], leg_self_weight[1]),
+                                       self.computeLegActuationPolygon(legsJacobians[2], torque_limits[2], leg_self_weight[2]), 
+                                        self.computeLegActuationPolygon(legsJacobians[3], torque_limits[3], leg_self_weight[3])])
 #        if np.sum(stanceFeet) == 3:
 ##            print 'test', torque_limits, stanceIndex
 #            actuation_polygons = np.array([self.computeLegActuationPolygon(legsJacobians[int(stanceIndex[0])], torque_limits[int(stanceIndex[0])]),
@@ -185,30 +189,38 @@ class Constraints:
     it is restricted to 3 DoFs and point contacts. If the latter assumption is not
     respected the Jacobian matrix might become not invertible.
     """        
-    def computeLegActuationPolygon(self, leg_jacobian, tau_lim):
-        dx = tau_lim[0]
-        dy = tau_lim[1]
-        dz = tau_lim[2]
+    def computeLegActuationPolygon(self, leg_jacobian, tau_lim, leg_self_weight):
+        dx = tau_lim[0] 
+        dy = tau_lim[1] 
+        dz = tau_lim[2] 
+       					
+								
 #        vertices = np.array([[dx, dx, -dx, -dx, dx, dx, -dx, -dx],
 #                         [dy, -dy, -dy, dy, dy, -dy, -dy, dy],
 #                         [dz, dz, dz, dz, -dz, -dz, -dz, -dz]])
-                         
-        vertices = np.array([[dx, dx, -dx, -dx, dx, dx, -dx, -dx],
-                         [-dy, dy, dy, -dy, -dy, dy, dy, -dy],
-                         [-dz, -dz, -dz, -dz, dz, dz, dz, dz]])
-                         
+                  
+        vertices = np.array([[ dx, dx, -dx, -dx, dx, dx, -dx, -dx],
+                             [-dy, dy, dy, -dy, -dy, dy, dy, -dy],
+                             [-dz, -dz, -dz, -dz, dz, dz, dz, dz]])
+																														
+																															
+					
+
+		                         
+																											
         if (np.size(leg_jacobian,0)==2):          
             torque_lims_xz = np.vstack([vertices[0,:],vertices[2,:]])
-            legs_gravity = np.ones((2,8))*0 # TODO: correct computation of the force acting on the legs due to gravity
-            actuation_polygon_xy = np.matmul(np.linalg.inv(np.transpose(leg_jacobian)),legs_gravity - torque_lims_xz) 
+            
+            actuation_polygon_xy = np.matmul(np.linalg.inv(np.transpose(leg_jacobian)), - torque_lims_xz) 
             actuation_polygon = np.vstack([actuation_polygon_xy[0,:],
                                    vertices[1,:],
                                    actuation_polygon_xy[1,:]])
                                    
         elif (np.size(leg_jacobian,0)==3):
-            torque_lims = vertices
-            legs_gravity = np.ones((3,8))*0 # TODO: correct computation of the force acting on the legs due to gravity
-            actuation_polygon = np.matmul(np.linalg.pinv(np.transpose(leg_jacobian)),legs_gravity - torque_lims)
+            leg_self_weight.shape = (3,1)
+            legs_gravity = np.matlib.repmat(leg_self_weight, 1,8)
+            
+            actuation_polygon = np.matmul(np.linalg.pinv(np.transpose(leg_jacobian)),legs_gravity - vertices)
             
         # Only for debugging:                          
         # actuation_polygon = vertices
@@ -238,6 +250,7 @@ class Constraints:
         constraint_mode = params.getConstraintModes()
 
         tau_lim = params.getTorqueLims()
+        leg_self_weight = params.getLegSelfWeight()
         ng = params.getNumberOfFrictionConesEdges()
         friction_coeff = params.getFrictionCoefficient()
         normals = params.getNormals()
@@ -266,7 +279,7 @@ class Constraints:
                 Ctemp = np.dot(constraints_local_frame, rotationMatrix.T)
             
             if constraint_mode[j] == 'ONLY_ACTUATION':
-                Ctemp, d_cone, actuation_polygons, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim)
+                Ctemp, d_cone, actuation_polygons, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight)
                 #            print d.shape[0]            
                 if isIKoutOfWorkSpace is False:
                     d_cone = d_cone.reshape(6) 
@@ -275,7 +288,7 @@ class Constraints:
                     d_cone = np.zeros((0))
             
             if constraint_mode[j] == 'FRICTION_AND_ACTUATION':
-                C1, d1, actuation_polygons, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim)
+                C1, d1, actuation_polygons, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight)
                 C2, d2 = self.linearized_cone_halfspaces_world(contactsNumber, ng, friction_coeff, normals)
                 #            print C1, C2
                 if isIKoutOfWorkSpace is False:

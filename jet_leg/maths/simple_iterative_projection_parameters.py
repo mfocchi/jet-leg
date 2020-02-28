@@ -44,6 +44,7 @@ class IterativeProjectionParameters:
 		self.RH_q_lim_min = [0., 0., 0.]
 
 		self.torque_limits = np.array([self.LF_tau_lim, self.RF_tau_lim, self.LH_tau_lim, self.RH_tau_lim])
+		self.leg_self_weight = np.array([[0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]])
 		self.joint_limits_max = np.array([self.LF_q_lim_max, self.RF_q_lim_max, self.LH_q_lim_max, self.RH_q_lim_max])
 		self.joint_limits_min = np.array([self.LF_q_lim_min, self.RF_q_lim_min, self.LH_q_lim_min, self.RH_q_lim_min])
 
@@ -146,6 +147,9 @@ class IterativeProjectionParameters:
 
 	def getTorqueLims(self):
 		return self.torque_limits
+		
+	def getLegSelfWeight(self):
+		return self.leg_self_weight
 
 	def getJointLimsMax(self):
 		return self.joint_limits_max
@@ -216,6 +220,7 @@ class IterativeProjectionParameters:
 		# For now, change manually here.
 		for leg in range(0,self.no_of_legs):
 			self.torque_limits[leg] = received_data.tau_lim.data[self.stride * leg : self.stride * leg + 3]
+			self.leg_self_weight[leg] = received_data.leg_self_weight.data[self.stride * leg : self.stride * leg + 3]
 
 
 		# Joint Limits
