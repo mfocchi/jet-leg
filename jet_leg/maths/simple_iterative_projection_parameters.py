@@ -79,7 +79,7 @@ class IterativeProjectionParameters:
 		self.plane_normal = [0, 0, 1]
 
 		# CoM height (projected along z axis)
-		self.current_CoM_height = 0
+		self.com_vertical_shift = 0
 
 		self.desired_acceleration = np.array([0,0,0])
 
@@ -183,15 +183,15 @@ class IterativeProjectionParameters:
 	def get_plane_normal(self):
 		return self.plane_normal
 
-	def get_current_CoM_height(self):
-		return self.current_CoM_height
+	def get_com_vertical_shift(self):
+		return self.com_vertical_shift
 
 	def get_CoM_plane_z_intercept(self):
 		point_on_plane = self.comPositionWF
 		return self.math.plane_z_intercept(point_on_plane, self.plane_normal)
 
 	def get_terrain_plane_z_intercept(self):
-		point_on_plane = self.comPositionWF - np.array([0,0,self.current_CoM_height])
+		point_on_plane = self.comPositionWF - np.array([0,0,self.com_vertical_shift])
 		return self.math.plane_z_intercept(point_on_plane, self.plane_normal)
 
 	def getStanceIndex(self, stanceLegs):
@@ -248,7 +248,9 @@ class IterativeProjectionParameters:
 
 		self.plane_normal = received_data.plane_normal
 
-		self.current_CoM_height = received_data.actual_CoM_height
+
+          #what it matters is the relative position of act com wrt the region, however for visualization purposes we 
+		self.com_vertical_shift = received_data.com_vertical_shift
 #
 		self.roll = received_data.roll
 		self.pitch = received_data.pitch

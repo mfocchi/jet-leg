@@ -304,9 +304,14 @@ class ComputationalDynamics:
 #        print 'hull ', hull.vertices
             compressed_hull = compressed_vertices[hull.vertices]
             compressed_hull = self.geom.clockwise_sort(compressed_hull)
+            # USE THIS TO COMPUTE THE REGION AT THE COM LEVEL
             compressed_hull = self.fill_general_plane_region_z_component(compressed_hull,
                                                                          iterative_projection_params.get_plane_normal(),
-                                                                         iterative_projection_params.get_terrain_plane_z_intercept())
+                                                                         iterative_projection_params.get_CoM_plane_z_intercept())
+#            # USE THIS TO COMPUTE THE REGION AT THE FEET LEVEL
+#            compressed_hull = self.fill_general_plane_region_z_component(compressed_hull,
+#                                                                         iterative_projection_params.get_plane_normal(),
+#                                                                         iterative_projection_params.get_terrain_plane_z_intercept())                                                                         
             compressed_hull = compressed_hull
 #        print compressed_hull
         #vertices_WF = vertices_BF + np.transpose(comWF[0:2])

@@ -259,9 +259,15 @@ class NonlinearProjectionBretl:
 		else:
 			vertices = [array([v.x, v.y]) for v in vertices_list]
 			compressed_vertices = np.compress([True, True], vertices, axis=1)
+# USE THIS TO COMPUTE THE REGION AT THE COM LEVEL
 			compressed_vertices = self.fill_general_plane_region_z_component(compressed_vertices,
 													   params.get_plane_normal(),
-													   params.get_terrain_plane_z_intercept())
+													   params.get_CoM_plane_z_intercept())
+# USE THIS TO COMPUTE THE REGION AT THE FEET LEVEL
+#			compressed_vertices = self.fill_general_plane_region_z_component(compressed_vertices,
+#													   params.get_plane_normal(),
+#													   params.get_terrain_plane_z_intercept())                            
+                
 			vertices = compressed_vertices
 		# print compressed_vertices
 		# try:
