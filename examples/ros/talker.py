@@ -28,7 +28,7 @@ import message_filters
 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
 from jet_leg.maths.math_tools import Math
-from jet_leg.maths.simple_iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization.simple_foothold_planning_interface import FootholdPlanningInterface
 from jet_leg.optimization.orientation_planning_interface import OrientationPlanningInterface
 from jet_leg.optimization import nonlinear_projection
@@ -100,7 +100,7 @@ class HyQSim(threading.Thread):
 		self.orient_ack_optimization_done = False  # Not used
 
 	def run(self):
-		print "Run!"
+		print "Started Jetleg!"
 		self.sub_clock = ros.Subscriber(self.clock_sub_name, Clock, callback=self._reg_sim_time, queue_size=1000)
 		self.sub_actuation_params = ros.Subscriber(self.hyq_actuation_params_sub_name, RobotStates,
 												   callback=self.callback_hyq_debug, queue_size=1, buff_size=3000)
@@ -281,7 +281,6 @@ def talker():
 	foothold_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
 	orient_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
 	params.getFutureStanceFeetFlags(p.hyq_debug_msg)
-	print "time: ", time.time() - first
 
 	""" contact points """
 	ng = 4
@@ -333,10 +332,7 @@ def talker():
 		# print "friction time: ", computation_time
 
 		if (p.plotFeasibleRegionFlag or p.plotExtendedRegionFlag):
-			# USE THIS ONLY TO PLOT THE ACTUAL REGION FOR A VIDEO FOR THE PAPER DO NOT USE FOR COM PLANNING
 			FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn)
-			# print "FEASIBLE_REGION: ", FEASIBLE_REGION
-			# print"FEASIBLE_REGION computation_time", computation_time
 			# safety measure use old when you cannot compute
 			if (p.plotFeasibleRegionFlag):
 				if FEASIBLE_REGION is not False:
@@ -363,7 +359,7 @@ def talker():
 												   foothold_params.ack_optimization_done)
 
 		if (p.plotExtendedRegionFlag):
-			FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn)
+			FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn) # Why compute again? I think unneeded
 
 			EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
 			reachable_feasible_polygon = np.array([])

@@ -27,7 +27,7 @@ from std_msgs.msg import MultiArrayDimension  # for tcrawl publisher
 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
 from jet_leg.maths.math_tools import Math
-from jet_leg.maths.simple_iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization.tcrawl_foothold_planning_interface import TCrawlFootholdPlanningInterface
 from jet_leg.optimization import nonlinear_projection
 

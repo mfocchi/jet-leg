@@ -7,8 +7,6 @@ Created on Tue Jun 12 10:54:31 2018
 
 import numpy as np
 
-from context import jet_leg
-
 from numpy import array
 from numpy.linalg import norm
 from jet_leg.plotting.plotting_tools import Plotter

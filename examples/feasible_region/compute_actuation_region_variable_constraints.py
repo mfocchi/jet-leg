@@ -10,8 +10,6 @@ for name in dir():
         
 import numpy as np
 
-from context import jet_leg 
-
 import time
 
 import random
@@ -26,13 +24,13 @@ from scipy.linalg import block_diag
 from numpy import array, cross, dot, eye, hstack, vstack, zeros, matrix
 
 import matplotlib.pyplot as plt
-from jet_leg.plotting_tools import Plotter
-from jet_leg.constraints import Constraints
-from jet_leg.hyq_kinematics import HyQKinematics
-from jet_leg.math_tools import Math
-from jet_leg.computational_dynamics import ComputationalDynamics
-from jet_leg.height_map import HeightMap
-from jet_leg.sequential_iterative_projection import SequentialIterativeProjection
+from jet_leg.plotting.plotting_tools import Plotter
+from jet_leg.constraints.constraints import Constraints
+from jet_leg.robots.hyq.hyq_kinematics import HyQKinematics
+from jet_leg.maths.math_tools import Math
+from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
+from jet_leg.map.height_map import HeightMap
+from examples.iterative_projection.sequential_iterative_projection import SequentialIterativeProjection
         
 class IterativeProjection:
         

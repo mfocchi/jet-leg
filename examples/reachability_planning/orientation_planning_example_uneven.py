@@ -18,7 +18,7 @@ from jet_leg.optimization.nonlinear_projection import NonlinearProjectionBretl
 # from jet_leg.height_map import HeightMap
 
 # from jet_leg.path_sequential_iterative_projection import PathIterativeProjection
-from jet_leg.maths.simple_iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization.orientation_planning_interface import OrientationPlanningInterface
 from jet_leg.optimization.orientation_planning import OrientationPlanning
 
