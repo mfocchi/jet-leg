@@ -137,7 +137,7 @@ params.setNumberOfFrictionConesEdges(4)
 params.setTotalMass(trunk_mass)
 params.externalForceWF = extForceW
 params.externalTorqueWF = extTorqueW# params.externalForceWF is actually used anywhere at the moment
-
+params.set_plane_normal(plane_normal)
 
 #-----------------------------------------------------------------------------------------------------
 # Single Projection
