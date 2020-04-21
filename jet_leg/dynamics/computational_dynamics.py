@@ -450,13 +450,13 @@ class ComputationalDynamics:
         contactsBF = np.zeros((4,3)) # this is just for initialization
         comWorldFrame = LPparams.getCoMPosWF()
         extForce = LPparams.externalForceWF
+        extTorque = LPparams.externalTorqueWF
         totForce = grav
         totForce[0] += extForce[0]
         totForce[1] += extForce[1]
         totForce[2] += extForce[2]
         #print grav, extForce, totForce
-
-        torque = -np.cross(comWorldFrame, np.transpose(totForce))
+        torque = np.subtract(-np.cross(comWorldFrame, np.transpose(totForce)), extTorque)
         A = np.zeros((6,0))
         stanceIndex = LPparams.getStanceIndex(stanceLegs)
         print 'stanceIndex',stanceIndex
