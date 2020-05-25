@@ -1,2 +1,11 @@
 *.pyc
 .idea/
+/jet_leg.egg-info/PKG-INFO
+/jet_leg.egg-info/SOURCES.txt
+/jet_leg.egg-info/dependency_links.txt
+/jet_leg.egg-info/requires.txt
+/jet_leg.egg-info/top_level.txt
+/jet_leg/maths/.iterative_projection_parameters.py.swo
+/plotting_in_communication
+/dist/jet_leg-0.0.0-py2.7.egg
+/examples/ros/communication.py.orig
