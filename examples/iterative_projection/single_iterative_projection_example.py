@@ -32,10 +32,10 @@ possible constraints for each foot:
  ONLY_FRICTION = only friction cone constraints are enforced
  FRICTION_AND_ACTUATION = both friction cone constraints and joint-torque limits
 '''
-constraint_mode_IP = ['ONLY_FRICTION',
-                      'ONLY_FRICTION',
-                      'ONLY_FRICTION',
-                      'ONLY_FRICTION']
+constraint_mode_IP = ['FRICTION_AND_ACTUATION',
+                      'FRICTION_AND_ACTUATION',
+                      'FRICTION_AND_ACTUATION',
+                      'FRICTION_AND_ACTUATION']
 
 # number of decision variables of the problem
 #n = nc*6
@@ -124,7 +124,6 @@ IP_points, force_polytopes, IP_computation_time = comp_dyn.iterative_projection_
 '''I now check whether the given CoM configuration is stable or not'''
 isConfigurationStable, contactForces, forcePolytopes = comp_dyn.check_equilibrium(params)
 print isConfigurationStable
-print 'contact forces', contactForces
 
 '''Plotting the contact points in the 3D figure'''
 fig = plt.figure()
@@ -135,7 +134,7 @@ ax.set_zlabel('Z axis')
 
 nc = np.sum(stanceFeet)
 stanceID = params.getStanceIndex(stanceFeet)
-force_scaling_factor = 1500
+force_scaling_factor = 2500
 #plt.plot(contacts[0:nc,0],contacts[0:nc,1],'ko',markersize=15)
 fz_tot = 0.0
 for j in range(0,nc): # this will only show the contact positions and normals of the feet that are defined to be in stance

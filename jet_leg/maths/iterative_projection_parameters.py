@@ -12,16 +12,12 @@ class IterativeProjectionParameters:
 	def __init__(self):
 
 		self.no_of_legs = 4
-		self.stride = 3
+		self.stride = 3 # Used for receiving data from ROS arrays
 
 		self.math = Math()
 		self.q = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 		self.comPositionBF = [0., 0., 0.]  # var used only for IK inside constraints.py
 		self.comPositionWF = [0., 0., 0.]
-		self.footPosWLF = [0.3, 0.2, -.0]
-		self.footPosWRF = [0.3, -0.2, -.0]
-		self.footPosWLH = [-0.3, 0.2, -.0]
-		self.footPosWRH = [-0.3, -0.2, -.0]
 		self.externalForceWF = np.array([0., 0., 0.])
 		self.externalTorqueWF = np.array([0., 0., 0.])
 

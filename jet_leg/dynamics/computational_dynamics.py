@@ -459,7 +459,6 @@ class ComputationalDynamics:
         torque = np.subtract(-np.cross(comWorldFrame, np.transpose(totForce)), extTorque)
         A = np.zeros((6,0))
         stanceIndex = LPparams.getStanceIndex(stanceLegs)
-        print 'stanceIndex',stanceIndex
         for j in stanceIndex:
             j = int(j)
             #print 'index in lp ',j

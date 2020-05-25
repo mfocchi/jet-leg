@@ -47,7 +47,7 @@ mu = 0.8
     
 axisZ= array([[0.0], [0.0], [1.0]])
 
-comp_dyn = ComputationalDynamics()
+comp_dyn = ComputationalDynamics('hyq')
 
 number_of_tests = 10
 tests3contacts = np.zeros((number_of_tests))

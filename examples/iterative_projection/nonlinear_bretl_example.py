@@ -88,18 +88,19 @@ com_check = np.array([0.3, -0.1, 0.5])
 com_check = None
 # polygon, computation_time = projection.project_polytope(params, com_check)
 polygon, computation_time = projection.project_polytope(params, com_check, 20. * np.pi / 180, 0.03)
+final = polygon
 # polygon, computation_time = projection.project_polytope(params)
 print "vertices", polygon
 print "Computation Time: ", computation_time, " seconds"
 
-joint_lim_polygon = Polygon(polygon)
-test_polygon = Polygon([(-0.215, -0.34), (0.225, -0.34), (0.225, 0.34), (-0.215, 0.34)])
-final = joint_lim_polygon.intersection(test_polygon)
+# joint_lim_polygon = Polygon(polygon)
+# test_polygon = Polygon([(-0.215, -0.34), (0.225, -0.34), (0.225, 0.34), (-0.215, 0.34)])
+# final = joint_lim_polygon.intersection(test_polygon)
 
 
-test_polygon = np.array(test_polygon.exterior.coords)
-final = np.array(final.exterior.coords)
-print "final: ", final
+# test_polygon = np.array(test_polygon.exterior.coords)
+# final = np.array(final.exterior.coords)
+# print "final: ", final
 
 plt.close()
 h1 = plt.figure()
@@ -113,20 +114,20 @@ plt.legend()
 nc = np.sum(stanceFeet)
 stanceID = params.getStanceIndex(stanceFeet)
 
-for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
-    idx = int(stanceID[j])
-    ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
-    h1 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=15, label='stance feet')
-h2 = plotter.plot_polygon(np.transpose(polygon), '--b', 'Iterative Projection')
+# for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
+#     idx = int(stanceID[j])
+#     ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
+#     h1 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=15, label='stance feet')
+# h2 = plotter.plot_polygon(np.transpose(polygon), '--b', 'Iterative Projection')
+#
+#
+# for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
+#     idx = int(stanceID[j])
+#     ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
+#     h3 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=15, label='stance feet')
+# h4 = plotter.plot_polygon(np.transpose(test_polygon), '--g', 'Iterative Projection')
 
-
-for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
-    idx = int(stanceID[j])
-    ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
-    h3 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=15, label='stance feet')
-h4 = plotter.plot_polygon(np.transpose(test_polygon), '--g', 'Iterative Projection')
-
-plt.figure()
+# plt.figure()
 
 for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
     idx = int(stanceID[j])
