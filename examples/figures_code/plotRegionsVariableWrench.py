@@ -86,10 +86,10 @@ HAA = Hip Abduction Adduction
 HFE = Hip Flextion Extension
 KFE = Knee Flextion Extension
 '''
-LF_tau_lim = [160.0, 160.0, 160.0]  # HAA, HFE, KFE
-RF_tau_lim = [160.0, 160.0, 160.0]  # HAA, HFE, KFE
-LH_tau_lim = [160.0, 160.0, 160.0]  # HAA, HFE, KFE
-RH_tau_lim = [160.0, 160.0, 160.0]  # HAA, HFE, KFE
+LF_tau_lim = [140.0, 140.0, 140.0]  # HAA, HFE, KFE
+RF_tau_lim = [140.0, 140.0, 140.0]  # HAA, HFE, KFE
+LH_tau_lim = [140.0, 140.0, 140.0]  # HAA, HFE, KFE
+RH_tau_lim = [140.0, 140.0, 140.0]  # HAA, HFE, KFE
 torque_limits = np.array([LF_tau_lim, RF_tau_lim, LH_tau_lim, RH_tau_lim])
 
 ''' extForceW is an optional external pure force (no external torque for now) applied on the CoM of the robot.'''
