@@ -67,6 +67,8 @@ class FeasibleWorkspace:
 		c_t = [com_pos_x, com_pos_y, com_pos_z]  # CoM to be tested
 		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
 
+		stanceIndex = params.getStanceIndex(params.getStanceFeet())
+
 		print np.linalg.norm(params.getContactsPosWF()[0] - params.getCoMPosWF())
 		max_iter = (np.linalg.norm(params.getContactsPosWF()[0] - params.getCoMPosWF()))
 		i = 0
@@ -77,8 +79,11 @@ class FeasibleWorkspace:
 
 			contactsBF = self.getcontactsBF(params, c_t)
 			q = self.kin.inverse_kin(contactsBF, foot_vel)
+			q_to_check = np.concatenate(
+				[list(q[leg * 3: leg * 3 + 3]) for leg in stanceIndex])  # To check 3 or 4 feet stance
 
-			out = self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin())
+			out = self.kin.isOutOfJointLims(q_to_check, params.getJointLimsMax()[stanceIndex,:],
+														params.getJointLimsMin()[stanceIndex,:])
 
 			cxy_t = [c_t[0], c_t[1]]
 			self.points.append(cxy_t)
@@ -103,9 +108,10 @@ class FeasibleWorkspace:
 		comPosWF_0 = params.getCoMPosWF()
 
 		# Check if current configuration is already feasible
+		stanceIndex = params.getStanceIndex(params.getStanceFeet())
 		contactsBF = self.getcontactsBF(params, comPosWF_0)
 		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
-		if self.kin.isOutOfWorkSpace(contactsBF, params.getJointLimsMax(), params.getJointLimsMin(), foot_vel):
+		if self.kin.isOutOfWorkSpace(contactsBF, params.getJointLimsMax(), params.getJointLimsMin(), stanceIndex, foot_vel):
 			print "Couldn't compute a reachable region! Current configuration is already out of joint limits!"
 		else:
 			# polygon = Polygon()
