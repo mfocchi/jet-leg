@@ -9,6 +9,7 @@ from jet_leg.maths.computational_geometry import ComputationalGeometry
 from jet_leg.maths.math_tools import Math
 from jet_leg.kinematics.kinematics_interface import KinematicsInterface
 from scipy.linalg import block_diag
+from scipy.spatial.transform import Rotation as Rot
 from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 from numpy import matlib
@@ -21,7 +22,7 @@ class Constraints:
         self.dog = DogInterface()
         self.rbd = RigidBodyDynamics()
 
-    def compute_actuation_constraints(self, contactIterator, torque_limits, leg_self_weight):
+    def  compute_actuation_constraints(self, contactIterator, torque_limits, leg_self_weight, euler_angles):
 					
 
 
@@ -36,14 +37,19 @@ class Constraints:
             jacobianMatrices = np.array([J_LF, J_RF, J_LH, J_RH])
 #            print 'Jacobians',jacobianMatrices
             actuation_polygons = self.computeActuationPolygons(jacobianMatrices, torque_limits, leg_self_weight)
-#                print 'actuation polygon ',actuation_polygons
+            rot = Rot.from_euler('xyz', [euler_angles[0], euler_angles[1], euler_angles[2]], degrees=False)
+            W_R_B = rot.as_dcm()
+            actuation_polygons_WF = W_R_B.dot(actuation_polygons[contactIterator])
+            # print 'actuation polygon ',actuation_polygons[contactIterator]
+            # print 'actuation polygon WF ', actuation_polygons_WF
             ''' in the case of the IP alg. the contact force limits must be divided by the mass
             because the gravito inertial wrench is normalized'''
                 
             C1 = np.zeros((0,0))
             d1 = np.zeros((1,0))
 
-            hexahedronHalfSpaceConstraints, knownTerm = self.hexahedron(actuation_polygons[contactIterator])
+            hexahedronHalfSpaceConstraints, knownTerm = self.hexahedron(actuation_polygons_WF)
+
             C1 = block_diag(C1, hexahedronHalfSpaceConstraints)
             d1 = np.hstack([d1, knownTerm.T])
 
@@ -57,7 +63,7 @@ class Constraints:
             #    #print theta, "[rad] ", theta/np.pi*180, "[deg]"
             #print "V description: "
             #print actuation_polygons[contactIterator]
-        return C1, d1, actuation_polygons, isOutOfWorkspace
+        return C1, d1, actuation_polygons_WF, isOutOfWorkspace
         
     def linearized_cone_halfspaces_world(self, contactsNumber, ng, mu, normals, max_normal_force = 10000.0, saturate_max_normal_force = False):            
 
@@ -255,7 +261,7 @@ class Constraints:
         friction_coeff = params.getFrictionCoefficient()
         normals = params.getNormals()
         
-        actuation_polygons = np.zeros((1,1))
+        actuation_polygons = np.zeros((4, 3, 8))
         C = np.zeros((0,0))
         d = np.zeros((0))
 
@@ -279,8 +285,8 @@ class Constraints:
                 Ctemp = np.dot(constraints_local_frame, rotationMatrix.T)
             
             if constraint_mode[j] == 'ONLY_ACTUATION':
-                Ctemp, d_cone, actuation_polygons, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight)
-                #            print d.shape[0]            
+                Ctemp, d_cone, leg_polygon, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight, rpy)
+                actuation_polygons[j] = leg_polygon
                 if isIKoutOfWorkSpace is False:
                     d_cone = d_cone.reshape(6) 
                 else:
@@ -288,9 +294,9 @@ class Constraints:
                     d_cone = np.zeros((0))
             
             if constraint_mode[j] == 'FRICTION_AND_ACTUATION':
-                C1, d1, actuation_polygons, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight)
+                C1, d1, leg_polygon, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight, rpy)
                 C2, d2 = self.linearized_cone_halfspaces_world(contactsNumber, ng, friction_coeff, normals)
-                #            print C1, C2
+                actuation_polygons[j] = leg_polygon
                 if isIKoutOfWorkSpace is False:
                     #                print d1
                     Ctemp = np.vstack([C1, C2])
