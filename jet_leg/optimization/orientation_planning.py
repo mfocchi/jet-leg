@@ -82,8 +82,14 @@ class OrientationPlanning:
 				params.setOrientation(new_orientation)
 
 				# Compute feasible region, reachable region, and intersection
-
-				feasible_region, actuation_polygons, computation_time = self.compDyn.try_iterative_projection_bretl(params)
+				try:
+					feasible_region, actuation_polygons, computation_time = self.compDyn.try_iterative_projection_bretl(params)
+				except ValueError, e:
+					feasible_region = False
+					if hasattr(e, 'message'):
+						print(e.message)
+					else:
+						print(e)
 				if feasible_region is False:
 					feasible_regions.append(False)
 					min_distances.append(False)

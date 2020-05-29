@@ -282,10 +282,17 @@ class ComputationalDynamics:
         if isIKoutOfWorkSpace:
             return False, False, False
         else:
-            if iterative_projection_params.plane_normal == [0,0,1]:
-                vertices_WF = pypoman.project_polytope(proj, self.ineq, self.A_y, self.eq, method='bretl', max_iter=500, init_angle=0.0)
-            else:
-                vertices_WF = pypoman.project_polytope_general_plane(self.ineq, self.eq, max_iter=500, init_angle=0.0)
+            try:
+                if iterative_projection_params.plane_normal == [0,0,1]:
+                    vertices_WF = pypoman.project_polytope(proj, self.ineq, self.A_y, self.eq, method='bretl', max_iter=500, init_angle=0.0)
+                else:
+                    vertices_WF = pypoman.project_polytope_general_plane(self.ineq, self.eq, max_iter=500, init_angle=0.0)
+            except ValueError as e:
+                vertices_WF = False
+                if hasattr(e, 'message'):
+                    print(e.message)
+                else:
+                    print(e)
 
             if vertices_WF is False:
                 print 'Project polytope function is False'

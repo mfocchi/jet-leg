@@ -361,7 +361,8 @@ def talker():
 		if (p.plotExtendedRegionFlag):
 			FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn) # Why compute again? I think unneeded
 
-			EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
+			if FEASIBLE_REGION	is not False:
+				EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
 			reachable_feasible_polygon = np.array([])
 			reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
 																							 20. * np.pi / 180, 0.03)
