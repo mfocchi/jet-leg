@@ -287,7 +287,7 @@ class ComputationalDynamics:
                     vertices_WF = pypoman.project_polytope(proj, self.ineq, self.A_y, self.eq, method='bretl', max_iter=500, init_angle=0.0)
                 else:
                     vertices_WF = pypoman.project_polytope_general_plane(self.ineq, self.eq, max_iter=500, init_angle=0.0)
-            except ValueError as e:
+            except (ValueError, Exception) as e:
                 vertices_WF = False
                 if hasattr(e, 'message'):
                     print(e.message)

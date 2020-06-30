@@ -282,6 +282,8 @@ def talker():
 	orient_params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
 	params.getFutureStanceFeetFlags(p.hyq_debug_msg)
 
+	old_reachable_feasible_polygon = []
+
 	""" contact points """
 	ng = 4
 	params.setNumberOfFrictionConesEdges(ng)
@@ -327,7 +329,11 @@ def talker():
 									   constraint_mode_IP])
 			params.setNumberOfFrictionConesEdges(ng)
 			frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
-			p.send_friction_region(name, p.fillPolygon(frictionRegion))
+			if frictionRegion is not False:
+				p.send_friction_region(name, p.fillPolygon(frictionRegion))
+				old_frictionRegion = frictionRegion
+			else:
+				p.send_friction_region(name, p.fillPolygon(old_frictionRegion))
 		# print "frictionRegion: ", frictionRegion
 		# print "friction time: ", computation_time
 
@@ -366,6 +372,7 @@ def talker():
 			reachable_feasible_polygon = np.array([])
 			reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
 																							 20. * np.pi / 180, 0.03)
+
 			if reachability_polygon.size > 0:
 				preachability_polygon = Polygon(reachability_polygon)
 
@@ -382,7 +389,7 @@ def talker():
 													   foothold_params.option_index,
 													   foothold_params.ack_optimization_done)
 			else:
-				p.send_reachable_feasible_polygons(name, p.fillPolygon([]),
+				p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
 												   foothold_params.option_index,
 												   foothold_params.ack_optimization_done)
 
@@ -475,18 +482,18 @@ def talker():
 		# print "optimization_done: ", orient_params.ack_optimization_done
 		# print "internal optim_done: ", p.orient_ack_optimization_done
 
+		feasible_regions = []
 		if orient_params.orient_optimization_started and not orient_params.ack_optimization_done:
 			params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
 			print "Stance Feet: ", params.stanceFeet
 			print "Current orientation is: ", params.getOrientation()
 			print "Default orientation is: ", orient_params.get_default_orientation()
-			# print "normals: ", params.getNormals()
 			print "Current CoM is: ", params.getCoMPosWF()
 			# print "Target CoM is: ", orient_params.target_CoM_WF
 
 			first_time = time.time()
-			feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = orient_planning_mp.optimize_orientation(
-				orient_params, params)
+			feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = \
+				orient_planning_mp.optimize_orientation(orient_params, params)
 			print "Optimization time: ", time.time() - first_time
 			optimization_success = True if optimal_index > -1 else False
 

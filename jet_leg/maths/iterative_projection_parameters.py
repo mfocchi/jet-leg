@@ -78,6 +78,8 @@ class IterativeProjectionParameters:
 		# CoM height (projected along z axis)
 		self.com_vertical_shift = 0
 
+		# Planning targets
+		self.target_CoM_WF = np.array([0., 0., 0.])
 		self.desired_acceleration = np.array([0, 0, 0])
 
 	def setContactsPosBF(self, contactsBF):
@@ -194,6 +196,9 @@ class IterativeProjectionParameters:
 		point_on_plane = self.comPositionWF - np.array([0, 0, self.com_vertical_shift])
 		return self.math.plane_z_intercept(point_on_plane, self.plane_normal)
 
+	def get_target_CoM_WF(self):
+		return self.target_CoM_WF
+
 	def getStanceIndex(self, stanceLegs):
 		stanceIdx = []
 		#        print 'stance', stanceLegs
@@ -256,6 +261,9 @@ class IterativeProjectionParameters:
 		self.yaw = received_data.yaw
 		#
 		self.actual_swing = received_data.actual_swing  # variable doesn't change in framework. Needs fix
+
+		for dir in range(0, 3):
+			self.target_CoM_WF[dir] = received_data.target_CoM_WF[dir]
 
 		self.desired_acceleration = np.array(received_data.desired_acceleration)
 
