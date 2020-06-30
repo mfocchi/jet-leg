@@ -142,7 +142,7 @@ class OrientationPlanning:
 				max_areas.append(area)
 
 				# Update optimal distance
-				if distance - old_distance > 0.02 or (abs(distance - old_distance) < 0.02 and area > old_area):
+				if distance - old_distance > 0.02 or (abs(distance - old_distance) <= 0.02 and area > old_area):
 					optimal_orientation = new_orientation
 					optimal_index = len(feasible_regions) - 1
 					old_distance = distance

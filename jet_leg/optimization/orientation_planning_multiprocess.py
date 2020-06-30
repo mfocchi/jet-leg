@@ -103,7 +103,7 @@ class OrientationPlanningMultiProcess:
 			new_orientation = default_orientation + np.array([angle[0], angle[1], 0])
 
 			# Update optimal distance if new one is relatively larger or if the new area is bigger in case distance is not much different
-			if distance - old_distance > 0.02 or (abs(distance - old_distance) < 0.02 and area > old_area):
+			if distance - old_distance > 0.02 or (abs(distance - old_distance) <= 0.02 and area > old_area):
 				optimal_orientation = new_orientation
 				optimal_index = index
 				old_distance = distance
@@ -127,7 +127,6 @@ class OrientationPlanningMultiProcess:
 
 
 		# Compute feasible region, reachable region, and intersection
-
 		feasible_region, actuation_polygons, computation_time = self.compDyn.try_iterative_projection_bretl(params)
 		if feasible_region is False:
 			return False, False, "FR False"
