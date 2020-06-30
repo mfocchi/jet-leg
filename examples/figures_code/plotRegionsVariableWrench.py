@@ -213,16 +213,16 @@ for wrench in externalWrenchesIter:
 	# lines.append(h)
 
 # h2 = plotter.plot_polygon(np.transpose(IP_points), '--b', 'Support Region')
-ax.plot(contactsWF[0:nc,0],contactsWF[0:nc,1],'ko',markersize=15)
+ax.plot(contactsWF[0:nc,0],contactsWF[0:nc,1],'ko',markersize=15, label=r'$\mathrm{Feet}$')
 
 box = ax.get_position()
 ax.set_position([box.x0, box.y0, box.width * 0.92, box.height])
-ax.legend([r'$F_x = -100 \, \mathrm{N,}$' + '\n' + r'$\tau_y = -100 \, \mathrm{Nm}$',
-			r'$F_y = -100 \, \mathrm{N,}$' + '\n' + r'$\tau_y = -100 \, \mathrm{Nm}$',
-			r'$\tau_\mathrm{z} = 100 \, \mathrm{Nm}$',
-			'$\mathrm{No}$ $\mathrm{ext}$ $\mathrm{wrench}$'], # mathrm so the text font and latex symbols look the same
+ax.legend([r'$1) F_x = -100 \, \mathrm{N,}$' + '\n' + r'$\tau_y = -100 \, \mathrm{Nm}$',
+			r'$2)F_y = -100 \, \mathrm{N,}$' + '\n' + r'$\tau_y = -100 \, \mathrm{Nm}$',
+			r'$3)\tau_\mathrm{z} = 100 \, \mathrm{Nm}$',
+			'$\mathrm{No}$ $\mathrm{ext}$ $\mathrm{wrench}$', r'$\mathrm{Feet}$'], # mathrm so the text font and latex symbols look the same
 		   loc="lower center",
-		   	bbox_to_anchor=(1.02, 0.4), fontsize=16, framealpha=0.8)
+		   	bbox_to_anchor=(0.992, 0.23), fontsize=17, framealpha=0.8)
 
 # plt.legend([lines[0][0], lines[1][0], lines[2][0]],[r'$F_x = -100, \tau_y = -100$',
 # 		   	r'$F_x = -100, F_y = 50, \tau_x = 50, \tau_y = -100$',

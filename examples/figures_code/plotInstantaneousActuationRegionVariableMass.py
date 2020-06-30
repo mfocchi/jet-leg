@@ -12,9 +12,9 @@ from context import jet_leg
 from numpy import array, cross, dot, eye, hstack, vstack, zeros, matrix
 from numpy.linalg import norm
 
-from jet_leg.math_tools import Math
-from jet_leg.computational_dynamics import ComputationalDynamics
-from jet_leg.iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.maths.math_tools import Math
+from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
+from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
 
 import matplotlib as mpl
 import matplotlib.colors as colors
@@ -25,7 +25,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
 from matplotlib.collections import PatchCollection
 
-from jet_leg.arrow3D import Arrow3D
 
 def set_axes_radius(ax, origin, radius):
     ax.set_xlim3d([origin[0] - radius, origin[0] + radius])
@@ -60,10 +59,10 @@ ng = 4
 
 # ONLY_ACTUATION or ONLY_FRICTION or FRICTION_AND_ACTUATION
 #constraint_mode = 'ONLY_ACTUATION'
-constraint_mode = ['ONLY_ACTUATION',
-                   'ONLY_ACTUATION',
-                   'ONLY_ACTUATION',
-                   'ONLY_ACTUATION']
+constraint_mode = ['FRICTION_AND_ACTUATION',
+                   'FRICTION_AND_ACTUATION',
+                   'FRICTION_AND_ACTUATION',
+                   'FRICTION_AND_ACTUATION']
                    
 useVariableJacobian = False
 
@@ -110,7 +109,7 @@ RF_tau_lim = [50.0, 100.0, 100.0]
 LH_tau_lim = [50.0, 100.0, 100.0]
 RH_tau_lim = [50.0, 100.0, 100.0]
 torque_limits = np.array([LF_tau_lim, RF_tau_lim, LH_tau_lim, RH_tau_lim])
-comp_dyn = ComputationalDynamics()
+comp_dyn = ComputationalDynamics('hyq')
 
 ''' Add 2D figure '''
 mpl.rcParams['text.usetex'] = True
@@ -166,8 +165,8 @@ plt.legend(prop={'size': 20}, bbox_to_anchor=(1.1, 1.1))
 #plt.axis('equal')
 plt.axis([-1.25, 1.75, -1.45, 1.55])
 plt.show()
-fig.savefig('../../figs/IP_bretl/4contacts_only_actuation.pdf')
-fig.savefig('../../figs/IP_bretl/4contacts_only_actuation.png')
+# fig.savefig('../../figs/IP_bretl/4contacts_only_actuation.pdf')
+# fig.savefig('../../figs/IP_bretl/4contacts_only_actuation.png')
 
 ''' Add 3D figure '''
 
