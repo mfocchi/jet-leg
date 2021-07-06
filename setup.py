@@ -38,5 +38,5 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Mathematics'],
     packages=find_packages(),
-    include_package_data=True, install_requires=['numpy', 'scipy']
+    include_package_data=True, install_requires=['numpy', 'scipy', 'pinocchio']
 )

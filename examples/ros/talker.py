@@ -247,7 +247,7 @@ class HyQSim(threading.Thread):
 
 def talker():
 	# Create a communication thread
-	time.sleep(7)
+	time.sleep(20)
 	p = HyQSim()
 	p.start()  # Start thread
 	p.register_node()

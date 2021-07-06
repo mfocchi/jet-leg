@@ -78,7 +78,7 @@ class hyqrealKinematics():
                 IKsuccess = False
                 break
             # print J_lin
-            v = - np.linalg.pinv(J_lin) * e
+            v = - np.linalg.pinv(J_lin).dot(e)
             q = pinocchio.integrate(self.model, q, v * DT)
             i += 1
             # print i
