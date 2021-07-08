@@ -12,6 +12,7 @@ from jet_leg.plotting.plotting_tools import Plotter
 import random
 from jet_leg.maths.math_tools import Math
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
+from jet_leg.dynamics.vertex_based_projection import VertexBasedProjection
 from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
 
 import matplotlib.pyplot as plt
@@ -19,9 +20,49 @@ from jet_leg.plotting.arrow3D import Arrow3D
         
 plt.close('all')
 math = Math()
+class FeasibleWrenchPolytope():
+    def __init__(self):
+        self.vProj = VertexBasedProjection()
+
+    def computeAngularPart(self, forcePolygonsVertices):
+        numberOfForcePolygons = np.size(forcePolygonsVertices, 0)
+        contactsBF = params.computeContactsBF().T
+        wrenchPolytopes = []
+        for i in np.arange(0, numberOfForcePolygons):
+            footPos = contactsBF[:,i]
+            currentPolytope = forcePolygonsVertices[i]
+            angularPart = np.zeros((3,8))
+            for j in np.arange(0,8):
+                linear = currentPolytope[:,j]
+                print "linear", linear
+                print "foot pos", footPos
+                angularPart[:,j] = np.cross(footPos,linear)
+                print "angular", angularPart
+            sixDpoly = np.vstack([currentPolytope, angularPart])
+            wrenchPolytopes.append(sixDpoly)
+
+        return wrenchPolytopes
+
+    def compute_feasible_wrench_polytope_v_rep(self, params, forcePolygonsVertices):
+
+        print "contacts BF",params.computeContactsBF()
+        wrenchPolytopes = self.computeAngularPart(forcePolygonsVertices)
+        numberOfForcePolygons = np.size(wrenchPolytopes, 0)
+        print "number of force polytopes", numberOfForcePolygons
+        tmpSum = wrenchPolytopes[0]
+        print "dimensionality of the polytopes:", np.size(tmpSum[:,0])
+        i = 0
+        for j in np.arange(0,numberOfForcePolygons-1):
+            nextPolygon = wrenchPolytopes[j+1]
+            tmpSum = self.vProj.minksum(tmpSum, nextPolygon)
+            print "tmpsm", np.shape(tmpSum)
+
+        currentPolygonSum = self.vProj.convex_hull(tmpSum)
+        print "tmpsm", np.shape(currentPolygonSum)
+        return  currentPolygonSum
 
 ''' Set the robot's name (either 'hyq', 'hyqreal' or 'anymal')'''
-robot_name = 'hyq'
+robot_name = 'anymal'
 
 ''' number of generators, i.e. rays/edges used to linearize the friction cone '''
 ng = 4
@@ -39,20 +80,18 @@ constraint_mode_IP = ['FRICTION_AND_ACTUATION',
 
 # number of decision variables of the problem
 #n = nc*6
-comWF = np.array([-0.009, 0.0001, 0.549])  # pos of COM in world frame w. trunk controller
-comBF = np.array([-0.0094, 0.0002, -0.0458])  # pos of COM in body frame w. trunk controller
-rpy = np.array([0.00001589, -0.00000726, -0.00000854])  # orientation of body frame w. trunk controller
+comWF = np.array([.0, .0, .0])
 
 """ contact points in the World Frame"""
-LF_foot = np.array([0.36, 0.32, 0.02])  # Starting configuration w.o. trunk controller
-RF_foot = np.array([0.36, -0.32, 0.02])
-LH_foot = np.array([-0.36, 0.32, 0.02])
-RH_foot = np.array([-0.36, -0.32, 0.02])
+LF_foot = np.array([0.3, 0.2, -0.4])
+RF_foot = np.array([0.3, -0.2, -0.4])
+LH_foot = np.array([-0.3, 0.2, -0.4])
+RH_foot = np.array([-0.3, -0.2, -0.4])
 
 contactsWF = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot))
 
 ''' parameters to be tuned'''
-mu = 0.8
+mu = 0.5
 
 ''' stanceFeet vector contains 1 is the foot is on the ground and 0 if it is in the air'''
 stanceFeet = [1,1,1,1]
@@ -74,8 +113,7 @@ n4 = np.transpose(np.transpose(math.rpyToRot(0.0,0.0,0.0)).dot(axisZ))  # RH
 normals = np.vstack([n1, n2, n3, n4])
 
 ''' extForceW is an optional external pure force (no external torque for now) applied on the CoM of the robot.'''
-extForceW = np.array([-000.0, 0.0, -000.0]) # units are Nm
-extTorqueW = np.array([0.0, -00000.0, -00000.0]) # units are Nm
+extForceW = np.array([0.0, 0.0, 0.0]) # units are Nm
 
 comp_dyn = ComputationalDynamics(robot_name)
 
@@ -85,8 +123,6 @@ params = IterativeProjectionParameters()
 
 params.setContactsPosWF(contactsWF)
 params.setCoMPosWF(comWF)
-params.setCoMPosBF(comBF)
-params.setOrientation(rpy)
 params.setTorqueLims(comp_dyn.robotModel.robotModel.torque_limits)
 params.setActiveContacts(stanceFeet)
 params.setConstraintModes(constraint_mode_IP)
@@ -95,24 +131,16 @@ params.setFrictionCoefficient(mu)
 params.setNumberOfFrictionConesEdges(ng)
 params.setTotalMass(comp_dyn.robotModel.robotModel.trunkMass)
 params.externalForceWF = extForceW  # params.externalForceWF is actually used anywhere at the moment
-params.externalTorqueWF = extTorqueW
-
-''' compute iterative projection 
-Outputs of "iterative_projection_bretl" are:
-IP_points = resulting 2D vertices
-actuation_polygons = these are the vertices of the 3D force polytopes (one per leg)
-computation_time = how long it took to compute the iterative projection
-'''
-IP_points, force_polytopes, IP_computation_time = comp_dyn.iterative_projection_bretl(params)
-
-#print "Inequalities", comp_dyn.ineq
-#print "actuation polygons"
-#print actuation_polygons
 
 '''I now check whether the given CoM configuration is stable or not'''
-isConfigurationStable, contactForces, forcePolytopes = comp_dyn.check_equilibrium(params)
-print isConfigurationStable
-print 'contact forces', contactForces
+C, d, isIKoutOfWorkSpace, forcePolytopes = comp_dyn.constr.getInequalities(params)
+
+print isIKoutOfWorkSpace
+print 'vertices', forcePolytopes
+
+fwp = FeasibleWrenchPolytope()
+fwp.compute_feasible_wrench_polytope_v_rep(params, forcePolytopes)
+
 
 '''Plotting the contact points in the 3D figure'''
 fig = plt.figure()
@@ -123,7 +151,7 @@ ax.set_zlabel('Z axis')
 
 nc = np.sum(stanceFeet)
 stanceID = params.getStanceIndex(stanceFeet)
-force_scaling_factor = 2500
+force_scaling_factor = 1500
 #plt.plot(contacts[0:nc,0],contacts[0:nc,1],'ko',markersize=15)
 fz_tot = 0.0
 for j in range(0,nc): # this will only show the contact positions and normals of the feet that are defined to be in stance
