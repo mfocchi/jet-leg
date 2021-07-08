@@ -275,12 +275,6 @@ class IterativeProjectionParameters:
 
 	def getCurrentStanceFeetFlags(self, received_data):
 
-		self.state_machine = received_data.current_state_machine_leg
-
-		for leg in range(0, self.no_of_legs):
-			if self.state_machine[leg] < 4.0:
-				self.stanceFeet[leg] = 1
-			else:
-				self.stanceFeet[leg] = 0
+		self.stanceFeet = received_data.current_stance_legs
 
 		self.numberOfContacts = np.sum(self.stanceFeet)
