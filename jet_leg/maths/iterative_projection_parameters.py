@@ -18,8 +18,11 @@ class IterativeProjectionParameters:
 		self.q = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 		self.comPositionBF = [0., 0., 0.]  # var used only for IK inside constraints.py
 		self.comPositionWF = [0., 0., 0.]
-		self.externalForceWF = np.array([0., 0., 0.])
-		self.externalTorqueWF = np.array([0., 0., 0.])
+		self.comLinAcc = [0., 0., 0.]
+		self.comAngAcc = [0., 0., 0.]
+		self.externalForce = [0., 0., 0.]
+		self.externalCentroidalTorque = [0., 0., 0.]
+		self.externalCentroidalWrench = np.hstack([self.externalForce, self.externalCentroidalTorque])
 
 		self.roll = 0.0
 		self.pitch = 0.0
@@ -80,7 +83,16 @@ class IterativeProjectionParameters:
 
 		# Planning targets
 		self.target_CoM_WF = np.array([0., 0., 0.])
-		self.desired_acceleration = np.array([0, 0, 0])
+
+	def computeContactsPosBF(self):
+		self.contactsBF = np.zeros((4, 3))
+		rpy = self.getOrientation()
+		for j in np.arange(0, 4):
+			j = int(j)
+			self.contactsBF[j, :] = np.add(
+				np.dot(self.math.rpyToRot(rpy[0], rpy[1], rpy[2]), (self.contactsWF[j, :] - self.comPositionWF)),
+				self.comPositionBF)
+		return self.contactsBF
 
 	def setContactsPosBF(self, contactsBF):
 		self.contactsBF = contactsBF
@@ -98,6 +110,12 @@ class IterativeProjectionParameters:
 		self.roll = rpy[0]
 		self.pitch = rpy[1]
 		self.yaw = rpy[2]
+
+	def setCoMLinAcc(self, comLinAcc):
+		self.comLinAcc = comLinAcc
+
+	def setCoMAngAcc(self, comAngAcc):
+		self.comAngAcc = comAngAcc
 
 	def setTorqueLims(self, torqueLims):
 		self.torque_limits = torqueLims
@@ -142,6 +160,12 @@ class IterativeProjectionParameters:
 
 	def getCoMPosBF(self):
 		return self.comPositionBF
+
+	def getCoMLinAcc(self):
+		return self.comLinAcc
+
+	def getCoMAngAcc(self):
+		return self.comAngAcc
 
 	def getTorqueLims(self):
 		return self.torque_limits
@@ -238,8 +262,9 @@ class IterativeProjectionParameters:
 		self.comPositionBF = received_data.off_CoM
 
 		# External wrench
-		self.externalForceWF = np.array(received_data.ext_wrench[0:3])
-		self.externalTorqueWF = np.array(received_data.ext_wrench[3:6])
+		self.externalForce = received_data.ext_wrench[0:3]
+		self.externalCentroidalTorque = received_data.ext_wrench[3:6]
+		self.externalCentroidalWrench = np.hstack(self.externalForce, self.externalCentroidalTorque)
 
 		# 		# print 'ext force ',self.externalForceWF
 
@@ -265,7 +290,7 @@ class IterativeProjectionParameters:
 		for dir in range(0, 3):
 			self.target_CoM_WF[dir] = received_data.target_CoM_WF[dir]
 
-		self.desired_acceleration = np.array(received_data.desired_acceleration)
+		self.comLinAcc = np.array(received_data.desired_acceleration)
 
 	def getFutureStanceFeetFlags(self, received_data):
 
