@@ -5,13 +5,14 @@ Created on Mon May 28 13:00:59 2018
 @author: Romeo Orsolino
 """
 import numpy as np
-from jet_leg.maths.computational_geometry import ComputationalGeometry
-from jet_leg.maths.math_tools import Math
-from jet_leg.kinematics.kinematics_interface import KinematicsInterface
+from jet_leg.computational_geometry.computational_geometry import ComputationalGeometry
+from jet_leg.computational_geometry.math_tools import Math
+from jet_leg.computational_geometry.leg_force_polytopes import LegForcePolytopes
 from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation as Rot
 from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
+from jet_leg.computational_geometry.polytopes import Polytope
 from numpy import matlib
 
 class Constraints:    
@@ -63,7 +64,9 @@ class Constraints:
             #    #print theta, "[rad] ", theta/np.pi*180, "[deg]"
             #print "V description: "
             #print actuation_polygons[contactIterator]
-        return C1, d1, actuation_polygons_WF, isOutOfWorkspace
+            legForcePolytope = Polytope(C1, d1, actuation_polygons)
+
+        return legForcePolytope, isOutOfWorkspace
         
     def linearized_cone_halfspaces_world(self, contactsNumber, ng, mu, normals, max_normal_force = 10000.0, saturate_max_normal_force = False):            
 
@@ -260,8 +263,7 @@ class Constraints:
         ng = params.getNumberOfFrictionConesEdges()
         friction_coeff = params.getFrictionCoefficient()
         normals = params.getNormals()
-        
-        actuation_polygons = np.zeros((4, 3, 8))
+
         C = np.zeros((0,0))
         d = np.zeros((0))
 
@@ -273,20 +275,22 @@ class Constraints:
 
         #print ("q is ",q)
 
+        forcePolytopes = LegForcePolytopes()
         for j in stanceIndex:
             j = int(j)
             if constraint_mode[j] == 'ONLY_FRICTION':
                 #            print contactsNumber
                 constraints_local_frame, d_cone = self.linearized_cone_halfspaces_world(contactsNumber, ng, friction_coeff, normals)
                 isIKoutOfWorkSpace = False
+                leg_actuation_polygon = np.zeros((1,1))
 #                print normals
                 n = self.math.normalize(normals[j,:])
                 rotationMatrix = self.math.rotation_matrix_from_normal(n)
                 Ctemp = np.dot(constraints_local_frame, rotationMatrix.T)
             
             if constraint_mode[j] == 'ONLY_ACTUATION':
-                Ctemp, d_cone, leg_polygon, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight, rpy)
-                actuation_polygons[j] = leg_polygon
+                Ctemp, d_cone, leg_actuation_polygon, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight, rpy)
+
                 if isIKoutOfWorkSpace is False:
                     d_cone = d_cone.reshape(6) 
                 else:
@@ -294,9 +298,9 @@ class Constraints:
                     d_cone = np.zeros((0))
             
             if constraint_mode[j] == 'FRICTION_AND_ACTUATION':
-                C1, d1, leg_polygon, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight, rpy)
+                C1, d1, leg_actuation_polygon, isIKoutOfWorkSpace = self.compute_actuation_constraints(j, tau_lim, leg_self_weight, rpy)
                 C2, d2 = self.linearized_cone_halfspaces_world(contactsNumber, ng, friction_coeff, normals)
-                actuation_polygons[j] = leg_polygon
+
                 if isIKoutOfWorkSpace is False:
                     #                print d1
                     Ctemp = np.vstack([C1, C2])
@@ -310,8 +314,9 @@ class Constraints:
                 
             C = block_diag(C, Ctemp)
             d = np.hstack([d, d_cone])
+            forcePolytopes.forcePolytopes[j] = Polytope(Ctemp, d_cone, leg_actuation_polygon)
         
         if contactsNumber == 0:
             print 'contactsNumber is zero, there are no stance legs set! This might be because Gazebo is in pause.'
-        return C, d, isIKoutOfWorkSpace, actuation_polygons
+        return C, d, isIKoutOfWorkSpace, forcePolytopes
     

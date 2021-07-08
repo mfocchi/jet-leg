@@ -14,8 +14,8 @@ from scipy.spatial import ConvexHull
 from jet_leg.constraints.constraints import Constraints
 from jet_leg.kinematics.kinematics_interface import KinematicsInterface
 from jet_leg.robots.robot_model_interface import RobotModelInterface
-from jet_leg.maths.math_tools import Math
-from jet_leg.maths.geometry import Geometry
+from jet_leg.computational_geometry.math_tools import Math
+from jet_leg.computational_geometry.geometry import Geometry
 from cvxopt import matrix, solvers
 import time
 
@@ -73,8 +73,8 @@ class ComputationalDynamics:
         Ey = np.zeros((0))
         G = np.zeros((6,0))
 
-        extForce = iterative_projection_params.get_external_force()
-        extTorque = iterative_projection_params.get_external_torque()
+        extForce = iterative_projection_params.getExternalCentroidalForce()
+        extTorque = iterative_projection_params.getExternalCentroidalTorque()
         acceleration = iterative_projection_params.desired_acceleration
         # linear_momentum_dot = robotMass*acceleration
         linear_momentum_dot = [0., 0., 0.]
@@ -137,9 +137,9 @@ class ComputationalDynamics:
         g = 9.81
         contactsNumber = np.sum(stanceLegs)
 
-        extForce = iterative_projection_params.get_external_force()
-        extTorque = iterative_projection_params.get_external_torque()
-        acceleration = iterative_projection_params.desired_acceleration
+        extForce = iterative_projection_params.getExternalForce()
+        extTorque = iterative_projection_params.getExternalCentroidalTorque()
+        acceleration = iterative_projection_params.getCoMLinAcc()
         # linear_momentum_dot = robotMass*acceleration
         linear_momentum_dot = np.array([0., 0., 0.])
         angular_momentum_dot = np.array([0., 0., 0.])
@@ -458,8 +458,8 @@ class ComputationalDynamics:
         contactsPosWF = LPparams.getContactsPosWF()
         contactsBF = np.zeros((4,3)) # this is just for initialization
         comWorldFrame = LPparams.getCoMPosWF()
-        extForce = LPparams.externalForceWF
-        extTorque = LPparams.externalTorqueWF
+        extForce = LPparams.externalForce()
+        extTorque = LPparams.externalCentroidalTorque()
         totForce = grav
         totForce[0] += extForce[0]
         totForce[1] += extForce[1]

@@ -179,11 +179,14 @@ class IterativeProjectionParameters:
 	def getJointLimsMin(self):
 		return self.joint_limits_min
 
-	def get_external_force(self):
-		return self.externalForceWF
+	def getExternalForce(self):
+		return self.externalForce
 
-	def get_external_torque(self):
-		return self.externalTorqueWF
+	def getExternalCentroidalTorque(self):
+		return self.externalCentroidalTorque
+
+	def getExternalCentroidalWrench(self):
+		return self.externalCentroidalWrench
 
 	def getStanceFeet(self):
 		return self.stanceFeet
