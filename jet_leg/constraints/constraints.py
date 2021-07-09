@@ -65,7 +65,7 @@ class Constraints:
             #print "V description: "
             #print actuation_polygons[contactIterator]
 
-        return C1, d1, actuation_polygons, isOutOfWorkspace
+        return C1, d1, actuation_polygons_WF, isOutOfWorkspace
         
     def linearized_cone_halfspaces_world(self, contactsNumber, ng, mu, normals, max_normal_force = 10000.0, saturate_max_normal_force = False):            
 
@@ -281,7 +281,7 @@ class Constraints:
                 #            print contactsNumber
                 constraints_local_frame, d_cone = self.linearized_cone_halfspaces_world(contactsNumber, ng, friction_coeff, normals)
                 isIKoutOfWorkSpace = False
-                leg_actuation_polygon = np.zeros((1, 1))
+                leg_actuation_polygon = np.zeros((3, 8))
 #                print normals
                 n = self.math.normalize(normals[j,:])
                 rotationMatrix = self.math.rotation_matrix_from_normal(n)
@@ -313,8 +313,8 @@ class Constraints:
 
             currentLegForcePolytope = Polytope()
             currentLegForcePolytope.setHalfSpaces(Ctemp, d_cone)
-            currentLegForcePolytope.setVertices(leg_actuation_polygon[j])
-            print np.shape(currentLegForcePolytope.getVertices())
+            currentLegForcePolytope.setVertices(leg_actuation_polygon)
+            # print np.shape(currentLegForcePolytope.getVertices())
             forcePolytopes.forcePolytope[j] = currentLegForcePolytope
                 
             C = block_diag(C, Ctemp)

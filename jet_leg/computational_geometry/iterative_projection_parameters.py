@@ -267,7 +267,7 @@ class IterativeProjectionParameters:
 		# External wrench
 		self.externalForce = received_data.ext_wrench[0:3]
 		self.externalCentroidalTorque = received_data.ext_wrench[3:6]
-		self.externalCentroidalWrench = np.hstack(self.externalForce, self.externalCentroidalTorque)
+		self.externalCentroidalWrench = np.hstack([self.externalForce, self.externalCentroidalTorque])
 
 		# 		# print 'ext force ',self.externalForceWF
 

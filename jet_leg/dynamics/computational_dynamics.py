@@ -166,7 +166,7 @@ class ComputationalDynamics:
         A22 = self.compute_A22_block(g*robotMass, extForce, linear_momentum_dot, plane_normal)
         A = np.hstack((G, np.vstack((A21_zeros, A22))))
 
-        t_linear = np.add(np.add(-np.array([0.0, 0.0, -g*robotMass]), linear_momentum_dot), -extForce)
+        t_linear = np.add(np.add(-np.array([0.0, 0.0, -g*robotMass]), linear_momentum_dot), -np.array(extForce))
         t_angular = self.compute_t_angular_vector(projection_plane_z_intercept, extForce, extTorque,
                                                   linear_momentum_dot, angular_momentum_dot)
         t = np.concatenate([t_linear, t_angular])
@@ -328,10 +328,10 @@ class ComputationalDynamics:
         #print("Iterative Projection (Bretl): --- %s seconds ---" % computation_time)
 
 #        print np.size(actuation_polygons,0), np.size(actuation_polygons,1), actuation_polygons
-        if np.size(actuation_polygons,0) is 4:
-            if np.size(actuation_polygons,1) is 3:
-#                print actuation_polygons
-                p = self.reorganizeActuationPolytopes(actuation_polygons[1])
+#         if np.size(actuation_polygons,0) is 4:
+#             if np.size(actuation_polygons,1) is 3:
+# #                print actuation_polygons
+#                 p = self.reorganizeActuationPolytopes(actuation_polygons[1])
 
         return compressed_hull, actuation_polygons, computation_time
         
