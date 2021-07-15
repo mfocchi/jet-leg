@@ -16,6 +16,7 @@ from jet_leg.kinematics.kinematics_interface import KinematicsInterface
 from jet_leg.robots.robot_model_interface import RobotModelInterface
 from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.computational_geometry.geometry import Geometry
+from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 from cvxopt import matrix, solvers
 import time
 
@@ -30,7 +31,7 @@ class ComputationalDynamics:
         self.constr = Constraints(self.kin)
         self.ineq = ([],[])
         self.eq = ([],[])
-        self.A_y = []
+        self.rbd = RigidBodyDynamics()
 
     def getGraspMatrix(self, r):
         # Returns a single column of the grasp matrix
@@ -326,12 +327,12 @@ class ComputationalDynamics:
         #vertices_WF = vertices_BF + np.transpose(comWF[0:2])
             computation_time = (time.time() - start_t_IP)
         #print("Iterative Projection (Bretl): --- %s seconds ---" % computation_time)
-
+        # print "actuation_polygons: ", actuation_polygons.getVertices()
 #        print np.size(actuation_polygons,0), np.size(actuation_polygons,1), actuation_polygons
-#         if np.size(actuation_polygons,0) is 4:
-#             if np.size(actuation_polygons,1) is 3:
-# #                print actuation_polygons
-#                 p = self.reorganizeActuationPolytopes(actuation_polygons[1])
+        if np.size(actuation_polygons.getVertices(), 0) is 4:
+            if np.size(actuation_polygons.getVertices(), 1) is 3:
+#                print actuation_polygons
+                p = self.reorganizeActuationPolytopes(actuation_polygons.getVertices()[1])
 
         return compressed_hull, actuation_polygons, computation_time
         
@@ -452,11 +453,9 @@ class ComputationalDynamics:
         totMass = LPparams.robotMass
         nc = np.sum(stanceLegs)
         grav = np.array([[0.], [0.], [-g*totMass]])
-
         p = matrix(np.zeros((3*nc,1)))
 
         contactsPosWF = LPparams.getContactsPosWF()
-        contactsBF = np.zeros((4,3)) # this is just for initialization
         comWorldFrame = LPparams.getCoMPosWF()
         extForce = LPparams.externalForce()
         extTorque = LPparams.externalCentroidalTorque()
@@ -465,17 +464,22 @@ class ComputationalDynamics:
         totForce[1] += extForce[1]
         totForce[2] += extForce[2]
         #print grav, extForce, totForce
-        torque = np.subtract(-np.cross(comWorldFrame, np.transpose(totForce)), extTorque)
-        A = np.zeros((6,0))
+        externalWrench = np.vstack([totForce, 0.0, 0.0, 0.0])
+        totalCentroidalWrench = self.rbd.computeCentroidalWrench(LPparams.robotMass,
+                                                                 LPparams.getCoMPosWF(),
+                                                                 LPparams.externalCentroidalWrench,
+                                                                 LPparams.getCoMLinAcc())
+        torque = -np.cross(comWorldFrame, np.transpose(totForce))
+        A = np.zeros((6, 0))
         stanceIndex = LPparams.getStanceIndex(stanceLegs)
         for j in stanceIndex:
             j = int(j)
-            #print 'index in lp ',j
-            r = contactsPosWF[j,:]
+            # print 'index in lp ',j
+            r = contactsPosWF[j, :]
             GraspMat = self.getGraspMatrix(r)
-            A = np.hstack((A, GraspMat[:,0:3]))
+            A = np.hstack((A, GraspMat[:, 0:3]))
             A = matrix(A)
-            b = matrix(np.vstack([-totForce, np.transpose(torque)]).reshape((6)))
+            b = matrix(totalCentroidalWrench.reshape((6)))
 
         G, h, isIKoutOfWorkSpace, LP_actuation_polygons = self.constr.getInequalities(LPparams)
         G = matrix(G)

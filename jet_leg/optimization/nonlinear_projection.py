@@ -8,11 +8,11 @@ Created on Tue Jun 12 10:54:31 2018
 from numpy import array, cos, sin, cross, pi
 from scipy.linalg import norm
 from scipy.spatial import ConvexHull
-from jet_leg.maths.geometry import Geometry
+from jet_leg.computational_geometry.geometry import Geometry
 import time
 import numpy as np
 
-from jet_leg.maths.math_tools import Math
+from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.kinematics.kinematics_interface import KinematicsInterface
 
 

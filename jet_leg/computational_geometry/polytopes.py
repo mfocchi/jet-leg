@@ -8,7 +8,7 @@ from cvxopt import matrix
 
 class Polytope():
     def __init__(self):
-        self.vertices = []
+        self.vertices = np.zeros((3,8))
         self.halfspaces = []
 
     def setVertices(self, vertices):
