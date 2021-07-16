@@ -33,12 +33,6 @@ class ComputationalDynamics:
         self.eq = ([],[])
         self.rbd = RigidBodyDynamics()
 
-    def getGraspMatrix(self, r):
-        # Returns a single column of the grasp matrix
-        # as defined in the equation 13 in Feasible Region paper
-        # This is defined in general for the six-dimensional wrench case
-        G = np.vstack([np.hstack([eye(3), zeros((3, 3))]),np.hstack([self.math.skew(r), eye(3)])])
-        return G
 
     ''' 
     This function is used to prepare all the variables that will be later used 
@@ -91,7 +85,7 @@ class ComputationalDynamics:
             # Build grasp matrix of the set of contact points
             # See equations 12 and 13 in Feasible Region paper
             # or equation 6 in Bretl
-            graspMatrix = self.getGraspMatrix(r)[:,0:3]  # get the transformation for forces (3D) only (no torque)
+            graspMatrix = self.math.getGraspMatrix(r)[:,0:3]  # get the transformation for forces (3D) only (no torque)
             Ex = hstack([Ex, -graspMatrix[4]])
             Ey = hstack([Ey, graspMatrix[3]])
             G = hstack([G, graspMatrix])  # Full grasp matrix
@@ -158,9 +152,7 @@ class ComputationalDynamics:
             # Build grasp matrix of the set of contact points
             # See equations 12 and 13 in Feasible Region paper
             # or equation 6 in Bretl
-            graspMatrix = self.getGraspMatrix(r)[:,0:3]  # get the transformation for forces (3D) only (no torque)
-            # Ex = hstack([Ex, -graspMatrix[4]])
-            # Ey = hstack([Ey, graspMatrix[3]])
+            graspMatrix = self.math.getGraspMatrix(r)[:,0:3]  # get the transformation for forces (3D) only (no torque)
             G = hstack([G, graspMatrix])  # Full grasp matrix. A1 of A_ext
 
         A21_zeros = np.zeros((3,2))
@@ -453,7 +445,10 @@ class ComputationalDynamics:
         totMass = LPparams.robotMass
         nc = np.sum(stanceLegs)
         grav = np.array([[0.], [0.], [-g*totMass]])
-        p = matrix(np.zeros((3*nc,1)))
+        if LPparams.pointContacts:
+            p = matrix(np.zeros((3*nc,1)))
+        else:
+            p = matrix(np.zeros((5*nc,1)))
 
         contactsPosWF = LPparams.getContactsPosWF()
         comWorldFrame = LPparams.getCoMPosWF()
@@ -463,23 +458,32 @@ class ComputationalDynamics:
         totForce[0] += extForce[0]
         totForce[1] += extForce[1]
         totForce[2] += extForce[2]
-        #print grav, extForce, totForce
-        externalWrench = np.vstack([totForce, 0.0, 0.0, 0.0])
         totalCentroidalWrench = self.rbd.computeCentroidalWrench(LPparams.robotMass,
                                                                  LPparams.getCoMPosWF(),
                                                                  LPparams.externalCentroidalWrench,
                                                                  LPparams.getCoMLinAcc())
-        torque = -np.cross(comWorldFrame, np.transpose(totForce))
+
         A = np.zeros((6, 0))
         stanceIndex = LPparams.getStanceIndex(stanceLegs)
         for j in stanceIndex:
             j = int(j)
             # print 'index in lp ',j
             r = contactsPosWF[j, :]
-            GraspMat = self.getGraspMatrix(r)
-            A = np.hstack((A, GraspMat[:, 0:3]))
-            A = matrix(A)
-            b = matrix(totalCentroidalWrench.reshape((6)))
+            GraspMat = self.math.getGraspMatrix(r)
+            if LPparams.pointContacts:
+                A = np.hstack((A, GraspMat[:, 0:3]))
+                print A
+                A = matrix(A)
+                b = matrix(totalCentroidalWrench.reshape((6)))
+            else:
+                Atmp = np.zeros((6, 2))
+                Atmp[3:5, 0:2] = np.eye(2)
+                print "Atmp", Atmp
+                A = np.hstack((A, GraspMat[:, 0:3], Atmp))
+                print A
+                A = matrix(A)
+                b = matrix(totalCentroidalWrench.reshape((6)))
+
 
         G, h, isIKoutOfWorkSpace, LP_actuation_polygons = self.constr.getInequalities(LPparams)
         G = matrix(G)
