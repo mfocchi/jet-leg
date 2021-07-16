@@ -89,6 +89,7 @@ comp_dyn = ComputationalDynamics(robot_name)
 params = IterativeProjectionParameters()
 
 params.setContactsPosWF(contacts)
+params.pointContacts = True
 params.externalCentroidalWrench = extCentroidalWrench
 params.setCoMPosWF(comWF)
 params.setCoMLinAcc(comWF_lin_acc)
