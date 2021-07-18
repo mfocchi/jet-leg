@@ -25,7 +25,7 @@ class ForcePolytopeConstraint:
         self.rbd = RigidBodyDynamics()
         self.frictionConeConstr = FrictionConeConstraint()
 
-    def compute_actuation_constraints(self, contactIterator, torque_limits, leg_self_weight, euler_angles):
+    def compute_actuation_constraints(self, contact_iterator, torque_limits, leg_self_weight, euler_angles, point_contact, contact_torque_lims):
 
         J_LF, J_RF, J_LH, J_RH, isOutOfWorkspace = self.kin.get_jacobians()
         # print J_LF, J_RF, J_LH, J_RH
@@ -40,21 +40,33 @@ class ForcePolytopeConstraint:
             actuation_polygons = self.computeActuationPolygons(jacobianMatrices, torque_limits, leg_self_weight)
             rot = Rot.from_euler('xyz', [euler_angles[0], euler_angles[1], euler_angles[2]], degrees=False)
             W_R_B = rot.as_dcm()
-            actuation_polygons_WF = W_R_B.dot(actuation_polygons[contactIterator])
-            # print 'actuation polygon ',actuation_polygons[contactIterator]
-            # print 'actuation polygon WF ', actuation_polygons_WF
+            actuation_polygons_WF = W_R_B.dot(actuation_polygons[contact_iterator])
             ''' in the case of the IP alg. the contact force limits must be divided by the mass
 			because the gravito inertial wrench is normalized'''
 
             C1 = np.zeros((0, 0))
             d1 = np.zeros((1, 0))
 
-            hexahedronHalfSpaceConstraints, knownTerm = self.hexahedron(actuation_polygons_WF)
+            if point_contact:
+                halfSpaceConstraints, knownTerm = self.hexahedron(actuation_polygons_WF)
+            else:
+                hexahedronHalfSpaceConstraints, d = self.hexahedron(actuation_polygons_WF)
+                wrench_term = np.array([[0, 0, 0, +1, 0],
+                    [0, 0, 0, 0, +1],
+                    [0, 0, 0, -1, 0],
+                    [0, 0, 0, 0, -1]])
+                force_term = np.hstack([hexahedronHalfSpaceConstraints, np.zeros((6,2))])
+                halfSpaceConstraints = np.vstack([force_term, wrench_term])
+                print "contact torque", contact_torque_lims
+                max_contact_torque = contact_torque_lims[1]
+                min_contact_torque = contact_torque_lims[0]
+                knownTerm = np.vstack([d, max_contact_torque, max_contact_torque, -min_contact_torque, -min_contact_torque])
+                print "knownTerm term" ,np.shape(knownTerm), knownTerm
 
-            C1 = block_diag(C1, hexahedronHalfSpaceConstraints)
+            C1 = block_diag(C1, halfSpaceConstraints)
             d1 = np.hstack([d1, knownTerm.T])
 
-            # print "H description: ",C1, d1
+            print "H description: ",C1, d1
             # print C1[0,0]
             # print "theta angles: "
             # for i in range(0,6):

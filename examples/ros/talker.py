@@ -337,61 +337,61 @@ def talker():
 		# print "frictionRegion: ", frictionRegion
 		# print "friction time: ", computation_time
 
-		# if (p.plotFeasibleRegionFlag or p.plotExtendedRegionFlag):
-		# 	FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn)
-		# 	# safety measure use old when you cannot compute
-		# 	if (p.plotFeasibleRegionFlag):
-		# 		if FEASIBLE_REGION is not False:
-		# 			p.send_feasible_polygons(name, p.fillPolygon(FEASIBLE_REGION), foothold_params.option_index,
-		# 									 foothold_params.ack_optimization_done)
-		# 			old_FEASIBLE_REGION = FEASIBLE_REGION
-		# 		else:
-		# 			print 'Could not compute the feasible region'
-		# 			p.send_feasible_polygons(name, p.fillPolygon(old_FEASIBLE_REGION), foothold_params.option_index,
-		# 									 foothold_params.ack_optimization_done)
-		#
-		# if (p.plotReachableFeasibleRegionFlag and not p.plotExtendedRegionFlag):
-		# 	reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
-		# 																					 20. * np.pi / 180, 0.03)
-		# 	# print "reachable region computation_time: ", computation_time_joint
-		# 	if reachability_polygon.size > 0:
-		# 		old_reachable_feasible_polygon = reachability_polygon
-		# 		p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon),
-		# 										   foothold_params.option_index,
-		# 										   foothold_params.ack_optimization_done)
-		# 	else:
-		# 		p.send_reachable_feasible_polygons(name, p.fillPolygon([]),
-		# 										   foothold_params.option_index,
-		# 										   foothold_params.ack_optimization_done)
-		#
-		# if (p.plotExtendedRegionFlag):
-		# 	FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn) # Why compute again? I think unneeded
-		#
-		# 	if FEASIBLE_REGION	is not False:
-		# 		EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
-		# 	reachable_feasible_polygon = np.array([])
-		# 	reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
-		# 																					 20. * np.pi / 180, 0.03)
-		#
-		# 	if reachability_polygon.size > 0:
-		# 		preachability_polygon = Polygon(reachability_polygon)
-		#
-		# 		try:
-		# 			reachable_feasible_polygon = EXTENDED_FEASIBLE_REGION.intersection(preachability_polygon)
-		# 			reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
-		# 		except (AttributeError, TopologicalError), e:
-		# 			print "Shape not a Polygon."
-		# 			p.send_reachable_feasible_polygons(name, p.fillPolygon([]), foothold_params.option_index,
-		# 											   foothold_params.ack_optimization_done)
-		# 		else:
-		# 			old_reachable_feasible_polygon = reachable_feasible_polygon
-		# 			p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon),
-		# 											   foothold_params.option_index,
-		# 											   foothold_params.ack_optimization_done)
-		# 	else:
-		# 		p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
-		# 										   foothold_params.option_index,
-		# 										   foothold_params.ack_optimization_done)
+		if (p.plotFeasibleRegionFlag or p.plotExtendedRegionFlag):
+			FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn)
+			# safety measure use old when you cannot compute
+			if (p.plotFeasibleRegionFlag):
+				if FEASIBLE_REGION is not False:
+					p.send_feasible_polygons(name, p.fillPolygon(FEASIBLE_REGION), foothold_params.option_index,
+											 foothold_params.ack_optimization_done)
+					old_FEASIBLE_REGION = FEASIBLE_REGION
+				else:
+					print 'Could not compute the feasible region'
+					p.send_feasible_polygons(name, p.fillPolygon(old_FEASIBLE_REGION), foothold_params.option_index,
+											 foothold_params.ack_optimization_done)
+
+		if (p.plotReachableFeasibleRegionFlag and not p.plotExtendedRegionFlag):
+			reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
+																							 20. * np.pi / 180, 0.03)
+			# print "reachable region computation_time: ", computation_time_joint
+			if reachability_polygon.size > 0:
+				old_reachable_feasible_polygon = reachability_polygon
+				p.send_reachable_feasible_polygons(name, p.fillPolygon(reachability_polygon),
+												   foothold_params.option_index,
+												   foothold_params.ack_optimization_done)
+			else:
+				p.send_reachable_feasible_polygons(name, p.fillPolygon([]),
+												   foothold_params.option_index,
+												   foothold_params.ack_optimization_done)
+
+		if (p.plotExtendedRegionFlag):
+			FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn) # Why compute again? I think unneeded
+
+			if FEASIBLE_REGION	is not False:
+				EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
+			reachable_feasible_polygon = np.array([])
+			reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
+																							 20. * np.pi / 180, 0.03)
+
+			if reachability_polygon.size > 0:
+				preachability_polygon = Polygon(reachability_polygon)
+
+				try:
+					reachable_feasible_polygon = EXTENDED_FEASIBLE_REGION.intersection(preachability_polygon)
+					reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
+				except (AttributeError, TopologicalError), e:
+					print "Shape not a Polygon."
+					p.send_reachable_feasible_polygons(name, p.fillPolygon([]), foothold_params.option_index,
+													   foothold_params.ack_optimization_done)
+				else:
+					old_reachable_feasible_polygon = reachable_feasible_polygon
+					p.send_reachable_feasible_polygons(name, p.fillPolygon(reachable_feasible_polygon),
+													   foothold_params.option_index,
+													   foothold_params.ack_optimization_done)
+			else:
+				p.send_reachable_feasible_polygons(name, p.fillPolygon(old_reachable_feasible_polygon),
+												   foothold_params.option_index,
+												   foothold_params.ack_optimization_done)
 
 		# FOOTHOLD PLANNING
 
