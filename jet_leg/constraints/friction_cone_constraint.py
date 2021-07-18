@@ -74,7 +74,7 @@ class FrictionConeConstraint:
                     [0, 0, 0, 0, -1]
                 ])
                 d = np.hstack([np.zeros(4), self.max_contact_wrench, self.max_contact_wrench, -self.min_contact_wrench, -self.min_contact_wrench])
-                print "c force", c_force, d
+                # print "c force", c_force, d
 
         elif ng == 8:
             c_force = np.array([

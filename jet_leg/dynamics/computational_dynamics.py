@@ -68,9 +68,9 @@ class ComputationalDynamics:
         Ey = np.zeros((0))
         G = np.zeros((6,0))
 
-        extForce = iterative_projection_params.getExternalCentroidalForce()
+        extForce = iterative_projection_params.getExternalForce()
         extTorque = iterative_projection_params.getExternalCentroidalTorque()
-        acceleration = iterative_projection_params.desired_acceleration
+        acceleration = iterative_projection_params.getCoMLinAcc()
         # linear_momentum_dot = robotMass*acceleration
         linear_momentum_dot = [0., 0., 0.]
         angular_momentum_dot = [0., 0., 0.]
@@ -85,13 +85,22 @@ class ComputationalDynamics:
             # Build grasp matrix of the set of contact points
             # See equations 12 and 13 in Feasible Region paper
             # or equation 6 in Bretl
-            graspMatrix = self.math.getGraspMatrix(r)[:,0:3]  # get the transformation for forces (3D) only (no torque)
+
+            # Get the transformation for forces (3D) or wrenches (6D)
+            if iterative_projection_params.pointContacts:
+                graspMatrix = self.math.getGraspMatrix(r)[:,0:3]  # forces (3D)
+            else:
+                graspMatrix = self.math.getGraspMatrix(r)[:,0:5]  # wrenches (6D)
+            print "grasp mat", graspMatrix
             Ex = hstack([Ex, -graspMatrix[4]])
             Ey = hstack([Ey, graspMatrix[3]])
+            # print "Ex", Ex
+            # print "Ey", Ey
             G = hstack([G, graspMatrix])  # Full grasp matrix
             
 #        print 'grasp matrix',G
         E = vstack((Ex, Ey)) / (g*robotMass - extForce[2] + linear_momentum_dot[2])
+        # print "E", E
         f = np.array([(-extTorque[1] + angular_momentum_dot[1] - (extForce[0] - linear_momentum_dot[0]) * height) /
                       (g*robotMass - extForce[2] + linear_momentum_dot[2]),
                       (extTorque[0] - angular_momentum_dot[0] - (extForce[1] - linear_momentum_dot[1]) * height) /
@@ -152,8 +161,14 @@ class ComputationalDynamics:
             # Build grasp matrix of the set of contact points
             # See equations 12 and 13 in Feasible Region paper
             # or equation 6 in Bretl
-            graspMatrix = self.math.getGraspMatrix(r)[:,0:3]  # get the transformation for forces (3D) only (no torque)
-            G = hstack([G, graspMatrix])  # Full grasp matrix. A1 of A_ext
+
+            # Get the transformation for forces (3D) or wrenches (6D)
+            if iterative_projection_params.pointContacts:
+                graspMatrix = self.math.getGraspMatrix(r)[:, 0:3]  # forces (3D)
+            else:
+                graspMatrix = self.math.getGraspMatrix(r)[:, 0:5]  # wrenches (6D)
+            # print "grasp mat", graspMatrix
+            G = hstack([G, graspMatrix])  # Full grasp matrix
 
         A21_zeros = np.zeros((3,2))
         A22 = self.compute_A22_block(g*robotMass, extForce, linear_momentum_dot, plane_normal)
@@ -452,8 +467,8 @@ class ComputationalDynamics:
 
         contactsPosWF = LPparams.getContactsPosWF()
         comWorldFrame = LPparams.getCoMPosWF()
-        extForce = LPparams.externalForce()
-        extTorque = LPparams.externalCentroidalTorque()
+        extForce = LPparams.getExternalForce()
+        extTorque = LPparams.getExternalCentroidalTorque()
         totForce = grav
         totForce[0] += extForce[0]
         totForce[1] += extForce[1]

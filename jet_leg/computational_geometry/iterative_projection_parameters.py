@@ -73,8 +73,7 @@ class IterativeProjectionParameters:
 		self.friction = 0.8
 		self.robotMass = 85  # Kg
 		self.numberOfGenerators = 4
-		self.pointContacts = True
-
+		self.pointContacts = False  # False if contact torques are allowed (e.g. humanoid foot or double support quadruped).
 		self.actual_swing = 0
 
 		self.plane_normal = [0, 0, 1]
@@ -307,3 +306,5 @@ class IterativeProjectionParameters:
 		self.stanceFeet = received_data.current_stance_legs
 
 		self.numberOfContacts = np.sum(self.stanceFeet)
+		self.pointContacts = True if self.numberOfContacts >= 3 else False
+
