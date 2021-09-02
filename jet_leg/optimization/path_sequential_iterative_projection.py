@@ -4,6 +4,11 @@ Created on Thu Oct 25 10:37:16 2018
 
 @author: rorsolino
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 
 #from context import jet_leg 
@@ -247,7 +252,7 @@ class PathIterativeProjection:
             if new_point:
                 intersection_points = np.vstack([intersection_points, new_point])
             else:
-                print "lines are parallel!"
+                print("lines are parallel!")
                 while new_point is False:
                     desired_com_line = self.line(comWF, comWF+desired_direction+np.array([random()*0.01,random()*0.01,0.0]))
                     new_point = self.two_lines_intersection(desired_com_line, actuation_region_edge)
@@ -316,7 +321,7 @@ class PathIterativeProjection:
                 vertices_list = polygon.export_vertices()
                 vertices1 = [array([v.x, v.y]) for v in vertices_list]
                 polygon_to_stack.append(vertices1)
-                print while_iter
+                print(while_iter)
 #                print 'poly',vertices1
                 new_p, all_points = self.find_intersection(vertices1, desired_direction, comWF)
                 if np.size(new_p, 0)==0:
@@ -328,8 +333,8 @@ class PathIterativeProjection:
                     newCoM = 0.2*increment + newCoM
                     while_iter += 1
             else:
-                print "foot position is out of workspace!"
+                print("foot position is out of workspace!")
                 while_iter += max_iteration_number
         
-        print polygon_to_stack
+        print(polygon_to_stack)
         return comToStack, stackedIncrements, polygon_to_stack

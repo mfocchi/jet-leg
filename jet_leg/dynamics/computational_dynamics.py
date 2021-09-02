@@ -5,7 +5,9 @@ Created on Tue Jun  5 15:57:17 2018
 @author: Romeo Orsolino
 """
 
-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import pypoman
 import numpy as np
@@ -91,7 +93,7 @@ class ComputationalDynamics:
                 graspMatrix = self.math.getGraspMatrix(r)[:,0:3]  # forces (3D)
             else:
                 graspMatrix = self.math.getGraspMatrix(r)[:,0:5]  # wrenches (6D)
-            print "grasp mat", graspMatrix
+            print("grasp mat", graspMatrix)
             Ex = hstack([Ex, -graspMatrix[4]])
             Ey = hstack([Ey, graspMatrix[3]])
             # print "Ex", Ex
@@ -275,8 +277,8 @@ class ComputationalDynamics:
             compressed_hull, actuation_polygons, computation_time = self.iterative_projection_bretl(iterative_projection_params, saturate_normal_force)
             return compressed_hull, actuation_polygons, computation_time
         except ValueError as err:
-            print 'Could not compute the feasible region'
-            print(err.args)
+            print('Could not compute the feasible region')
+            print((err.args))
             return False, False, False
 
 
@@ -300,12 +302,12 @@ class ComputationalDynamics:
             except (ValueError, Exception) as e:
                 vertices_WF = False
                 if hasattr(e, 'message'):
-                    print(e.message)
+                    print((e.message))
                 else:
                     print(e)
 
             if vertices_WF is False:
-                print 'Project polytope function is False'
+                print('Project polytope function is False')
                 return False, False, False
 
             else:
@@ -313,8 +315,8 @@ class ComputationalDynamics:
                 try:
                     hull = ConvexHull(compressed_vertices)
                 except Exception as err:
-                    print("QHull type error: " + str(err))
-                    print("matrix to compute qhull:",compressed_vertices)
+                    print(("QHull type error: " + str(err)))
+                    print(("matrix to compute qhull:",compressed_vertices))
                     return False, False, False
                 
                 
@@ -366,11 +368,11 @@ class ComputationalDynamics:
 
         if isIKoutOfWorkSpace:
             #unfeasible_points = np.vstack([unfeasible_points, com_WF])
-            print 'something is wrong in the inequalities or the point is out of workspace'
+            print('something is wrong in the inequalities or the point is out of workspace')
             x = -1
             return False, x, LP_actuation_polygons
         else:
-            print 'Solving LP'
+            print('Solving LP')
             sol = solvers.lp(p, G, h, A, b)
             x = sol['x']
             status = sol['status']
@@ -433,7 +435,7 @@ class ComputationalDynamics:
                         unfeasible_points = np.vstack([unfeasible_points, com_WF])
 
                     
-        print("LP test: --- %s seconds ---" % (time.time() - start_t_LP))
+        print(("LP test: --- %s seconds ---" % (time.time() - start_t_LP)))
         
         return feasible_points, unfeasible_points, contact_forces
 
@@ -487,15 +489,15 @@ class ComputationalDynamics:
             GraspMat = self.math.getGraspMatrix(r)
             if LPparams.pointContacts:
                 A = np.hstack((A, GraspMat[:, 0:3]))
-                print A
+                print(A)
                 A = matrix(A)
                 b = matrix(totalCentroidalWrench.reshape((6)))
             else:
                 Atmp = np.zeros((6, 2))
                 Atmp[3:5, 0:2] = np.eye(2)
-                print "Atmp", Atmp
+                print("Atmp", Atmp)
                 A = np.hstack((A, GraspMat[:, 0:3], Atmp))
-                print A
+                print(A)
                 A = matrix(A)
                 b = matrix(totalCentroidalWrench.reshape((6)))
 

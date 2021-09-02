@@ -4,8 +4,10 @@ Created on Wed Nov 14 15:07:45 2018
 
 @author: Romeo Orsolino
 """
+from __future__ import absolute_import
+
 import numpy as np
-from math_tools import Math
+from .math_tools import Math
 
 
 class IterativeProjectionParameters:

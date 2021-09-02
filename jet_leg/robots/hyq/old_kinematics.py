@@ -7,6 +7,11 @@ Created on Mon May 28 09:39:54 2018
 This code computes the inverse kinematics for the HyQ quadruped robot.
 Besides the joint positions and velocities it also returns the 2D jacobians referring to the HFE and KFE joints
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 
 class Kinematics:
@@ -60,11 +65,11 @@ class Kinematics:
         q[1] = -np.arcsin(sin_arg[0]) + np.arccos(cos_arg[0]);# LF HFE
         if (np.isnan(q[1])):
             isOutOfWorkSpace = True
-            print 'Warning! point is out of workspace!'
+            print('Warning! point is out of workspace!')
         q[4] = -np.arcsin(sin_arg[0]) + np.arccos(cos_arg[0]);# RF HFE
         if (np.isnan(q[4])):
             isOutOfWorkSpace = True
-            print 'Warning! point is out of workspace!'
+            print('Warning! point is out of workspace!')
         cos_arg = (upperLegLength * upperLegLength + lowerLegLength * lowerLegLength - hfe2foot * hfe2foot)/ (2 * upperLegLength * lowerLegLength);
         q[8]= + M_PI- np.arccos(cos_arg[0]); # LH KFE
         q[11] = + M_PI - np.arccos(cos_arg[0]); # RH KFE
@@ -73,11 +78,11 @@ class Kinematics:
         q[7] = -np.arcsin(sin_arg[0])- np.arccos(cos_arg[0]);# LH HFE
         if (np.isnan(q[7])):
             isOutOfWorkSpace = True
-            print 'Warning! point is out of workspace!'
+            print('Warning! point is out of workspace!')
         q[10] = -np.arcsin(sin_arg[0])- np.arccos(cos_arg[0]);# RH HFE
         if (np.isnan(q[10])):
             isOutOfWorkSpace = True
-            print 'Warning! point is out of workspace!'    
+            print('Warning! point is out of workspace!')    
         """ compute joint velocities updating the 2D jacobians with the computed position """
         l1 = upperLegLength;
         l2 = lowerLegLength;

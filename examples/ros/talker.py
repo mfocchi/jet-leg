@@ -1,10 +1,14 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct  3 13:38:45 2018
 
 @author: Romeo Orsolino
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import copy
 import numpy as np
@@ -78,7 +82,7 @@ class HyQSim(threading.Thread):
 		self.optimal_orientation_topic_name = "/feasible_region/optimal_orientation"
 		self.robot_name = ros.get_param('/robot_name')
 		# self.hyq_wbs_sub_name = "/"+self.robot_name+"/robot_states" not used
-		print ros.get_namespace()
+		print(ros.get_namespace())
 		self.sim_time = 0.0
 
 		self.plotFeasibleRegionFlag = False
@@ -100,7 +104,7 @@ class HyQSim(threading.Thread):
 		self.orient_ack_optimization_done = False  # Not used
 
 	def run(self):
-		print "Started Jetleg!"
+		print("Started Jetleg!")
 		self.sub_clock = ros.Subscriber(self.clock_sub_name, Clock, callback=self._reg_sim_time, queue_size=1000)
 		self.sub_actuation_params = ros.Subscriber(self.hyq_actuation_params_sub_name, RobotStates,
 												   callback=self.callback_hyq_debug, queue_size=1, buff_size=3000)
@@ -128,16 +132,16 @@ class HyQSim(threading.Thread):
 
 		# advertise service
 		service = ros.Service('/feasible_region/set_config', Config, self.handle_set_feasible_region_config)
-		print "Feasible Region Config Server initialized"
+		print("Feasible Region Config Server initialized")
 
 	def handle_set_feasible_region_config(self, req):
-		print "Returning [vis opt: %s , com %s , comtype: %s foothold: %s]" % (
-		req.visualization_options, req.com_optimization, req.com_optimization_type, req.foothold_optimization)
+		print("Returning [vis opt: %s , com %s , comtype: %s foothold: %s]" % (
+		req.visualization_options, req.com_optimization, req.com_optimization_type, req.foothold_optimization))
 		self.com_optimization = req.com_optimization
 		self.foothold_optimization = req.foothold_optimization
 		self.com_optimization_type = req.com_optimization_type
 		if (len(req.visualization_options) < 8):
-			print  "wrong visualization option size is :", len(req.visualization_options)
+			print("wrong visualization option size is :", len(req.visualization_options))
 			return ConfigResponse(False)
 		self.parse_vis_options(req.visualization_options)
 		return ConfigResponse(True)
@@ -346,7 +350,7 @@ def talker():
 											 foothold_params.ack_optimization_done)
 					old_FEASIBLE_REGION = FEASIBLE_REGION
 				else:
-					print 'Could not compute the feasible region'
+					print('Could not compute the feasible region')
 					p.send_feasible_polygons(name, p.fillPolygon(old_FEASIBLE_REGION), foothold_params.option_index,
 											 foothold_params.ack_optimization_done)
 
@@ -379,8 +383,8 @@ def talker():
 				try:
 					reachable_feasible_polygon = EXTENDED_FEASIBLE_REGION.intersection(preachability_polygon)
 					reachable_feasible_polygon = np.array(reachable_feasible_polygon.exterior.coords)
-				except (AttributeError, TopologicalError), e:
-					print "Shape not a Polygon."
+				except (AttributeError, TopologicalError) as e:
+					print("Shape not a Polygon.")
 					p.send_reachable_feasible_polygons(name, p.fillPolygon([]), foothold_params.option_index,
 													   foothold_params.ack_optimization_done)
 				else:
@@ -412,13 +416,13 @@ def talker():
 			When this flag is true the planner (in jetleg) will start a new computation of the feasible region.'''
 			# print 'optimization started flag', foothold_params.foothold_optimization_started
 			if foothold_params.foothold_optimization_started and not foothold_params.ack_optimization_done:
-				print '============================================================'
-				print 'current swing ', params.actual_swing
-				print '============================================================'
+				print('============================================================')
+				print('current swing ', params.actual_swing)
+				print('============================================================')
 
 				params.getFutureStanceFeetFlags(p.hyq_debug_msg)
 
-				print "FUTURE STANCE LEGS: ", params.stanceFeet
+				print("FUTURE STANCE LEGS: ", params.stanceFeet)
 
 				# Select foothold option with maximum feasible region from among all possible (default is 9) options
 				foothold_params.option_index, stackedResidualRadius, feasibleRegions, mapFootHoldIdxToPolygonIdx = footHoldPlanning.selectMaximumFeasibleArea(
@@ -427,9 +431,9 @@ def talker():
 				if feasibleRegions is False:
 					foothold_params.option_index = -1
 				else:
-					print 'min radius ', foothold_params.minRadius, 'residual radius ', stackedResidualRadius
+					print('min radius ', foothold_params.minRadius, 'residual radius ', stackedResidualRadius)
 					# print 'feet options', foothold_params.footOptions
-					print 'final index', foothold_params.option_index, 'index list', mapFootHoldIdxToPolygonIdx
+					print('final index', foothold_params.option_index, 'index list', mapFootHoldIdxToPolygonIdx)
 
 				foothold_params.ack_optimization_done = 1
 
@@ -453,13 +457,13 @@ def talker():
 
 				frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
 
-				print 'friction region is: ', frictionRegion
+				print('friction region is: ', frictionRegion)
 
 				p.send_friction_region(name, p.fillPolygon(frictionRegion))
 
 				# this sends the data back to ros that contains the foot hold choice (used for stepping) and the corrspondent region (that will be used for com planning TODO update with the real footholds)
 				if (feasibleRegions is not False) and (np.size(feasibleRegions) is not 0):
-					print 'sending actuation region'
+					print('sending actuation region')
 					p.send_feasible_polygons(name, p.fillPolygon(feasibleRegions[-1]), foothold_params.option_index,
 											 foothold_params.ack_optimization_done)
 				# print feasibleRegions[-1]
@@ -485,24 +489,24 @@ def talker():
 		feasible_regions = []
 		if orient_params.orient_optimization_started and not orient_params.ack_optimization_done:
 			params.getCurrentStanceFeetFlags(p.hyq_debug_msg)
-			print "Stance Feet: ", params.stanceFeet
-			print "Current orientation is: ", params.getOrientation()
-			print "Default orientation is: ", orient_params.get_default_orientation()
-			print "Current CoM is: ", params.getCoMPosWF()
+			print("Stance Feet: ", params.stanceFeet)
+			print("Current orientation is: ", params.getOrientation())
+			print("Default orientation is: ", orient_params.get_default_orientation())
+			print("Current CoM is: ", params.getCoMPosWF())
 			# print "Target CoM is: ", orient_params.target_CoM_WF
 
 			first_time = time.time()
 			feasible_regions, min_distances, max_areas, optimal_orientation, optimal_index = \
 				orient_planning_mp.optimize_orientation(orient_params, params)
-			print "Optimization time: ", time.time() - first_time
+			print("Optimization time: ", time.time() - first_time)
 			optimization_success = True if optimal_index > -1 else False
 
 			# time.sleep(5)
 			orient_params.ack_optimization_done = p.orient_ack_optimization_done = True
 
-			print "Optimal orientation is: ", optimal_orientation
+			print("Optimal orientation is: ", optimal_orientation)
 
-			print "Sending optimal orientation..."
+			print("Sending optimal orientation...")
 			p.send_optimal_orientation(name, optimal_orientation, optimization_success,
 									   orient_params.ack_optimization_done)
 
@@ -554,5 +558,5 @@ def talker():
 		# if (p.orient_ack_optimization_done == False):
 		#     orient_params.ack_optimization_done = False
 
-	print 'de registering...'
+	print('de registering...')
 	p.deregister_node()

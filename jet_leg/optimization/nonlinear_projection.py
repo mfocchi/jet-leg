@@ -4,6 +4,9 @@ Created on Tue Jun 12 10:54:31 2018
 
 @author: Abdelrahman Abdalla
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from numpy import array, cos, sin, cross, pi
 from scipy.linalg import norm
@@ -50,7 +53,7 @@ class Polygon:
 		while not vcur.checked:
 			vcur.checked = True
 			newvertices.append(vcur)
-			vcur = vcur.next
+			vcur = vcur.__next__
 		newvertices.reverse()
 		vfirst = newvertices.pop(-1)
 		newvertices.insert(0, vfirst)
@@ -238,14 +241,14 @@ class NonlinearProjectionBretl:
 		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
 
 		if self.kin.isOutOfWorkSpace(contactsBF, params.getJointLimsMax(), params.getJointLimsMin(), stanceIndex, foot_vel):
-			print "Couldn't compute a reachable region! Current configuration is already out of joint limits!"
+			print("Couldn't compute a reachable region! Current configuration is already out of joint limits!")
 			return np.array([]), (time.time() - ip_start)
 
 		if com_wf_check is not None:
 
 			contactsBF_check = self.getcontactsBF(params, com_wf_check)
 			if self.kin.isOutOfWorkSpace(contactsBF_check, params.getJointLimsMax(), params.getJointLimsMin(), stanceIndex, foot_vel):
-				print "Ouch!"
+				print("Ouch!")
 				return np.array([]), (time.time() - ip_start)
 
 		# Compute region

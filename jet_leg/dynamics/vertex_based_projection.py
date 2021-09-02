@@ -5,6 +5,9 @@ Created on Thu Jun  7 22:14:22 2018
 @author: Romeo Orsolino
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import time
 import numpy as np
@@ -76,7 +79,7 @@ class VertexBasedProjection():
             v_new = np.array([[v_new_x],[v_new_y]])
             vertices2d = np.hstack([vertices2d, v_new])
         #print 'number of com points', np.size(vertices2d,1)
-        print vertices2d
+        print(vertices2d)
         return vertices2d
     
     
@@ -158,7 +161,7 @@ class VertexBasedProjection():
         w1 = np.vstack([tau1, vertices_1])
         w2 = np.vstack([tau2, vertices_2])
         w3 = np.vstack([tau3, vertices_3]) #6XN
-        print w1, w2, w3
+        print(w1, w2, w3)
         w12 = self.minksum(w1, w2)
         w123 = self.minksum(w12, w3) #CWC con punti interni 6XN
         
@@ -191,22 +194,22 @@ class VertexBasedProjection():
         
             
         
-        print np.size(w123_hull,1) 
-        print "pointsfZ"        
-        print np.size(pointsfZ,1)      
-        print np.size(pointsfZhull,1) 
+        print(np.size(w123_hull,1)) 
+        print("pointsfZ")        
+        print(np.size(pointsfZ,1))      
+        print(np.size(pointsfZhull,1)) 
         
-        print "pointsfy"
-        print np.size(pointsfY,1)
-        print np.size(pointsfYhull,1) #
-        print "pointsfx"
-        print np.size(pointsfX,1)
-        print np.size(pointsfXhull,1) #
-        print "pointstZx"
-        print np.size(pointstZ,1)
-        print np.size(pointstZhull,1) #
+        print("pointsfy")
+        print(np.size(pointsfY,1))
+        print(np.size(pointsfYhull,1)) #
+        print("pointsfx")
+        print(np.size(pointsfX,1))
+        print(np.size(pointsfXhull,1)) #
+        print("pointstZx")
+        print(np.size(pointstZ,1))
+        print(np.size(pointstZhull,1)) #
         
-        print pointstZhull
+        print(pointstZhull)
 #        points, points_num = self.compute_section_points(w123_hull, mg) 
 #        
         # TODO: use pointsfZhull instead for "ONLY_FRICTION" option:
@@ -220,6 +223,6 @@ class VertexBasedProjection():
         vertices2d = np.transpose(points2d)
         chull = scipy.spatial.ConvexHull(vertices2d)
         #print chull.vertices[0]
-        print("Closed form algorith: --- %s seconds ---" % (time.time() - start_t))
+        print(("Closed form algorith: --- %s seconds ---" % (time.time() - start_t)))
         
         return vertices2d, chull.simplices

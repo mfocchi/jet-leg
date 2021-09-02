@@ -4,6 +4,11 @@ Created on Mon May 28 13:00:59 2018
 
 @author: Romeo Orsolino
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.computational_geometry.leg_force_polytopes import LegForcePolytopes
@@ -118,7 +123,7 @@ class Constraints:
 
         
         if contactsNumber == 0:
-            print 'contactsNumber is zero, there are no stance legs set! This might be because Gazebo is in pause.'
+            print('contactsNumber is zero, there are no stance legs set! This might be because Gazebo is in pause.')
             
         return C, d, isIKoutOfWorkSpace, forcePolytopes
     

@@ -5,6 +5,9 @@ Created on Wed Oct  3 13:38:45 2018
 
 @author: Abdelrahman Abdalla
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # import copy
 import numpy as np
@@ -84,10 +87,10 @@ class OrientationPlanning:
 				# Compute feasible region, reachable region, and intersection
 				try:
 					feasible_region, actuation_polygons, computation_time = self.compDyn.try_iterative_projection_bretl(params)
-				except ValueError, e:
+				except ValueError as e:
 					feasible_region = False
 					if hasattr(e, 'message'):
-						print(e.message)
+						print((e.message))
 					else:
 						print(e)
 				if feasible_region is False:

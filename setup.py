@@ -35,7 +35,7 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU Lesser General Public License (LGPL)',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering :: Mathematics'],
     packages=find_packages(),
     include_package_data=True, install_requires=['numpy', 'scipy', 'pinocchio']

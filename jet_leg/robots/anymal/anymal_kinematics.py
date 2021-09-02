@@ -1,3 +1,8 @@
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 
 import pinocchio
@@ -71,9 +76,9 @@ class anymalKinematics():
                 IKsuccess = True
                 break
             if i >= IT_MAX:
-                print(
+                print((
                     "\n Warning: the iterative algorithm has not reached convergence to the desired precision. Error is: ",
-                    np.linalg.norm(e))
+                    np.linalg.norm(e)))
                 IKsuccess = False
                 break
             # print J_lin

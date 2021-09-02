@@ -4,6 +4,11 @@ Created on Mon May 28 13:00:59 2018
 
 @author: Romeo Orsolino
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 from jet_leg.computational_geometry.computational_geometry import ComputationalGeometry
 from jet_leg.computational_geometry.math_tools import Math
@@ -33,7 +38,7 @@ class ForcePolytopeConstraint:
             C1 = np.zeros((0, 0))
             d1 = np.zeros((1, 0))
             actuation_polygons = 0
-            print 'Out of workspace IK!!!'
+            print('Out of workspace IK!!!')
         else:
             jacobianMatrices = np.array([J_LF, J_RF, J_LH, J_RH])
             #            print 'Jacobians',jacobianMatrices
@@ -57,16 +62,16 @@ class ForcePolytopeConstraint:
                     [0, 0, 0, 0, -1]])
                 force_term = np.hstack([hexahedronHalfSpaceConstraints, np.zeros((6,2))])
                 halfSpaceConstraints = np.vstack([force_term, wrench_term])
-                print "contact torque", contact_torque_lims
+                print("contact torque", contact_torque_lims)
                 max_contact_torque = contact_torque_lims[1]
                 min_contact_torque = contact_torque_lims[0]
                 knownTerm = np.vstack([d, max_contact_torque, max_contact_torque, -min_contact_torque, -min_contact_torque])
-                print "knownTerm term" ,np.shape(knownTerm), knownTerm
+                print("knownTerm term" ,np.shape(knownTerm), knownTerm)
 
             C1 = block_diag(C1, halfSpaceConstraints)
             d1 = np.hstack([d1, knownTerm.T])
 
-            print "H description: ",C1, d1
+            print("H description: ",C1, d1)
             # print C1[0,0]
             # print "theta angles: "
             # for i in range(0,6):
