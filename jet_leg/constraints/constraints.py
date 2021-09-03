@@ -69,7 +69,7 @@ class Constraints:
 
         self.kin.inverse_kin(contactsBF, foot_vel)
 
-        forcePolytopes = LegForcePolytopes()
+        forcePolytopes = LegForcePolytopes(params.getNumberOfLegs())
         for j in stanceIndex:
             j = int(j)
             if constraint_mode[j] == 'ONLY_FRICTION':

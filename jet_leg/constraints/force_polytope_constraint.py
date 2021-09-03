@@ -71,7 +71,7 @@ class ForcePolytopeConstraint:
             C1 = block_diag(C1, halfSpaceConstraints)
             d1 = np.hstack([d1, knownTerm.T])
 
-            print("H description: ",C1, d1)
+            # print("H description: ",C1, d1)
             # print C1[0,0]
             # print "theta angles: "
             # for i in range(0,6):

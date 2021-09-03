@@ -151,6 +151,9 @@ class IterativeProjectionParameters:
 	def set_plane_normal(self, plane_normal):
 		self.plane_normal = plane_normal
 
+	def setNumberOfLegs(self, numberOfLegs):
+		self.numberOfLegs = numberOfLegs
+
 	def getContactsPosWF(self):
 		return self.contactsWF
 
@@ -227,11 +230,14 @@ class IterativeProjectionParameters:
 
 	def get_target_CoM_WF(self):
 		return self.target_CoM_WF
+		
+	def getNumberOfLegs(self):
+		return self.numberOfLegs
 
 	def getStanceIndex(self, stanceLegs):
 		stanceIdx = []
 		#        print 'stance', stanceLegs
-		for iter in range(0, 4):
+		for iter in range(0, self.numberOfLegs):
 			if stanceLegs[iter] == 1:
 				#                print 'new poly', stanceIndex, iter
 				stanceIdx = np.hstack([stanceIdx, int(iter)])

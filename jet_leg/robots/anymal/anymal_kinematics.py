@@ -82,7 +82,7 @@ class anymalKinematics():
                 IKsuccess = False
                 break
             # print J_lin
-            v = - np.linalg.pinv(J_lin) * e
+            v = np.matmul(- np.linalg.pinv(J_lin), e)
             q = pinocchio.integrate(self.model, q, v * DT)
             i += 1
             # print i

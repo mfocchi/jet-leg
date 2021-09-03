@@ -5,6 +5,10 @@ Created on Tue Jun 12 10:54:31 2018
 @author: Romeo Orsolino
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 
 from numpy import array
@@ -32,10 +36,10 @@ possible constraints for each foot:
  ONLY_FRICTION = only friction cone constraints are enforced
  FRICTION_AND_ACTUATION = both friction cone constraints and joint-torque limits
 '''
-constraint_mode_IP = ['FRICTION_AND_ACTUATION',
-                      'FRICTION_AND_ACTUATION',
-                      'FRICTION_AND_ACTUATION',
-                      'FRICTION_AND_ACTUATION']
+constraint_mode_IP = ['ONLY_FRICTION',
+                      'ONLY_FRICTION',
+                      'ONLY_FRICTION',
+                      'ONLY_FRICTION']
 
 # number of decision variables of the problem
 #n = nc*6
@@ -55,14 +59,14 @@ contactsWF = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot))
 mu = 0.8
 
 ''' stanceFeet vector contains 1 is the foot is on the ground and 0 if it is in the air'''
-stanceFeet = [0,1,1,0]
+stanceFeet = [1,1,1,1]
 
 randomSwingLeg = random.randint(0,3)
 tripleStance = False # if you want you can define a swing leg using this variable
 if tripleStance:
-    print 'Swing leg', randomSwingLeg
+    print('Swing leg', randomSwingLeg)
     stanceFeet[randomSwingLeg] = 0
-print 'stanceLegs ' ,stanceFeet
+print('stanceLegs ' ,stanceFeet)
 
 ''' now I define the normals to the surface of the contact points. By default they are all vertical now'''
 axisZ= array([[0.0], [0.0], [1.0]])
@@ -112,8 +116,8 @@ IP_points, force_polytopes, IP_computation_time = comp_dyn.iterative_projection_
 
 '''I now check whether the given CoM configuration is stable or not'''
 isConfigurationStable, contactForces, forcePolytopes = comp_dyn.check_equilibrium(params)
-print isConfigurationStable
-print 'contact forces', contactForces
+print(isConfigurationStable)
+print('contact forces', contactForces)
 
 '''Plotting the contact points in the 3D figure'''
 fig = plt.figure()
@@ -153,7 +157,7 @@ for j in range(0,nc): # this will only show the contact positions and normals of
     ax.scatter(contactsWF[idx, 0], contactsWF[idx, 1], 0.0, c='k', s=100)
     ax.add_artist(a)
 
-print 'sum of vertical forces is', fz_tot
+print('sum of vertical forces is', fz_tot)
 
 ''' plotting Iterative Projection points '''
 plotter = Plotter()
