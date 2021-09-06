@@ -151,8 +151,9 @@ class IterativeProjectionParameters:
 	def set_plane_normal(self, plane_normal):
 		self.plane_normal = plane_normal
 
-	def setNumberOfLegs(self, numberOfLegs):
-		self.numberOfLegs = numberOfLegs
+		
+	def setNoOfLegs(self, numberOfLegs):
+		self.no_of_legs = numberOfLegs
 
 	def getContactsPosWF(self):
 		return self.contactsWF
@@ -231,13 +232,13 @@ class IterativeProjectionParameters:
 	def get_target_CoM_WF(self):
 		return self.target_CoM_WF
 		
-	def getNumberOfLegs(self):
-		return self.numberOfLegs
+	def getNoOfLegs(self):
+		return self.no_of_legs
 
 	def getStanceIndex(self, stanceLegs):
 		stanceIdx = []
 		#        print 'stance', stanceLegs
-		for iter in range(0, self.numberOfLegs):
+		for iter in range(0, self.no_of_legs):
 			if stanceLegs[iter] == 1:
 				#                print 'new poly', stanceIndex, iter
 				stanceIdx = np.hstack([stanceIdx, int(iter)])
@@ -254,17 +255,22 @@ class IterativeProjectionParameters:
 		# Changing torque limits in urdf still doesn't change
 		# value used by trunk controller and Jet-leg.
 		# For now, change manually here.
+		self.torque_limits = []
+		self.leg_self_weight = []
 		for leg in range(0, self.no_of_legs):
-			self.torque_limits[leg] = received_data.tau_lim.data[self.stride * leg: self.stride * leg + 3]
-			self.leg_self_weight[leg] = received_data.leg_self_weight.data[self.stride * leg: self.stride * leg + 3]
+			self.torque_limits.append(received_data.tau_lim.data[self.stride * leg: self.stride * leg + 3])
+			self.leg_self_weight.append(received_data.leg_self_weight.data[self.stride * leg: self.stride * leg + 3])
 
 		# Joint Limits
+		self.joint_limits_max = np.zeros((self.no_of_legs, 3))
+		self.joint_limits_min = np.zeros((self.no_of_legs, 3))
 		for leg in range(0, self.no_of_legs):
 			self.joint_limits_max[leg] = received_data.q_lim_max.data[self.stride * leg: self.stride * leg + 3]
 		for leg in range(0, self.no_of_legs):
 			self.joint_limits_min[leg] = received_data.q_lim_min.data[self.stride * leg: self.stride * leg + 3]
 		#
 		# 		# the inputs are all in the WF this way we can compute generic regions for generic contact sets and generic com position
+		self.contactsWF = np.zeros((self.no_of_legs, 3))
 		for leg in range(0, self.no_of_legs):
 			self.contactsWF[leg] = received_data.contactsWF.data[self.stride * leg: self.stride * leg + 3]
 
@@ -280,6 +286,8 @@ class IterativeProjectionParameters:
 		# 		# print 'ext force ',self.externalForceWF
 
 		# 		# they are in WF
+		
+		self.normals = np.zeros((self.no_of_legs, 3))
 		for leg in range(0, self.no_of_legs):
 			self.normals[leg] = received_data.normals.data[self.stride * leg: self.stride * leg + 3]
 
@@ -302,6 +310,9 @@ class IterativeProjectionParameters:
 			self.target_CoM_WF[dir] = received_data.target_CoM_WF[dir]
 
 		self.comLinAcc = np.array(received_data.desired_acceleration)
+
+	def getNoOfLegsFromMsg(self, received_data):
+		self.no_of_legs = received_data.no_of_legs
 
 	def getFutureStanceFeetFlags(self, received_data):
 

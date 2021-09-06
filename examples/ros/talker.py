@@ -239,10 +239,7 @@ class HyQSim(threading.Thread):
 	def computeFeasibleRegion(self, params, ng, compDyn):
 		constraint_mode_IP = 'FRICTION_AND_ACTUATION'
 		# constraint_mode_IP = 'ONLY_ACTUATION'
-		params.setConstraintModes([constraint_mode_IP,
-								   constraint_mode_IP,
-								   constraint_mode_IP,
-								   constraint_mode_IP])
+		params.setConstraintModes([constraint_mode_IP]*params.getNoOfLegs())
 		params.setNumberOfFrictionConesEdges(ng)
 		FEASIBLE_REGION, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
 
@@ -279,6 +276,7 @@ def talker():
 	first = time.time()
 	# print p.hyq_debug_msg.tau_lim.data[0]
 	time.sleep(1)
+	params.getNoOfLegsFromMsg(p.hyq_debug_msg)
 	params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
 	# foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
 	# orient_params.getParamsFromRosDebugTopic(p.hyq_orientation_request_msg)
@@ -327,10 +325,7 @@ def talker():
 
 		if (p.plotFrictionRegion):
 			constraint_mode_IP = 'ONLY_FRICTION'
-			params.setConstraintModes([constraint_mode_IP,
-									   constraint_mode_IP,
-									   constraint_mode_IP,
-									   constraint_mode_IP])
+			params.setConstraintModes([constraint_mode_IP]*params.getNoOfLegs())
 			params.setNumberOfFrictionConesEdges(ng)
 			frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
 			if frictionRegion is not False:
@@ -440,10 +435,7 @@ def talker():
 				#         ONLY_ACTUATION, ONLY_FRICTION or FRICTION_AND_ACTUATION
 				#        3 - FRICTION REGION
 				constraint_mode_IP = 'ONLY_FRICTION'
-				params.setConstraintModes([constraint_mode_IP,
-										   constraint_mode_IP,
-										   constraint_mode_IP,
-										   constraint_mode_IP])
+				params.setConstraintModes([constraint_mode_IP]*params.getNoOfLegs())
 				params.setNumberOfFrictionConesEdges(ng)
 
 				params.contactsWF[params.actual_swing] = foothold_params.footOptions[
