@@ -13,6 +13,8 @@ from .math_tools import Math
 class IterativeProjectionParameters:
 	def __init__(self):
 
+		self.robot_name = 'hyq'
+
 		self.no_of_legs = 4
 		self.stride = 3 # Used for receiving data from ROS arrays
 
@@ -151,6 +153,8 @@ class IterativeProjectionParameters:
 	def set_plane_normal(self, plane_normal):
 		self.plane_normal = plane_normal
 
+	def setRobotName(self,robotName):
+		self.robot_name = robotName
 		
 	def setNoOfLegs(self, numberOfLegs):
 		self.no_of_legs = numberOfLegs
@@ -310,6 +314,9 @@ class IterativeProjectionParameters:
 			self.target_CoM_WF[dir] = received_data.target_CoM_WF[dir]
 
 		self.comLinAcc = np.array(received_data.desired_acceleration)
+
+	def getRobotNameFromMsg(self, received_data):
+		self.robot_name = received_data.robot_name
 
 	def getNoOfLegsFromMsg(self, received_data):
 		self.no_of_legs = received_data.no_of_legs

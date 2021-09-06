@@ -276,6 +276,7 @@ def talker():
 	first = time.time()
 	# print p.hyq_debug_msg.tau_lim.data[0]
 	time.sleep(1)
+	params.getRobotNameFromMsg(p.hyq_debug_msg)
 	params.getNoOfLegsFromMsg(p.hyq_debug_msg)
 	params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
 	# foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
