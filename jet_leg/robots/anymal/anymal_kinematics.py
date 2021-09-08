@@ -128,3 +128,19 @@ class anymalKinematics():
     def getLegJacobians(self):
         isOutOfWS = not self.ik_success
         return *self.feet_jac, isOutOfWS
+
+    def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
+
+        no_of_legs_to_check = joint_positions.size/3
+        q = joint_positions.reshape((no_of_legs_to_check, 3))
+        # print "q: ", q
+        # print "leq than max ", np.all(np.less_equal(q, joint_limits_max))
+        # print "geq than min ", np.all(np.greater_equal(q, joint_limits_min))
+        return not np.all(np.less_equal(q, joint_limits_max)) \
+               or not np.all(np.greater_equal(q, joint_limits_min))
+
+    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel):
+        [q, success] = self.fixedBaseInverseKinematics(contactsBF_check)
+        # print "q:", q
+
+        return self.isOutOfJointLims(q, joint_limits_max, joint_limits_min)
