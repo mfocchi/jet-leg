@@ -13,9 +13,9 @@ import yaml
 
 class anymalKinematics():
     def __init__(self):
-        self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/anymal/'
-        self.URDF = self.PKG + 'urdf/anymal_boxy.urdf'
-        self.FEET = self.PKG + 'feet_names_ordered.yaml'
+        self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/hyqreal/'
+        self.URDF = self.PKG + 'urdf/hyqreal.urdf'
+        self.FEET = self.PKG + 'robot_data.yaml'
         if self.PKG is None:
             self.robot = RobotWrapper.BuildFromURDF(self.URDF)
         else:
@@ -25,14 +25,21 @@ class anymalKinematics():
         self.data = self.robot.data
         self.feet_jac = None
         self.ik_success = False
-    
+
+        yaml_data = []
+        self.urdf_feet_names = []
+        self.default_q = []
         ## Can be used to compute q in an feet order similar to feet variables
         # Get feet frame names in a similar order to feet variables (position, etc...)
         with open(self.FEET, 'r') as stream:
             try:
-                self.urdf_feet_names = yaml.safe_load(stream)
+                yaml_data = yaml.safe_load(stream)
+
             except yaml.YAMLError as exc:
                 print(exc)
+        
+        self.urdf_feet_names = yaml_data['Feet_names']
+        self.default_q = yaml_data['Default_q']
         # Get feet frame names in an alphabatical order to match pinocchio kinematics
         self.urdf_feet_names_pinocchio = []
         for frame in self.model.frames:
@@ -53,7 +60,7 @@ class anymalKinematics():
     def footInverseKinematicsFixedBase(self, foot_pos_des, frame_name):
         frame_id = self.model.getFrameId(frame_name)
         blockIdx = self.getBlockIndex(frame_name)
-        anymal_q0 = np.vstack([-0.1, 0.7, -1., -0.1, -0.7, 1., 0.1, 0.7, -1., 0.1, -0.7, 1.])
+        anymal_q0 = np.vstack(self.default_q)
         q = anymal_q0
         eps = 0.005
         IT_MAX = 200
