@@ -48,11 +48,6 @@
   <!-- Links -->
   <!-- Footprint link -->
   <link name="base_link">
-    <visual>
-      <geometry>
-        <cylinder length="0.01" radius="0.01"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Trunk link -->
   <link name="trunk">
@@ -61,18 +56,6 @@
       <mass value="59"/>
       <inertia ixx="1.498728" ixy="-0.007369" ixz="-0.189135" iyy="9.492381" iyz="0.000185" izz="9.012359"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/trunk/combined_torso.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/trunk/combined_torso_decimated.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <gazebo reference="trunk">
     <kp>100000000.0</kp>
@@ -86,9 +69,6 @@
   <sensor name="trunk_contact_sensor" type="contact">
     <always_on>true</always_on>
     <update_rate>100.0</update_rate>
-    <contact>
-      <collision>trunk_collision</collision>
-    </contact>
     <plugin filename="libgazebo_ros_bumper.so" name="trunk_bumper">
       <bumperTopicName>/trunk_sensor</bumperTopicName>
       <frameName>base_link</frameName>
@@ -139,14 +119,6 @@
       <mass value="4.973275"/>
       <inertia ixx="0.011231" ixy="-0.000592" ixz="0.000225" iyy="0.015768" iyz="0.000224" izz="0.016863"/>
     </inertial>
-    <visual>
-      <origin rpy="0 -1.5707963268 -1.5707963268" xyz="0 -0.046 0"/>
-      <geometry>
-         --&gt;
-				
-        <cylinder length="0.117" radius="0.0444"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Upper leg link -->
   <link name="lf_upperleg">
@@ -155,18 +127,6 @@
       <mass value="5.877927"/>
       <inertia ixx="0.016432" ixy="0.001863" ixz="0.003897" iyy="0.075737" iyz="-0.00024" izz="0.079267"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Lower leg link -->
   <link name="lf_lowerleg">
@@ -175,35 +135,9 @@
       <mass value="1.291954"/>
       <inertia ixx="0.001088" ixy="-0.000572" ixz="0.000118" iyy="0.029215" iyz="0.00046" izz="0.029772"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-      <material name="white"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg_decimated.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Foot link -->
   <link name="lf_foot">
-    <visual>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-      <material name="black"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Hip assembly -->
   <transmission name="lf_haa_trans">
@@ -263,9 +197,6 @@
     <sensor name="lf_shin_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>lf_lowerleg_collision</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="lf_shin_bumper">
@@ -283,9 +214,6 @@
     <sensor name="lf_foot_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>lf_lowerleg_fixed_joint_lump__lf_foot_collision_1</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="lf_foot_bumper">
@@ -340,14 +268,6 @@
       <mass value="4.973275"/>
       <inertia ixx="0.011231" ixy="-0.000592" ixz="0.000225" iyy="0.015768" iyz="0.000224" izz="0.016863"/>
     </inertial>
-    <visual>
-      <origin rpy="0 -1.5707963268 -1.5707963268" xyz="0 -0.046 0"/>
-      <geometry>
-         --&gt;
-				
-        <cylinder length="0.117" radius="0.0444"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Upper leg link -->
   <link name="rf_upperleg">
@@ -356,18 +276,6 @@
       <mass value="5.877927"/>
       <inertia ixx="0.016432" ixy="0.001863" ixz="-0.003897" iyy="0.075737" iyz="0.00024" izz="0.079267"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Lower leg link -->
   <link name="rf_lowerleg">
@@ -376,35 +284,9 @@
       <mass value="1.291954"/>
       <inertia ixx="0.001088" ixy="-0.000572" ixz="0.000118" iyy="0.029215" iyz="0.00046" izz="0.029772"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-      <material name="white"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg_decimated.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Foot link -->
   <link name="rf_foot">
-    <visual>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-      <material name="black"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Hip assembly -->
   <transmission name="rf_haa_trans">
@@ -464,9 +346,6 @@
     <sensor name="rf_shin_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>rf_lowerleg_collision</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="rf_shin_bumper">
@@ -484,9 +363,6 @@
     <sensor name="rf_foot_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>rf_lowerleg_fixed_joint_lump__rf_foot_collision_1</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="rf_foot_bumper">
@@ -541,14 +417,6 @@
       <mass value="4.973275"/>
       <inertia ixx="0.011231" ixy="-0.000592" ixz="0.000225" iyy="0.015768" iyz="0.000224" izz="0.016863"/>
     </inertial>
-    <visual>
-      <origin rpy="0 -1.5707963268 -1.5707963268" xyz="0 -0.046 0"/>
-      <geometry>
-         --&gt;
-				
-        <cylinder length="0.117" radius="0.0444"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Upper leg link -->
   <link name="lh_upperleg">
@@ -557,18 +425,6 @@
       <mass value="5.877927"/>
       <inertia ixx="0.016432" ixy="0.001863" ixz="0.003897" iyy="0.075737" iyz="-0.00024" izz="0.079267"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Lower leg link -->
   <link name="lh_lowerleg">
@@ -577,35 +433,9 @@
       <mass value="1.291954"/>
       <inertia ixx="0.001088" ixy="-0.000572" ixz="0.000118" iyy="0.029215" iyz="0.00046" izz="0.029772"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-      <material name="white"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg_decimated.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Foot link -->
   <link name="lh_foot">
-    <visual>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-      <material name="black"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Hip assembly -->
   <transmission name="lh_haa_trans">
@@ -665,9 +495,6 @@
     <sensor name="lh_shin_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>lh_lowerleg_collision</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="lh_shin_bumper">
@@ -685,9 +512,6 @@
     <sensor name="lh_foot_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>lh_lowerleg_fixed_joint_lump__lh_foot_collision_1</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="lh_foot_bumper">
@@ -742,14 +566,6 @@
       <mass value="4.973275"/>
       <inertia ixx="0.011231" ixy="-0.000592" ixz="0.000225" iyy="0.015768" iyz="0.000224" izz="0.016863"/>
     </inertial>
-    <visual>
-      <origin rpy="0 -1.5707963268 -1.5707963268" xyz="0 -0.046 0"/>
-      <geometry>
-         --&gt;
-				
-        <cylinder length="0.117" radius="0.0444"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Upper leg link -->
   <link name="rh_upperleg">
@@ -758,18 +574,6 @@
       <mass value="5.877927"/>
       <inertia ixx="0.016432" ixy="0.001863" ixz="-0.003897" iyy="0.075737" iyz="0.00024" izz="0.079267"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/upperleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Lower leg link -->
   <link name="rh_lowerleg">
@@ -778,35 +582,9 @@
       <mass value="1.291954"/>
       <inertia ixx="0.001088" ixy="-0.000572" ixz="0.000118" iyy="0.029215" iyz="0.00046" izz="0.029772"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-      <material name="white"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="package://hyqreal_description/meshes/leg/lowerleg_decimated.dae" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Foot link -->
   <link name="rh_foot">
-    <visual>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-      <material name="black"/>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <sphere radius="0.032"/>
-      </geometry>
-    </collision>
   </link>
   <!-- Hip assembly -->
   <transmission name="rh_haa_trans">
@@ -866,9 +644,6 @@
     <sensor name="rh_shin_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>rh_lowerleg_collision</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="rh_shin_bumper">
@@ -886,9 +661,6 @@
     <sensor name="rh_foot_contact_sensor" type="contact">
       <always_on>true</always_on>
       <update_rate>250.0</update_rate>
-      <contact>
-        <collision>rh_lowerleg_fixed_joint_lump__rh_foot_collision_1</collision>
-      </contact>
       <!-- the sensor readings in terms of force torques are expressed in the lowerleg frame
                     because gazebo lumps the fake footframe with the real parent link, the normals are in the world frame-->
       <plugin filename="libgazebo_ros_bumper.so" name="rh_foot_bumper">
@@ -939,12 +711,6 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <inertia ixx="0.00" ixy="0.0" ixz="0.0" iyy="0.00" iyz="0.0" izz="0.00"/>
     </inertial>
-    <visual>
-      <!-- fake visual to let URDF parser happy -->
-      <geometry>
-        <sphere radius="0.0005"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Fake link exactly located at the sensing point for the x-axis -->
   <link name="trunk_imu_sensing_point_x">
@@ -953,12 +719,6 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <inertia ixx="0.00" ixy="0.0" ixz="0.0" iyy="0.00" iyz="0.0" izz="0.00"/>
     </inertial>
-    <visual>
-      <!-- fake visual to let URDF parser happy -->
-      <geometry>
-        <sphere radius="0.0005"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Fake link expressing the exact sensing point for the y-axis -->
   <link name="trunk_imu_sensing_point_y">
@@ -967,12 +727,6 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <inertia ixx="0.00" ixy="0.0" ixz="0.0" iyy="0.00" iyz="0.0" izz="0.00"/>
     </inertial>
-    <visual>
-      <!-- fake visual to let URDF parser happy -->
-      <geometry>
-        <sphere radius="0.0005"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Fake link expressing the exact sensing point for the z-axis -->
   <link name="trunk_imu_sensing_point_z">
@@ -981,12 +735,6 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <inertia ixx="0.00" ixy="0.0" ixz="0.0" iyy="0.00" iyz="0.0" izz="0.00"/>
     </inertial>
-    <visual>
-      <!-- fake visual to let URDF parser happy -->
-      <geometry>
-        <sphere radius="0.0005"/>
-      </geometry>
-    </visual>
   </link>
   <!-- Link -->
   <link name="trunk_imu_mount">
@@ -998,15 +746,6 @@
       <!-- ixx = iyy = 1/12*0.69*(3*(88.9/2000)^2+(73.7/1000)^2) -->
       <inertia ixx="0.000653148" ixy="0.0" ixz="0.0" iyy="0.000653148" iyz="0.0" izz="0.000681652"/>
     </inertial>
-    <visual>
-      <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://sensors_description/meshes/sensors/kvh_1775.dae" scale="1 1 1"/>
-      </geometry>
-      <material name="aluminium">
-        <color rgba="0.35 0.35 0.35 1"/>
-      </material>
-    </visual>
   </link>
   <gazebo>
     <plugin filename="libgazebo_ros_imu.so" name="trunk_imu_controller">
@@ -1058,21 +797,6 @@
     <child link="realsense/front/camera_link"/>
   </joint>
   <link name="realsense/front/camera_link">
-    <visual>
-      <origin rpy="1.57079632679 0 1.57079632679" xyz="0.0149 -0.0175 0"/>
-      <geometry>
-        <!--box size="${d435_cam_width} ${d435_cam_height} ${d435_cam_depth}"/-->
-        <mesh filename="package://realsense2_description/meshes/d435.dae"/>
-      </geometry>
-      <material name="aluminum"/>
-    </visual>
-    <collision>
-      <!--origin xyz="0.0 0.0 ${r430_cam_height/2}" rpy="0 0 0"/-->
-      <origin rpy="0 0 0" xyz="0 -0.0175 0"/>
-      <geometry>
-        <box size="0.02505 0.09 0.025"/>
-      </geometry>
-    </collision>
     <!-- The following are not reliable values, and should not be used for modeling -->
     <inertial>
       <mass value="0.564"/>
@@ -1187,21 +911,6 @@
     <child link="realsense/back/camera_link"/>
   </joint>
   <link name="realsense/back/camera_link">
-    <visual>
-      <origin rpy="1.57079632679 0 1.57079632679" xyz="0.0149 -0.0175 0"/>
-      <geometry>
-        <!--box size="${d435_cam_width} ${d435_cam_height} ${d435_cam_depth}"/-->
-        <mesh filename="package://realsense2_description/meshes/d435.dae"/>
-      </geometry>
-      <material name="aluminum"/>
-    </visual>
-    <collision>
-      <!--origin xyz="0.0 0.0 ${r430_cam_height/2}" rpy="0 0 0"/-->
-      <origin rpy="0 0 0" xyz="0 -0.0175 0"/>
-      <geometry>
-        <box size="0.02505 0.09 0.025"/>
-      </geometry>
-    </collision>
     <!-- The following are not reliable values, and should not be used for modeling -->
     <inertial>
       <mass value="0.564"/>
