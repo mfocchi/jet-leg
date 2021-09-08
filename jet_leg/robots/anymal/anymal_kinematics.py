@@ -8,12 +8,14 @@ import os
 import pinocchio
 from pinocchio.robot_wrapper import RobotWrapper
 from pinocchio.utils import *
+import yaml
 
 
 class anymalKinematics():
     def __init__(self):
         self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/anymal/'
         self.URDF = self.PKG + 'urdf/anymal_boxy.urdf'
+        self.FEET = self.PKG + 'feet_names_ordered.yaml'
         if self.PKG is None:
             self.robot = RobotWrapper.BuildFromURDF(self.URDF)
         else:
@@ -21,27 +23,31 @@ class anymalKinematics():
         self.robot = RobotWrapper.BuildFromURDF(self.URDF, [self.PKG])
         self.model = self.robot.model
         self.data = self.robot.data
-        self.LF_foot_jac = None
-        self.LH_foot_jac = None
-        self.RF_foot_jac = None
-        self.RH_foot_jac = None
-        self.urdf_foot_name_lf = 'LF_FOOT'
-        self.urdf_foot_name_lh = 'LH_FOOT'
-        self.urdf_foot_name_rf = 'RF_FOOT'
-        self.urdf_foot_name_rh = 'RH_FOOT'
+        self.feet_jac = None
         self.ik_success = False
+    
+        ## Can be used to compute q in an feet order similar to feet variables
+        # Get feet frame names in a similar order to feet variables (position, etc...)
+        with open(self.FEET, 'r') as stream:
+            try:
+                self.urdf_feet_names = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+        # Get feet frame names in an alphabatical order to match pinocchio kinematics
+        self.urdf_feet_names_pinocchio = []
+        for frame in self.model.frames:
+            if frame.name in self.urdf_feet_names:
+                self.urdf_feet_names_pinocchio.append(frame.name)
+    
 
     def getBlockIndex(self, frame_name):
-        if frame_name == self.urdf_foot_name_lf:
-            idx = 0
-        elif frame_name == self.urdf_foot_name_lh:
-            idx = 3
-        elif frame_name == self.urdf_foot_name_rf:
-            idx = 6
-        elif frame_name == self.urdf_foot_name_rh:
-            idx = 9
+        for i in range(len(self.urdf_feet_names_pinocchio)):
+            if frame_name == self.urdf_feet_names_pinocchio[i]:
+                print(frame_name)
+                idx = i * 3
+                print(idx)
+                break
 
-        # print ('index is',idx)
         return idx
 
     def footInverseKinematicsFixedBase(self, foot_pos_des, frame_name):
@@ -93,38 +99,25 @@ class anymalKinematics():
 
     def fixedBaseInverseKinematics(self, feetPosDes):
 
-        self.LF_foot_jac = []
-        self.LH_foot_jac = []
-        self.RF_foot_jac = []
-        self.RH_foot_jac = []
-        leg_ik_success = np.zeros((4))
+        no_of_feet = len(self.urdf_feet_names)
+        self.feet_jac = []
+        q = np.zeros((no_of_feet,3))
+        leg_ik_success = np.zeros((no_of_feet))
 
-        f_p_des = np.array(feetPosDes[0, :]).T
-        q_LF, self.LF_foot_jac, err, leg_ik_success[0] = self.footInverseKinematicsFixedBase(f_p_des,
-                                                                                             self.urdf_foot_name_lf)
+        for leg in range(no_of_feet):
+            '''Compute IK in similar order to feet location variable'''
+            f_p_des = np.array(feetPosDes[leg, :]).T
+            q[leg], foot_jac, err, leg_ik_success[leg] = self.footInverseKinematicsFixedBase(f_p_des,
+                                                                                                self.urdf_feet_names[leg])
+            self.feet_jac.append(foot_jac)
 
-        f_p_des = np.array(feetPosDes[2, :]).T
-        q_LH, self.LH_foot_jac, err, leg_ik_success[2] = self.footInverseKinematicsFixedBase(f_p_des,
-                                                                                             self.urdf_foot_name_lh)
 
-        f_p_des = np.array(feetPosDes[1, :]).T
-        q_RF, self.RF_foot_jac, err, leg_ik_success[1] = self.footInverseKinematicsFixedBase(f_p_des,
-                                                                                             self.urdf_foot_name_rf)
-
-        f_p_des = np.array(feetPosDes[3, :]).T
-        q_RH, self.RH_foot_jac, err, leg_ik_success[3] = self.footInverseKinematicsFixedBase(f_p_des,
-                                                                                             self.urdf_foot_name_rh)
-
-        self.ik_success = bool(leg_ik_success[0] and leg_ik_success[1] and leg_ik_success[2] and leg_ik_success[3])
+        self.ik_success = all(leg_ik_success)
 
         if self.ik_success is False:
             print('Warning, IK failed. Jacobian is singular')
-
-        '''please NOTICE here the alphabetical order of the legs in the vector q: LF -> LH -> RF -> RH '''
-        q = np.vstack([q_LF, q_LH, q_RF, q_RH])
-
         return q
 
     def getLegJacobians(self):
         isOutOfWS = not self.ik_success
-        return self.LF_foot_jac, self.RF_foot_jac, self.LH_foot_jac, self.RH_foot_jac, isOutOfWS
+        return *self.feet_jac, isOutOfWS
