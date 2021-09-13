@@ -9,6 +9,7 @@ import numpy as np
 from jet_leg.robots.hyq.hyq_model import HyqModel
 from jet_leg.robots.anymal.anymal_model import AnymalModel
 from jet_leg.robots.hyqreal.hyqreal_model import HyqrealModel
+from jet_leg.robots.crex.crex_model import CrexModel
 
 
 class RobotModelInterface:
@@ -20,6 +21,10 @@ class RobotModelInterface:
             self.robotModel = AnymalModel()
         elif self.robotName == 'hyqreal':
             self.robotModel = HyqrealModel()
-
+        elif self.robotName == 'hyqreal':
+            self.robotModel = HyqrealModel()
+        elif self.robotName == 'crex':
+            self.robotModel = CrexModel()
+            
         self.joint_torque_limits = self.robotModel.joint_torque_limits
         self.contact_torque_limits = self.robotModel.contact_torque_limits

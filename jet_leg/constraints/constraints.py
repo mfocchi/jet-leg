@@ -41,9 +41,9 @@ class Constraints:
         comPositionBF = params.getCoMPosBF()
         rpy = params.getOrientation()
         #compute the contacs in the base frame for the inv kineamtics
-        contactsBF = np.zeros((4,3))
+        contactsBF = np.zeros((params.getNoOfLegs(),3))
 
-        for j in np.arange(0, 4):
+        for j in np.arange(0, params.getNoOfLegs()):
             j = int(j)
             contactsBF[j,:]= np.add( np.dot(self.math.rpyToRot(rpy[0], rpy[1], rpy[2]), (contactsWF[j,:] - comPositionWF)), comPositionBF)
 
