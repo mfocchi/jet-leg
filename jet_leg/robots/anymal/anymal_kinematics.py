@@ -64,6 +64,12 @@ class anymalKinematics():
         DT = 1e-1
         err = np.zeros((3, 1))
         e = np.zeros((3, 1))
+        damp = 1e-12
+
+        # alpha = 1  # Step size
+        # # For line search only
+        # gamma = 0.5
+        # beta = 0.5
 
         i = 0
         while True:
@@ -92,10 +98,28 @@ class anymalKinematics():
                 IKsuccess = False
                 break
             # print J_lin
-            v = np.matmul(- np.linalg.pinv(J_lin), e)
+            v = - J_lin.T.dot(np.linalg.solve(J_lin.dot(J_lin.T) + damp * np.eye(3), e))
             q = pinocchio.integrate(self.model, q, v * DT)
-            i += 1
+            # q_next = q + v*alpha
+
+            ## Not working - Alternative method to integrate q
+            # #Compute error of next step
+            # pinocchio.forwardKinematics(self.model, self.data, q_next)
+            # pinocchio.framesForwardKinematics(self.model, self.data, q_next)
+            # foot_pos_next = self.data.oMf[frame_id].translation
+            # e_next = np.zeros(3)
+            # e_next[0] = foot_pos_next[[0]] - foot_pos_des[0]
+            # e_next[1] = foot_pos_next[[1]] - foot_pos_des[1]
+            # e_next[2] = foot_pos_next[[2]] - foot_pos_des[2]
+            # print("E: ", e)
+            # print("E next: ", e_next)
+            # e_check = np.linalg.norm(e_next) - np.linalg.norm(e)
+            # threshold = gamma*alpha*np.linalg.norm(e)
+            # if e_check <= threshold:
+            #     alpha = beta*alpha
+            # q = q_next 
             # print i
+            i += 1
 
         q_leg = q[blockIdx:blockIdx + 3]
         J_leg = J_lin[:, blockIdx:blockIdx + 3]
