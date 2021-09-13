@@ -13,14 +13,13 @@ import yaml
 
 class anymalKinematics():
     def __init__(self):
-        self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/hyqreal/'
-        self.URDF = self.PKG + 'urdf/hyqreal.urdf'
+        self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/anymal/'
+        self.URDF = self.PKG + 'urdf/anymal_boxy.urdf'
         self.FEET = self.PKG + 'robot_data.yaml'
         if self.PKG is None:
             self.robot = RobotWrapper.BuildFromURDF(self.URDF)
         else:
             self.robot = RobotWrapper.BuildFromURDF(self.URDF, [self.PKG])
-        self.robot = RobotWrapper.BuildFromURDF(self.URDF, [self.PKG])
         self.model = self.robot.model
         self.data = self.robot.data
         self.feet_jac = None
@@ -44,24 +43,22 @@ class anymalKinematics():
         self.urdf_feet_names_pinocchio = []
         for frame in self.model.frames:
             if frame.name in self.urdf_feet_names:
-                self.urdf_feet_names_pinocchio.append(frame.name)
-    
+                self.urdf_feet_names_pinocchio.append(frame.name)   
 
     def getBlockIndex(self, frame_name):
         for i in range(len(self.urdf_feet_names_pinocchio)):
             if frame_name == self.urdf_feet_names_pinocchio[i]:
-                print(frame_name)
                 idx = i * 3
-                print(idx)
                 break
 
         return idx
 
     def footInverseKinematicsFixedBase(self, foot_pos_des, frame_name):
         frame_id = self.model.getFrameId(frame_name)
+        # Get index of frame to retreive data from Pinocchio variables
         blockIdx = self.getBlockIndex(frame_name)
         anymal_q0 = np.vstack(self.default_q)
-        q = anymal_q0
+        q = anymal_q0.ravel()
         eps = 0.005
         IT_MAX = 200
         DT = 1e-1
@@ -80,8 +77,8 @@ class anymalKinematics():
             e[0] = foot_pos[[0]] - foot_pos_des[0]
             e[1] = foot_pos[[1]] - foot_pos_des[1]
             e[2] = foot_pos[[2]] - foot_pos_des[2]
+            J = pinocchio.computeFrameJacobian(self.model, self.data, q, frame_id, pinocchio.ReferenceFrame.LOCAL_WORLD_ALIGNED)
 
-            J = pinocchio.frameJacobian(self.model, self.data, q, frame_id)
             J_lin = J[:3, :]
 
             if np.linalg.norm(e) < eps:
@@ -102,7 +99,7 @@ class anymalKinematics():
 
         q_leg = q[blockIdx:blockIdx + 3]
         J_leg = J_lin[:, blockIdx:blockIdx + 3]
-        return q_leg, J_leg, err, IKsuccess
+        return q_leg.ravel(), J_leg, err, IKsuccess
 
     def fixedBaseInverseKinematics(self, feetPosDes):
 
