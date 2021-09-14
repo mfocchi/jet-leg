@@ -259,11 +259,11 @@ class IterativeProjectionParameters:
 		# Changing torque limits in urdf still doesn't change
 		# value used by trunk controller and Jet-leg.
 		# For now, change manually here.
-		self.torque_limits = []
-		self.leg_self_weight = []
+		self.torque_limits = np.zeros((self.no_of_legs, 3))
+		self.leg_self_weight = np.zeros((self.no_of_legs, 3))
 		for leg in range(0, self.no_of_legs):
-			self.torque_limits.append(received_data.tau_lim.data[self.stride * leg: self.stride * leg + 3])
-			self.leg_self_weight.append(received_data.leg_self_weight.data[self.stride * leg: self.stride * leg + 3])
+			self.torque_limits[leg] = (received_data.tau_lim.data[self.stride * leg: self.stride * leg + 3])
+			self.leg_self_weight[leg] = (received_data.leg_self_weight.data[self.stride * leg: self.stride * leg + 3])
 
 		# Joint Limits
 		self.joint_limits_max = np.zeros((self.no_of_legs, 3))

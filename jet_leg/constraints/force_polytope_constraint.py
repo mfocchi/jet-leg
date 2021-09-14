@@ -32,7 +32,7 @@ class ForcePolytopeConstraint:
 
     def compute_actuation_constraints(self, contact_iterator, torque_limits, leg_self_weight, euler_angles, point_contact, contact_torque_lims):
 
-        J_LF, J_RF, J_LH, J_RH, isOutOfWorkspace = self.kin.get_jacobians()
+        jacobianMatrices, isOutOfWorkspace = self.kin.get_jacobians()
         # print J_LF, J_RF, J_LH, J_RH
         if isOutOfWorkspace:
             C1 = np.zeros((0, 0))
@@ -40,7 +40,6 @@ class ForcePolytopeConstraint:
             actuation_polygons = 0
             print('Out of workspace IK!!!')
         else:
-            jacobianMatrices = np.array([J_LF, J_RF, J_LH, J_RH])
             #            print 'Jacobians',jacobianMatrices
             actuation_polygons = self.computeActuationPolygons(jacobianMatrices, torque_limits, leg_self_weight)
             rot = Rot.from_euler('xyz', [euler_angles[0], euler_angles[1], euler_angles[2]], degrees=False)
@@ -121,11 +120,11 @@ class ForcePolytopeConstraint:
         #        if np.sum(stanceFeet) == 4:
         #            print 'test', torque_limits[0]
 
-        actuation_polygons = np.array(
-            [self.computeLegActuationPolygon(legsJacobians[0], torque_limits[0], leg_self_weight[0]),
-             self.computeLegActuationPolygon(legsJacobians[1], torque_limits[1], leg_self_weight[1]),
-             self.computeLegActuationPolygon(legsJacobians[2], torque_limits[2], leg_self_weight[2]),
-             self.computeLegActuationPolygon(legsJacobians[3], torque_limits[3], leg_self_weight[3])])
+        actuation_polygons = []
+        for leg in range(len(legsJacobians)):
+            actuation_polygons.append(self.computeLegActuationPolygon(
+                                        legsJacobians[leg],torque_limits[leg], leg_self_weight[leg]))
+        actuation_polygons = np.array(actuation_polygons)
         #        if np.sum(stanceFeet) == 3:
         ##            print 'test', torque_limits, stanceIndex
         #            actuation_polygons = np.array([self.computeLegActuationPolygon(legsJacobians[int(stanceIndex[0])], torque_limits[int(stanceIndex[0])]),

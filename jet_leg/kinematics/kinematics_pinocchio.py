@@ -148,7 +148,7 @@ class robotKinematics():
 
     def getLegJacobians(self):
         isOutOfWS = not self.ik_success
-        return *self.feet_jac, isOutOfWS
+        return self.feet_jac, isOutOfWS
 
     def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
 
