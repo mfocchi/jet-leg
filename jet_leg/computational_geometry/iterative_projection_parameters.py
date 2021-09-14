@@ -238,6 +238,9 @@ class IterativeProjectionParameters:
 		
 	def getNoOfLegs(self):
 		return self.no_of_legs
+	
+	def getRobotName(self):
+		return self.robot_name
 
 	def getStanceIndex(self, stanceLegs):
 		stanceIdx = []
@@ -316,7 +319,7 @@ class IterativeProjectionParameters:
 		self.comLinAcc = np.array(received_data.desired_acceleration)
 
 	def getRobotNameFromMsg(self, received_data):
-		self.robot_name = received_data.robot_name
+		self.robot_name = received_data.robot_name.data
 
 	def getNoOfLegsFromMsg(self, received_data):
 		self.no_of_legs = received_data.no_of_legs
