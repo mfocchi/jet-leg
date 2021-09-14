@@ -136,32 +136,22 @@ class ComputationalDynamics:
 
     def setup_general_plane_iterative_projection(self, iterative_projection_params, saturate_normal_force):
 
-        print("------------------------")
         stanceLegs = iterative_projection_params.getStanceFeet()
-        print("StanceLegs: " , stanceLegs)
 
         contactsWF = iterative_projection_params.getContactsPosWF()
-        print("contactsWF: " , contactsWF)
         robotMass = iterative_projection_params.robotMass
-        print("robotMass: " , robotMass)
         g = 9.81
         contactsNumber = np.sum(stanceLegs)
-        print("contactsNumber: " , contactsNumber)
 
         extForce = iterative_projection_params.getExternalForce()
         extTorque = iterative_projection_params.getExternalCentroidalTorque()
-        print("extForce: " , extForce)
-        print("extTorque: " , extTorque)
         acceleration = iterative_projection_params.getCoMLinAcc()
         # linear_momentum_dot = robotMass*acceleration
         linear_momentum_dot = np.array([0., 0., 0.])
         angular_momentum_dot = np.array([0., 0., 0.])
         plane_normal = iterative_projection_params.get_plane_normal()
-        print("plane_normal: " , plane_normal)
         projection_plane_z_intercept = iterative_projection_params.get_CoM_plane_z_intercept()
-        print("projection_plane_z_intercept: " , projection_plane_z_intercept)
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
-        print("stanceIndex: " , stanceIndex)
         G = np.zeros((6, 0))
 
         for j in range(0,contactsNumber):
@@ -176,25 +166,18 @@ class ComputationalDynamics:
             # Get the transformation for forces (3D) or wrenches (6D)
             if iterative_projection_params.pointContacts:
                 graspMatrix = self.math.getGraspMatrix(r)[:, 0:3]  # forces (3D)
-                print("Grasp Matrix" , graspMatrix)
             else:
                 graspMatrix = self.math.getGraspMatrix(r)[:, 0:5]  # wrenches (6D)
             # print "grasp mat", graspMatrix
             G = hstack([G, graspMatrix])  # Full grasp matrix
 
-        print("G: ", G)
         A21_zeros = np.zeros((3,2))
         A22 = self.compute_A22_block(g*robotMass, extForce, linear_momentum_dot, plane_normal)
-        print("A22: ", A22)
         A = np.hstack((G, np.vstack((A21_zeros, A22))))
-        print("A: ", A)
         t_linear = np.add(np.add(-np.array([0.0, 0.0, -g*robotMass]), linear_momentum_dot), -np.array(extForce))
-        print("t_linear: " , t_linear)
         t_angular = self.compute_t_angular_vector(projection_plane_z_intercept, extForce, extTorque,
                                                   linear_momentum_dot, angular_momentum_dot)
-        print("t_angular: " , t_angular)
         t = np.concatenate([t_linear, t_angular])
-        print("t: ", t)
 
         eq = (A, t)  # A * x == t
 
