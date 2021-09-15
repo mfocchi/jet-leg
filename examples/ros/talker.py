@@ -238,7 +238,6 @@ class HyQSim(threading.Thread):
 
 	def computeFeasibleRegion(self, params, ng, compDyn):
 		constraint_mode_IP = 'FRICTION_AND_ACTUATION'
-		# constraint_mode_IP = 'ONLY_ACTUATION'
 		params.setConstraintModes([constraint_mode_IP]*params.getNoOfLegs())
 		params.setNumberOfFrictionConesEdges(ng)
 		FEASIBLE_REGION, actuation_polygons_array, computation_time = compDyn.iterative_projection_bretl(params)
@@ -248,7 +247,7 @@ class HyQSim(threading.Thread):
 
 def talker():
 	# Create a communication thread
-	time.sleep(25)
+	time.sleep(15)
 	p = HyQSim()
 	p.start()  # Start thread
 	p.register_node()
@@ -285,6 +284,8 @@ def talker():
 	params.getFutureStanceFeetFlags(p.hyq_debug_msg)
 
 	old_reachable_feasible_polygon = []
+	old_frictionRegion = [0]
+	old_FEASIBLE_REGION = [0]
 
 	""" contact points """
 	ng = 4
