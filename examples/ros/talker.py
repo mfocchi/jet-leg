@@ -291,10 +291,10 @@ def talker():
 	ng = 4
 	params.setNumberOfFrictionConesEdges(ng)
 
-	plt.close()
-	plt.figure()
-	plotter = Plotter()
-	plt.ion()
+#	plt.close()
+#	plt.figure()
+#	plotter = Plotter()
+#	plt.ion()
 	# plt.show()
 	i = 0
 
