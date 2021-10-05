@@ -1,9 +1,10 @@
-# -*- coding: future_fstrings -*-
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 
 import pinocchio
 from pinocchio.robot_wrapper import RobotWrapper
@@ -13,8 +14,15 @@ import yaml
 
 class robotKinematics():
     def __init__(self, robotName):
-        self.PKG = os.path.dirname(os.path.abspath(__file__)) + f'/../../resources/urdfs/{robotName}/'
-        self.URDF = self.PKG + f'urdf/{robotName}.urdf'
+        if sys.version_info[:2] == (2, 7):
+            print("Hi")
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../resources/urdfs/{}/'.format(robotName)
+            self.URDF = self.PKG + 'urdf/{}.urdf'.format(robotName)
+        else:
+            print("H2")
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../resources/urdfs/{robotName}/'
+            self.URDF = self.PKG + 'urdf/{robotName}.urdf'
+
         self.FEET = self.PKG + 'robot_data.yaml'
         if self.PKG is None:
             self.robot = RobotWrapper.BuildFromURDF(self.URDF)
