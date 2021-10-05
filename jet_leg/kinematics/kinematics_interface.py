@@ -19,7 +19,7 @@ class KinematicsInterface:
         self.rbd = RigidBodyDynamics()
         self.robotName = robot_name
         self.hyqreal_ik_success = True
-        if robot_name is 'hyq':
+        if robot_name == 'hyq':
             self.hyqKin = HyQKinematics()
         else:
             self.robotKin = robotKinematics(robot_name)
