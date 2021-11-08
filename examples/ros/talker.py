@@ -284,7 +284,7 @@ def talker():
 	params.getFutureStanceFeetFlags(p.hyq_debug_msg)
 
 	old_reachable_feasible_polygon = []
-	old_frictionRegion = [0]
+	old_frictionRegion = [[0, 0, 0]]
 	old_FEASIBLE_REGION = [0]
 
 	""" contact points """
