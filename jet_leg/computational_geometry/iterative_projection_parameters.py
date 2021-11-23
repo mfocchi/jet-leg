@@ -82,6 +82,9 @@ class IterativeProjectionParameters:
 
 		self.plane_normal = [0, 0, 1]
 
+		self.inertialForces = [0, 0, 0]
+		self.inertialMoments = [0, 0, 0]
+
 		# CoM height (projected along z axis)
 		self.com_vertical_shift = 0
 
@@ -176,6 +179,12 @@ class IterativeProjectionParameters:
 
 	def getCoMAngAcc(self):
 		return self.comAngAcc
+
+	def getInertialForces(self):
+		return self.inertialForces
+
+	def getInertialMoments(self):
+		return self.inertialMoments
 
 	def getTorqueLims(self):
 		return self.torque_limits
@@ -322,6 +331,10 @@ class IterativeProjectionParameters:
 			self.target_CoM_WF[dir] = received_data.target_CoM_WF[dir]
 
 		self.comLinAcc = np.array(received_data.desired_acceleration)
+		for dir in range(0, 3):
+			self.inertialForces[dir] = received_data.inertial_force[dir]
+		for dir in range(0, 3):
+			self.inertialMoments[dir] = received_data.inertial_moment[dir]
 
 	def getRobotNameFromMsg(self, received_data):
 		self.robot_name = received_data.robot_name.data
