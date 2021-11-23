@@ -61,11 +61,9 @@ class ForcePolytopeConstraint:
                     [0, 0, 0, 0, -1]])
                 force_term = np.hstack([hexahedronHalfSpaceConstraints, np.zeros((6,2))])
                 halfSpaceConstraints = np.vstack([force_term, wrench_term])
-                print("contact torque", contact_torque_lims)
                 max_contact_torque = contact_torque_lims[1]
                 min_contact_torque = contact_torque_lims[0]
                 knownTerm = np.vstack([d, max_contact_torque, max_contact_torque, -min_contact_torque, -min_contact_torque])
-                print("knownTerm term" ,np.shape(knownTerm), knownTerm)
 
             C1 = block_diag(C1, halfSpaceConstraints)
             d1 = np.hstack([d1, knownTerm.T])
