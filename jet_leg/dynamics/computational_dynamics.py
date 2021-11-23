@@ -152,6 +152,7 @@ class ComputationalDynamics:
         plane_normal = iterative_projection_params.get_plane_normal()
         projection_plane_z_intercept = iterative_projection_params.get_CoM_plane_z_intercept()
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
+
         G = np.zeros((6, 0))
 
         for j in range(0,contactsNumber):
@@ -283,6 +284,12 @@ class ComputationalDynamics:
     def iterative_projection_bretl(self, iterative_projection_params, saturate_normal_force = False):
 
         start_t_IP = time.time()
+
+        # Stop if no feet on the ground
+        stanceLegs = iterative_projection_params.getStanceFeet()
+        stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
+        if len(stanceIndex) < 1:
+            return False, False, False
 
         if iterative_projection_params.plane_normal == [0,0,1]:
             proj, self.eq, self.A_y, self.ineq, actuation_polygons, isIKoutOfWorkSpace = self.setup_iterative_projection(iterative_projection_params, saturate_normal_force)

@@ -244,12 +244,17 @@ class IterativeProjectionParameters:
 
 	def getStanceIndex(self, stanceLegs):
 		stanceIdx = []
+
 		#        print 'stance', stanceLegs
 		for iter in range(0, self.no_of_legs):
 			if stanceLegs[iter] == 1:
 				#                print 'new poly', stanceIndex, iter
 				stanceIdx = np.hstack([stanceIdx, int(iter)])
-		stanceIdx = stanceIdx.astype(np.int)
+
+		try:
+			stanceIdx = stanceIdx.astype(np.int)
+		except AttributeError as e:
+			pass
 
 		return stanceIdx
 
