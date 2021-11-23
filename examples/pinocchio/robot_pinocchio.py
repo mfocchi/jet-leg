@@ -7,14 +7,16 @@ import time
 
 ''' Must include robot urdf and data in resources/urdfs/'''
 
-robotName = 'crex'
-LF_foot = np.array([0.4331, 0.2979, -0.19765])
-RF_foot = np.array([0.4331, -0.2979, -0.1976])
-LH_foot = np.array([-0.4183, 0.30884, -0.1976])
-RH_foot = np.array([-0.4183, -0.3088, -0.1976])
-LC_foot = np.array([0.0152, 0.3777, -0.1912])
-RC_foot = np.array([0.0152, -0.3777,-0.1912])
-feet_pos_des = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot, LC_foot, RC_foot))
+robotName = 'aliengo'
+LF_foot = np.array([0.2331, 0.10884, -0.19765])
+RF_foot = np.array([0.2331, -0.10884, -0.1976])
+LH_foot = np.array([-0.2183, 0.10884, -0.1976])
+RH_foot = np.array([-0.2183, -0.10884, -0.1976])
+# LC_foot = np.array([0.0152, 0.3777, -0.1912])
+# RC_foot = np.array([0.0152, -0.3777,-0.1912])
+
+# feet_pos_des = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot, LC_foot, RC_foot))
+feet_pos_des = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot))
 print ("feet_pos_des: ", feet_pos_des)
 
 kin = robotKinematics(robotName)
