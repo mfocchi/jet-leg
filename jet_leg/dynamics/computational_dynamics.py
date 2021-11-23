@@ -146,8 +146,8 @@ class ComputationalDynamics:
         extForce = iterative_projection_params.getExternalForce()
         extTorque = iterative_projection_params.getExternalCentroidalTorque()
         acceleration = iterative_projection_params.getCoMLinAcc()
-        # linear_momentum_dot = robotMass*acceleration
-        linear_momentum_dot = np.array([0., 0., 0.])
+        linear_momentum_dot = robotMass*acceleration
+        # linear_momentum_dot = np.array([0., 0., 0.])
         angular_momentum_dot = np.array([0., 0., 0.])
         plane_normal = iterative_projection_params.get_plane_normal()
         projection_plane_z_intercept = iterative_projection_params.get_CoM_plane_z_intercept()
