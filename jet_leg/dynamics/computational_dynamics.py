@@ -149,10 +149,10 @@ class ComputationalDynamics:
         # linear_momentum_dot = robotMass*acceleration
         # linear_momentum_dot = np.array([0., 0., 0.])
         linear_momentum_dot = iterative_projection_params. getInertialForces()
-        print("linear_momentum_dot: ", linear_momentum_dot)
+        # print("linear_momentum_dot: ", linear_momentum_dot)
         # angular_momentum_dot = np.array([0., 0., 0.])
         angular_momentum_dot = iterative_projection_params.getInertialMoments()
-        print("angular_momentum_dot: ", angular_momentum_dot)
+        # print("angular_momentum_dot: ", angular_momentum_dot)
         plane_normal = iterative_projection_params.get_plane_normal()
         projection_plane_z_intercept = iterative_projection_params.get_CoM_plane_z_intercept()
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
