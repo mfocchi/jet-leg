@@ -61,6 +61,97 @@ class robotKinematics():
 
         return idx
 
+    def computeFootForwardKinematics(self, q_leg, frame_name):
+        q = np.zeros((self.model.nq))
+        frame_id = self.model.getFrameId(frame_name)
+        # Get index of frame to retreive data from Pinocchio variables
+        blockIdx = self.getBlockIndex(frame_name)
+        
+        q[blockIdx:blockIdx + 3] = q_leg
+        pinocchio.forwardKinematics(self.model, self.data, q)
+        pinocchio.framesForwardKinematics(self.model, self.data, q)
+        return  self.data.oMf[frame_id].translation
+        
+    def computeFootJacobian(self, q_leg, frame_name):
+        q = np.zeros((self.model.nq))
+        frame_id = self.model.getFrameId(frame_name)
+        # Get index of frame to retreive data from Pinocchio variables
+        blockIdx = self.getBlockIndex(frame_name)
+        q[blockIdx:blockIdx + 3] = q_leg
+        
+        J = pinocchio.computeFrameJacobian(self.model, self.data, q, frame_id, pinocchio.ReferenceFrame.LOCAL_WORLD_ALIGNED)
+        return J[:3,blockIdx:blockIdx + 3]
+        
+    def footInverseKinematicsFixedBaseLineSearch(self, foot_pos_des, frame_name, q0_leg = np.zeros(3)):    
+        
+        # Error initialization
+        e_bar = 1
+        iter = 0     
+             # Recursion parameters
+        epsilon = 0.000001  # Tolerance
+        # alpha = 0.1
+        alpha = 1  # Step size
+        lambda_ = 0.0000001  # Damping coefficient for pseudo-inverse
+        max_iter = 10000  # Maximum number of iterations
+    
+        # For line search only
+        gamma = 0.5
+        beta = 0.5    
+       
+        # Inverse kinematics with line search
+        while True: 
+            # compute foot position 
+            foot_pos0 = self.computeFootForwardKinematics(q0_leg, frame_name)
+            #get the square matrix jacobian that is smaller
+            J_leg = self.computeFootJacobian(q0_leg, frame_name)         
+           
+            # computed error wrt the des cartesian position
+            e_bar = foot_pos_des - foot_pos0 
+            
+            
+            if np.linalg.norm(e) < epsilon:
+                # print("IK Convergence achieved!")
+                IKsuccess = True
+                break
+            if iter >= max_iter:
+                print((
+                    "\n Warning: the iterative algorithm has not reached convergence to the desired precision. Error is: ", np.linalg.norm(e)))
+                IKsuccess = False
+                break
+             
+            #compute newton step
+            JtJ= np.dot(J_leg.T,J_leg) + np.identity(J_leg.shape[1])*lambda_
+            JtJ_inv = np.linalg.inv(JtJ)
+            P = JtJ_inv.dot(J_leg.T)
+            dq = P.dot(e_bar)
+    
+            # Update
+            q1_leg = q0_leg + dq*alpha
+            foot_pos1 = self.computeFootForwardKinematics(q1_leg, frame_name)
+               
+            #Compute error of next step         
+            e_bar1 = foot_pos_des - foot_pos1 
+           # print "e_bar1", np.linalg.norm(e_bar1), "e_bar", np.linalg.norm(e_bar)
+                
+            e_bar_check = np.linalg.norm(e_bar) - np.linalg.norm(e_bar1)
+            threshold = gamma*alpha*np.linalg.norm(e_bar)
+    
+            if e_bar_check <= threshold:
+                alpha = beta*alpha
+                #print ("alpha: ", alpha)
+                   
+            q0_leg = q1_leg
+            iter += 1
+    
+        if iter >= max_iter:
+            print("Maximum number of iterations reached no solution was found, going to closest solution")
+            q0_leg = q1_leg
+        else:
+            print("Inverse kinematics solved in {} iterations".format(iter))     
+            
+        return q0_leg            
+        
+            
     def footInverseKinematicsFixedBase(self, foot_pos_des, frame_name):
         frame_id = self.model.getFrameId(frame_name)
         # Get index of frame to retreive data from Pinocchio variables
@@ -143,9 +234,10 @@ class robotKinematics():
         for leg in range(no_of_feet):
             '''Compute IK in similar order to feet location variable'''
             f_p_des = np.array(feetPosDes[leg, :]).T
-            q[leg], foot_jac, err, leg_ik_success[leg] = self.footInverseKinematicsFixedBase(f_p_des,
-                                                                                                self.urdf_feet_names[leg])
-            self.feet_jac.append(foot_jac)
+#            q[leg], foot_jac, err, leg_ik_success[leg] = self.footInverseKinematicsFixedBase(f_p_des, self.urdf_feet_names[leg])
+            #self.feet_jac.append(foot_jac)
+            q[leg] = self.footInverseKinematicsFixedBaseLineSearch(f_p_des, self.urdf_feet_names[leg])           
+
 
 
         self.ik_success = all(leg_ik_success)
@@ -153,6 +245,15 @@ class robotKinematics():
         if self.ik_success is False:
             print('Warning, IK failed. Jacobian is singular')
         return q
+        
+   
+        
+        
+        
+        
+        
+        
+        
 
     def getLegJacobians(self):
         isOutOfWS = not self.ik_success
