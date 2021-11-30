@@ -82,13 +82,14 @@ class robotKinematics():
         J = pinocchio.computeFrameJacobian(self.model, self.data, q, frame_id, pinocchio.ReferenceFrame.LOCAL_WORLD_ALIGNED)
         return J[:3,blockIdx:blockIdx + 3]
         
-    def footInverseKinematicsFixedBaseLineSearch(self, foot_pos_des, frame_name, q0_leg = np.zeros(3)):    
-        
+    def footInverseKinematicsFixedBaseLineSearch(self, foot_pos_des, frame_name, q0_leg = np.zeros(3), verbose = False):    
+
+      
         # Error initialization
         e_bar = 1
         iter = 0     
              # Recursion parameters
-        epsilon = 0.000001  # Tolerance
+        epsilon = 0.00001  # Tolerance
         # alpha = 0.1
         alpha = 1  # Step size
         lambda_ = 0.0000001  # Damping coefficient for pseudo-inverse
@@ -106,16 +107,17 @@ class robotKinematics():
             J_leg = self.computeFootJacobian(q0_leg, frame_name)         
            
             # computed error wrt the des cartesian position
-            e_bar = foot_pos_des - foot_pos0 
+            e_bar = foot_pos_des - foot_pos0
             
             
-            if np.linalg.norm(e) < epsilon:
-                # print("IK Convergence achieved!")
+            if np.linalg.norm(e_bar) < epsilon:
                 IKsuccess = True
+                if verbose:
+                    print("IK Convergence achieved!")
+                    print("Inverse kinematics solved in {} iterations".format(iter))     
                 break
-            if iter >= max_iter:
-                print((
-                    "\n Warning: the iterative algorithm has not reached convergence to the desired precision. Error is: ", np.linalg.norm(e)))
+            if iter >= max_iter:                
+                print(("\n Warning: Max number of iterations reached, the iterative algorithm has not reached convergence to the desired precision. Error is: ", np.linalg.norm(e)))
                 IKsuccess = False
                 break
              
@@ -136,22 +138,17 @@ class robotKinematics():
             e_bar_check = np.linalg.norm(e_bar) - np.linalg.norm(e_bar1)
             threshold = gamma*alpha*np.linalg.norm(e_bar)
     
+            
             if e_bar_check <= threshold:
                 alpha = beta*alpha
-                #print ("alpha: ", alpha)
-                   
+                if verbose:
+                    print ("line search: alpha: ", alpha)                   
             q0_leg = q1_leg
             iter += 1
-    
-        if iter >= max_iter:
-            print("Maximum number of iterations reached no solution was found, going to closest solution")
-            q0_leg = q1_leg
-        else:
-            print("Inverse kinematics solved in {} iterations".format(iter))     
-            
-        return q0_leg            
+
+        return q0_leg, IKsuccess            
         
-            
+    #### OLD                   
     def footInverseKinematicsFixedBase(self, foot_pos_des, frame_name):
         frame_id = self.model.getFrameId(frame_name)
         # Get index of frame to retreive data from Pinocchio variables
@@ -224,19 +221,23 @@ class robotKinematics():
         J_leg = J_lin[:, blockIdx:blockIdx + 3]
         return q_leg.ravel(), J_leg, err, IKsuccess
 
-    def fixedBaseInverseKinematics(self, feetPosDes):
+
+    def fixedBaseInverseKinematics(self, feetPosDes, q0 = None, verbose = False):
 
         no_of_feet = len(self.urdf_feet_names)
         self.feet_jac = []
         q = np.zeros((no_of_feet,3))
         leg_ik_success = np.zeros((no_of_feet))
-
+        
+        if (q0 is None):
+            q0 = np.matlib.repmat(0.5, no_of_feet, 3)        
+        
         for leg in range(no_of_feet):
             '''Compute IK in similar order to feet location variable'''
             f_p_des = np.array(feetPosDes[leg, :]).T
 #            q[leg], foot_jac, err, leg_ik_success[leg] = self.footInverseKinematicsFixedBase(f_p_des, self.urdf_feet_names[leg])
             #self.feet_jac.append(foot_jac)
-            q[leg] = self.footInverseKinematicsFixedBaseLineSearch(f_p_des, self.urdf_feet_names[leg])           
+            q[leg], leg_ik_success[leg]= self.footInverseKinematicsFixedBaseLineSearch(f_p_des, self.urdf_feet_names[leg], q0[leg], verbose)           
 
 
 
