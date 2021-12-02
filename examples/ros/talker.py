@@ -101,6 +101,7 @@ class HyQSim(threading.Thread):
 		self.foothold_optimization = False
 		self.com_optimization_type = 0
 
+                self.message_received_from_framework = False
 		self.orient_ack_optimization_done = False  # Not used
 
 	def run(self):
@@ -168,6 +169,7 @@ class HyQSim(threading.Thread):
 		self.hyq_orientation_request_msg = copy.deepcopy(orient_req_msg)
 
 	def callback_hyq_debug(self, msg):
+                self.message_received_from_framework = True
 		self.hyq_debug_msg = copy.deepcopy(msg)
 		if (self.hyq_debug_msg.orient_optimization_started == False):
 			self.orient_ack_optimization_done = False
@@ -247,7 +249,7 @@ class HyQSim(threading.Thread):
 
 def talker():
 	# Create a communication thread
-	time.sleep(15)
+#	time.sleep(15)
 	p = HyQSim()
 	p.start()  # Start thread
 	p.register_node()
@@ -275,6 +277,10 @@ def talker():
 	first = time.time()
 	# print p.hyq_debug_msg.tau_lim.data[0]
 	time.sleep(1)
+
+        while not p.message_received_from_framework or (p.hyq_debug_msg.no_of_legs == 0):
+                continue
+
 	params.getNoOfLegsFromMsg(p.hyq_debug_msg)
 	params.getParamsFromRosDebugTopic(p.hyq_debug_msg)
 	# foothold_params.getParamsFromRosDebugTopic(p.hyq_footholds_msg)
