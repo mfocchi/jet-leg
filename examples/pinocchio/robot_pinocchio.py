@@ -8,18 +8,18 @@ import time
 ''' Must include robot urdf and data in resources/urdfs/'''
 
 robotName = 'aliengo'
-LF_foot = np.array([0.2331, 0.10884, -0.39765])
-RF_foot = np.array([0.2331, -0.10884, -0.1976])
-LH_foot = np.array([-0.2183, 0.10884, -0.1976])
-RH_foot = np.array([-0.2183, -0.10884, -0.1976])
+LF_foot = np.array([0.2331, 0.10884, -0.29765])
+RF_foot = np.array([0.2331, -0.10884, -0.2976])
+LH_foot = np.array([-0.2183, 0.10884, -0.2976])
+RH_foot = np.array([-0.2183, -0.10884, -0.2976])
 # LC_foot = np.array([0.0152, 0.3777, -0.1912])
 # RC_foot = np.array([0.0152, -0.3777,-0.1912])
 
 #use a reasonable guess 
 q0 = np.vstack((np.array([-0.2, 0.75, -1.5]), 
                np.array([-0.2, 0.75, -1.5]), 
-              np.array([-0.2, -0.75, 1.5]),
-              np.array([-0.2, -0.75, 1.5])))        
+              np.array([-0.2, 0.75, -1.5]),
+              np.array([-0.2, 0.75, -1.5])))        
 
 # feet_pos_des = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot, LC_foot, RC_foot))
 feet_pos_des = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot))

@@ -10,7 +10,7 @@ import pinocchio
 from pinocchio.robot_wrapper import RobotWrapper
 from pinocchio.utils import *
 import yaml
-
+import math
 
 class robotKinematics():
     def __init__(self, robotName):
@@ -144,7 +144,18 @@ class robotKinematics():
                 if verbose:
                     print ("line search: alpha: ", alpha)                   
             q0_leg = q1_leg
+            
+          
+            
             iter += 1
+            
+            
+        # unwrapping prevents from outputs larger than 2pi
+        for i in range(len(q0_leg)):
+            while q0_leg[i] >= 2 * math.pi:
+                q0_leg[i] -= 2 * math.pi
+            while q0_leg[i] < -2 * math.pi:
+                q0_leg[i] += 2 * math.pi      
 
         return q0_leg, IKsuccess            
         
@@ -230,7 +241,14 @@ class robotKinematics():
         leg_ik_success = np.zeros((no_of_feet))
         
         if (q0 is None):
-            q0 = np.matlib.repmat(0.5, no_of_feet, 3)        
+#            q0 =np.vstack((np.array([-0.2, 0.75, -1.5]), 
+#                np.array([-0.2, 0.75, -1.5]), 
+#                np.array([-0.2, -0.75, 1.5]),
+#                np.array([-0.2, -0.75, 1.5])))  
+             q0 =  np.vstack((np.array([-0.2, 0.75, -1.5]), 
+               np.array([-0.2, 0.75, -1.5]), 
+              np.array([-0.2, 0.75, -1.5]),
+              np.array([-0.2, 0.75, -1.5])))        
         
         for leg in range(no_of_feet):
             '''Compute IK in similar order to feet location variable'''
