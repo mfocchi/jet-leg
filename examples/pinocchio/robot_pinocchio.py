@@ -8,7 +8,7 @@ import time
 ''' Must include robot urdf and data in resources/urdfs/'''
 
 robotName = 'aliengo'
-LF_foot = np.array([0.2331, 0.10884, -0.29765])
+LF_foot = np.array([0.2331, 0.10884, -0.49765])
 RF_foot = np.array([0.2331, -0.10884, -0.2976])
 LH_foot = np.array([-0.2183, 0.10884, -0.2976])
 RH_foot = np.array([-0.2183, -0.10884, -0.2976])
@@ -21,14 +21,15 @@ q0 = np.vstack((np.array([-0.2, 0.75, -1.5]),
               np.array([-0.2, 0.75, -1.5]),
               np.array([-0.2, 0.75, -1.5])))        
 
+
 # feet_pos_des = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot, LC_foot, RC_foot))
 feet_pos_des = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot))
-print ("feet_pos_des:\n ", feet_pos_des)
+#print ("feet_pos_des:\n ", feet_pos_des)
 
 kin = robotKinematics(robotName)
 start_time = time.time()
 q = kin.fixedBaseInverseKinematics(feet_pos_des, q0, verbose = True)
 print('total time is ',time.time()-start_time)
 print('q is:\n', q)
-print('\n flatten result is: \n%s' % q.flatten().tolist())
+#print('\n flatten result is: \n%s' % q.flatten().tolist())
 

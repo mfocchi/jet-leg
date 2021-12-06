@@ -69,7 +69,7 @@ class robotKinematics():
         
         q[blockIdx:blockIdx + 3] = q_leg
         pinocchio.forwardKinematics(self.model, self.data, q)
-        pinocchio.framesForwardKinematics(self.model, self.data, q)
+        pinocchio.updateFramePlacements(self.model, self.data)
         return  self.data.oMf[frame_id].translation
         
     def computeFootJacobian(self, q_leg, frame_name):
@@ -78,7 +78,9 @@ class robotKinematics():
         # Get index of frame to retreive data from Pinocchio variables
         blockIdx = self.getBlockIndex(frame_name)
         q[blockIdx:blockIdx + 3] = q_leg
-        
+        pinocchio.forwardKinematics(self.model, self.data, q)
+        pinocchio.computeJointJacobians(self.model, self.data)
+        pinocchio.updateFramePlacements(self.model, self.data)
         J = pinocchio.computeFrameJacobian(self.model, self.data, q, frame_id, pinocchio.ReferenceFrame.LOCAL_WORLD_ALIGNED)
         return J[:3,blockIdx:blockIdx + 3]
         
@@ -89,11 +91,11 @@ class robotKinematics():
         e_bar = 1
         iter = 0     
              # Recursion parameters
-        epsilon = 0.00001  # Tolerance
+        epsilon = 0.0001  # Tolerance
         # alpha = 0.1
         alpha = 1  # Step size
-        lambda_ = 0.0000001  # Damping coefficient for pseudo-inverse
-        max_iter = 10000  # Maximum number of iterations
+        lambda_ = 0.00001# Damping coefficient for pseudo-inverse
+        max_iter = 10 # Maximum number of iterations
     
         # For line search only
         gamma = 0.5
@@ -113,40 +115,38 @@ class robotKinematics():
             if np.linalg.norm(e_bar) < epsilon:
                 IKsuccess = True
                 if verbose:
-                    print("IK Convergence achieved!")
+                    print("IK Convergence achieved!, norm(error) :", np.linalg.norm(e_bar) )
                     print("Inverse kinematics solved in {} iterations".format(iter))     
                 break
             if iter >= max_iter:                
-                print(("\n Warning: Max number of iterations reached, the iterative algorithm has not reached convergence to the desired precision. Error is: ", np.linalg.norm(e)))
+                print(("\n Warning: Max number of iterations reached, the iterative algorithm has not reached convergence to the desired precision. Error is: ", np.linalg.norm(e_bar)))
                 IKsuccess = False
                 break
              
             #compute newton step
-            JtJ= np.dot(J_leg.T,J_leg) + np.identity(J_leg.shape[1])*lambda_
-            JtJ_inv = np.linalg.inv(JtJ)
-            P = JtJ_inv.dot(J_leg.T)
-            dq = P.dot(e_bar)
+            dq = J_leg.T.dot(np.linalg.solve(J_leg.dot(J_leg.T) + lambda_ * np.identity(J_leg.shape[1]), e_bar))
     
-            # Update
-            q1_leg = q0_leg + dq*alpha
-            foot_pos1 = self.computeFootForwardKinematics(q1_leg, frame_name)
-               
-            #Compute error of next step         
-            e_bar1 = foot_pos_des - foot_pos1 
-           # print "e_bar1", np.linalg.norm(e_bar1), "e_bar", np.linalg.norm(e_bar)
-                
-            e_bar_check = np.linalg.norm(e_bar) - np.linalg.norm(e_bar1)
-            threshold = gamma*alpha*np.linalg.norm(e_bar)
-    
-            
-            if e_bar_check <= threshold:
-                alpha = beta*alpha
-                if verbose:
-                    print ("line search: alpha: ", alpha)                   
-            q0_leg = q1_leg
-            
-          
-            
+            while True:
+                # Update
+                q1_leg = q0_leg + dq*alpha
+                foot_pos1 = self.computeFootForwardKinematics(q1_leg, frame_name)
+                   
+                #Compute error of next step         
+                e_bar_new = foot_pos_des - foot_pos1 
+                # print "e_bar_new", np.linalg.norm(e_bar_new), "e_bar", np.linalg.norm(e_bar)
+                    
+                error_reduction = np.linalg.norm(e_bar) - np.linalg.norm(e_bar_new)
+                threshold = 0.0 # even more strict: gamma*alpha*np.linalg.norm(e_bar)
+        
+      
+                if error_reduction < threshold:
+                    alpha = beta*alpha
+                    if verbose:
+                        print (" line search: alpha: ", alpha) 
+                else:
+                    q0_leg = q1_leg
+                    alpha = 1
+                    break                    
             iter += 1
             
             
@@ -190,6 +190,12 @@ class robotKinematics():
             e[0] = foot_pos[[0]] - foot_pos_des[0]
             e[1] = foot_pos[[1]] - foot_pos_des[1]
             e[2] = foot_pos[[2]] - foot_pos_des[2]
+            
+            
+            #NOT UPDATE TO CHECK!
+            pinocchio.forwardKinematics(self.model, self.data, q, np.zeros(self.model.nv), np.zeros(self.model.nv))
+            pinocchio.computeJointJacobians(self.model, self.data)
+            pinocchio.updateFramePlacements(self.model, self.data)
             J = pinocchio.computeFrameJacobian(self.model, self.data, q, frame_id, pinocchio.ReferenceFrame.LOCAL_WORLD_ALIGNED)
 
             J_lin = J[:3, :]
@@ -253,7 +259,7 @@ class robotKinematics():
         for leg in range(no_of_feet):
             '''Compute IK in similar order to feet location variable'''
             f_p_des = np.array(feetPosDes[leg, :]).T
-#            q[leg], foot_jac, err, leg_ik_success[leg] = self.footInverseKinematicsFixedBase(f_p_des, self.urdf_feet_names[leg])
+            #q[leg], foot_jac, err, leg_ik_success[leg] = self.footInverseKinematicsFixedBase(f_p_des, self.urdf_feet_names[leg])
             #self.feet_jac.append(foot_jac)
             q[leg], leg_ik_success[leg]= self.footInverseKinematicsFixedBaseLineSearch(f_p_des, self.urdf_feet_names[leg], q0[leg], verbose)           
 
@@ -262,7 +268,7 @@ class robotKinematics():
         self.ik_success = all(leg_ik_success)
 
         if self.ik_success is False:
-            print('Warning, IK failed. Jacobian is singular')
+            print('Warning, IK failed in one of the legs')
         return q
         
    
