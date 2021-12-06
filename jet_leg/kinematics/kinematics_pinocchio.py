@@ -10,16 +10,14 @@ import pinocchio
 from pinocchio.robot_wrapper import RobotWrapper
 from pinocchio.utils import *
 import yaml
-
+import math
 
 class robotKinematics():
     def __init__(self, robotName):
         if sys.version_info[:2] == (2, 7):
-            print("Hi")
             self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../resources/urdfs/{}/'.format(robotName)
             self.URDF = self.PKG + 'urdf/{}.urdf'.format(robotName)
         else:
-            print("H2")
             self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../resources/urdfs/{robotName}/'
             self.URDF = self.PKG + 'urdf/{robotName}.urdf'
 
@@ -47,6 +45,8 @@ class robotKinematics():
         
         self.urdf_feet_names = yaml_data['Feet_names']
         self.default_q = yaml_data['Default_q']
+        self.default_q = np.vstack(self.default_q)
+        self.q = self.default_q   # Last q computed
         # Get feet frame names in an alphabatical order to match pinocchio kinematics
         self.urdf_feet_names_pinocchio = []
         for frame in self.model.frames:
@@ -158,10 +158,15 @@ class robotKinematics():
         isOutOfWS = not self.ik_success
         return self.feet_jac, isOutOfWS
 
+    def getCurrentQ(self):
+
+        return self.q
+
     def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
 
         no_of_legs_to_check = joint_positions.size/3
         q = joint_positions.reshape((no_of_legs_to_check, 3))
+
         # print "q: ", q
         # print "leq than max ", np.all(np.less_equal(q, joint_limits_max))
         # print "geq than min ", np.all(np.greater_equal(q, joint_limits_min))
@@ -169,7 +174,9 @@ class robotKinematics():
                or not np.all(np.greater_equal(q, joint_limits_min))
 
     def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel):
-        [q, success] = self.fixedBaseInverseKinematics(contactsBF_check)
-        # print "q:", q
+        q = self.fixedBaseInverseKinematics(contactsBF_check)
+        out = self.isOutOfJointLims(q, joint_limits_max, joint_limits_min)
+        if not out:
+            self.q = q
 
         return self.isOutOfJointLims(q, joint_limits_max, joint_limits_min)
