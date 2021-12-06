@@ -133,18 +133,32 @@ class robotKinematics():
         J_leg = J_lin[:, blockIdx:blockIdx + 3]
         return q_leg.ravel(), J_leg, err, IKsuccess
 
-    def fixedBaseInverseKinematics(self, feetPosDes):
+
+    def fixedBaseInverseKinematics(self, feetPosDes, q0 = None, verbose = False):
 
         no_of_feet = len(self.urdf_feet_names)
         self.feet_jac = []
-        q = np.zeros((no_of_feet,3))
+        q = []
         leg_ik_success = np.zeros((no_of_feet))
+        
+        if (q0 is None):
+#            q0 =np.vstack((np.array([-0.2, 0.75, -1.5]), 
+#                np.array([-0.2, 0.75, -1.5]), 
+#                np.array([-0.2, -0.75, 1.5]),
+#                np.array([-0.2, -0.75, 1.5])))  
+#             q0 = [-0.1, 0.75, -1.5, -0.1, 0.75, -1.5, -0.1, 0.75, -1.5, -0.1, 0.75, -1.5]
+#             q0 = np.vstack(self.default_q)
+#             q0 = q0.ravel()
+
+            q0 = self.default_q.ravel()
 
         for leg in range(no_of_feet):
             '''Compute IK in similar order to feet location variable'''
             f_p_des = np.array(feetPosDes[leg, :]).T
             q[leg], foot_jac, err, leg_ik_success[leg] = self.footInverseKinematicsFixedBase(f_p_des,
                                                                                                 self.urdf_feet_names[leg])
+
+            q = np.hstack([q, q_leg])
             self.feet_jac.append(foot_jac)
 
 

@@ -30,13 +30,19 @@ class KinematicsInterface:
         else:
             return self.robotKin.getLegJacobians()
 
-    def inverse_kin(self, contactsBF, foot_vel):
+    def get_current_q(self):
+        if self.robotName == 'hyq':
+            return self.hyqKin.getCurrentQ()
+        else:
+            return self.robotKin.getCurrentQ()
+
+    def inverse_kin(self, contactsBF, foot_vel, q_0=None):
 
         if self.robotName == 'hyq':
             q = self.hyqKin.fixedBaseInverseKinematics(contactsBF, foot_vel)
             return q
         else:
-            q = self.robotKin.fixedBaseInverseKinematics(contactsBF)
+            q = self.robotKin.fixedBaseInverseKinematics(contactsBF, q_0)
             return q
 
     def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
