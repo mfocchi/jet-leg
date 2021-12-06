@@ -10,6 +10,9 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import yaml
+import sys
+import os
 
 from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
@@ -113,6 +116,28 @@ class HyQKinematics:
         '''initialize quantities'''
         self.init_jacobians()
         self.init_homogeneous()
+
+
+        if sys.version_info[:2] == (2, 7):
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{}/'.format('hyq')
+            self.URDF = self.PKG + 'urdf/{}.urdf'.format('hyq')
+        else:
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{robotName}/'
+            self.URDF = self.PKG + 'urdf/{robotName}.urdf'
+
+        self.FEET = self.PKG + 'robot_data.yaml'
+
+        yaml_data = []
+        self.default_q = []
+        with open(self.FEET, 'r') as stream:
+            try:
+                yaml_data = yaml.safe_load(stream)
+
+            except yaml.YAMLError as exc:
+                print(exc)
+
+        self.default_q = yaml_data['Default_q']
+        self.q = self.default_q  # Last q computed
         
 
     def init_jacobians(self):
@@ -801,6 +826,9 @@ class HyQKinematics:
     def getLegJacobians(self):
         return np.array([self.fr_trunk_J_LF_foot[3:6,:] , self.fr_trunk_J_RF_foot[3:6,:], self.fr_trunk_J_LH_foot[3:6,:], self.fr_trunk_J_RH_foot[3:6,:]]), False
 
+    def getCurrentQ(self):
+
+        return self.q
 
     def forward_kin(self, q):
         LF_foot = self.fr_trunk_Xh_LF_foot[0:3,3]
@@ -964,6 +992,7 @@ class HyQKinematics:
             q_leg = self.leg_inverse_kin(legID, contactsBF[legID,:], foot_vel[legID,:])
             q = np.hstack([q, q_leg])
 
+        self.q = q
         self.update_homogeneous(q)
         self.update_jacobians(q)
         return q
@@ -981,6 +1010,7 @@ class HyQKinematics:
     def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel):
 
         q = self.fixedBaseInverseKinematics(contactsBF_check, foot_vel)
+        self.q = q
         q_to_check = np.concatenate([list(q[leg * 3: leg * 3 + 3]) for leg in stance_index])
 
         return self.isOutOfJointLims(q_to_check, joint_limits_max[stance_index,:], joint_limits_min[stance_index,:])
