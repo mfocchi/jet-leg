@@ -147,9 +147,6 @@ class robotKinematics():
                     break                    
             iter += 1
             
-        print ("ITEEERATIONSSS:     ", iter)
-            
-            
         # unwrapping prevents from outputs larger than 2pi
         for i in range(len(q0_leg)):
             while q0_leg[i] >= 2 * math.pi:
