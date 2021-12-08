@@ -379,9 +379,7 @@ def talker():
 				EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
 			reachable_feasible_polygon = np.array([])
 			start_time = time.time()
-			reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
-																							 20. * np.pi / 180, 0.03)
-			print('total time is ', time.time() - start_time)
+                        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
 
 			if reachability_polygon.size > 0:
 				preachability_polygon = Polygon(reachability_polygon)

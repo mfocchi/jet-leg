@@ -116,8 +116,9 @@ class robotKinematics():
                     print("IK Convergence achieved!, norm(error) :", np.linalg.norm(e_bar) )
                     print("Inverse kinematics solved in {} iterations".format(iter))     
                 break
-            if iter >= max_iter:                
-                print(("\n Warning: Max number of iterations reached, the iterative algorithm has not reached convergence to the desired precision. Error is: ", np.linalg.norm(e_bar)))
+            if iter >= max_iter:
+                if verbose:
+                    print(("\n Warning: Max number of iterations reached, the iterative algorithm has not reached convergence to the desired precision. Error is: ", np.linalg.norm(e_bar)))
                 IKsuccess = False
                 break
              
@@ -261,7 +262,7 @@ class robotKinematics():
 
         self.ik_success = all(leg_ik_success)
 
-        if self.ik_success is False:
+        if self.ik_success is False and verbose is True:
             print('Warning, IK failed in one of the legs')
         return q
 
