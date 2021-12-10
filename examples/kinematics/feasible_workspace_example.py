@@ -6,27 +6,32 @@ Created on Tue Jun 12 10:54:31 2018
 """
 
 import numpy as np
+import time
 
 from jet_leg.plotting.plotting_tools import Plotter
 import random
-from jet_leg.maths.math_tools import Math
+from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.kinematics import kinematics_interface
-from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.kinematics import full_feasible_workspace
+from jet_leg.optimization import nonlinear_projection
 from shapely.geometry import Polygon
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 plt.close('all')
 
 robot_name = 'hyq'
-projection = full_feasible_workspace.FeasibleWorkspace(robot_name)
+full_projection = full_feasible_workspace.FeasibleWorkspace(robot_name)
+projection = nonlinear_projection.NonlinearProjectionBretl(robot_name)
+
 math = Math()
 
 
 # comWF = np.array([.55, 0.005, 0.5])  # pos of COM in world frame
-comWF = np.array([0.0107, 0.0003, 0.5])  # pos of COM in world frame w.o. trunk controller
+comWF = np.array([0.0107, 0.0003, 0.49])  # pos of COM in world frame w.o. trunk controller
 # comWF = np.array([0.009, 0.0001, 0.549])  # pos of COM in world frame w. trunk controller
 comBF = np.array([0.0094,  0.0002, -0.0433])  # pos of COM in body frame w.o. trunk controller
 # comBF = np.array([0.0094, 0.0002, -0.0458])  # pos of COM in body frame w. trunk controller
@@ -84,10 +89,19 @@ params.setJointLimsMax(joint_limits_max)
 params.setJointLimsMin(joint_limits_min)
 params.setActiveContacts(stanceFeet)
 
+''' Compute FULL workspace'''
 # polygon, computation_time = projection.project_polytope(params, 20. * np.pi / 180, 0.03)
-polygon, polygon_states, computation_time = projection.project_polytope(params)
-print "vertices", polygon
+full_polygon, full_polygon_states, computation_time = full_projection.project_polytope(params)
+print "vertices", full_polygon
 print "Computation Time: ", computation_time, " seconds"
+
+''' Compute reachable region'''
+com_check = np.array([0.3, -0.1, 0.5])
+com_check = None
+# polygon, computation_time = projection.project_polytope(params, com_check)
+polygon, computation_time = projection.project_polytope(params, com_check, 10. * np.pi / 180, 0.01)
+final = polygon
+print("Computation time: ", computation_time)
 
 plt.close()
 h1 = plt.figure()
@@ -100,15 +114,27 @@ plt.legend()
 nc = np.sum(stanceFeet)
 stanceID = params.getStanceIndex(stanceFeet)
 
+''' Plot full workspace'''
+for i in range(0, len(full_polygon)):
+    if full_polygon_states[i] == True:
+        h2 = plt.plot(full_polygon[i][0], full_polygon[i][1], 'ro', markersize=5.5)
+    else:
+        h2 = plt.plot(full_polygon[i][0], full_polygon[i][1], 'go', markersize=5.5)
+
+'''' Plot reachable region'''
+h6 = plotter.plot_polygon(np.transpose(polygon), '--k', 'reachable region')
+
 for j in range(0, nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
     idx = int(stanceID[j])
     ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
-    h1 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=15, label='stance feet')
+    h1 = plt.plot(contactsWF[idx, 0], contactsWF[idx, 1], 'ko', markersize=15)
 
-for i in range(0, len(polygon)):
-    if polygon_states[i] == True:
-        h2 = plt.plot(polygon[i][0], polygon[i][1], 'ro', markersize=10, label='stance feet')
-    else:
-        h2 = plt.plot(polygon[i][0], polygon[i][1], 'go', markersize=10, label='stance feet')
+handles, labels = plt.gca().get_legend_handles_labels()
 
+green_circle = Line2D(range(1), range(1), linestyle='none', color="green", marker='o', markersize=7, label='CoM workspace')
+red_circle = Line2D(range(1), range(1), linestyle='none', color="red", marker='o', markersize=7, label='unreachable CoM position')
+handles.extend([green_circle,red_circle])
+plt.legend(handles=handles)
+#
+# plt.legend()
 plt.show()
