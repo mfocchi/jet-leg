@@ -35,6 +35,20 @@ class ComputationalDynamics:
         self.eq = ([],[])
         self.rbd = RigidBodyDynamics()
 
+    ''' 
+    This function computes the linear and angular inertial terms '''
+    def compute_inertial_terms(self, robotMass, robotInertia,
+                               acceleration_lin = [0., 0., 0.],
+                               acceleration_ang = [0., 0., 0.],
+                               velocity_ang = [[0.], [0.], [0.]]):
+
+        linear_momentum_dot = np.multiply(robotMass, acceleration_lin)
+
+        coriolis = robotInertia.dot(velocity_ang)
+        coriolis = np.cross(np.transpose(velocity_ang), np.transpose(coriolis))
+        coriolis = coriolis[0]
+        angular_momentum_dot = np.matmul(robotInertia, comAngAcc) + coriolis
+
 
     ''' 
     This function is used to prepare all the variables that will be later used 
@@ -54,9 +68,9 @@ class ComputationalDynamics:
     def setup_iterative_projection(self, iterative_projection_params, saturate_normal_force):
         
         stanceLegs = iterative_projection_params.getStanceFeet()
-   
         contactsWF = iterative_projection_params.getContactsPosWF()
-        robotMass = iterative_projection_params.robotMass
+        robotMass = iterative_projection_params.getTotalMass()
+        robotInertia = iterative_projection_params.getTotalInertia()
         height = iterative_projection_params.comPositionWF[2]
 
         ''' parameters to be tuned'''
@@ -72,10 +86,17 @@ class ComputationalDynamics:
 
         extForce = iterative_projection_params.getExternalForce()
         extTorque = iterative_projection_params.getExternalCentroidalTorque()
-        acceleration = iterative_projection_params.getCoMLinAcc()
-        # linear_momentum_dot = robotMass*acceleration
-        linear_momentum_dot = [0., 0., 0.]
-        angular_momentum_dot = [0., 0., 0.]
+        acceleration_lin = iterative_projection_params.getCoMLinAcc()
+        acceleration_ang = iterative_projection_params.getComAngAcc()
+        velocity_ang = iterative_projection_params.getCoMAngVel()
+
+        linear_momentum_dot, angular_momentum_dot = self.compute_inertial_terms(robotMass,
+                                                                               robotInertia,
+                                                                               acceleration_lin,
+                                                                               acceleration_ang,
+                                                                               velocity_ang)
+        # linear_momentum_dot = [0., 0., 0.]
+        # angular_momentum_dot = [0., 0., 0.]
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
 
         for j in range(0,contactsNumber):
@@ -145,14 +166,20 @@ class ComputationalDynamics:
 
         extForce = iterative_projection_params.getExternalForce()
         extTorque = iterative_projection_params.getExternalCentroidalTorque()
-        acceleration = iterative_projection_params.getCoMLinAcc()
+        acceleration_lin = iterative_projection_params.getCoMLinAcc()
+        acceleration_ang = iterative_projection_params.getComAngAcc()
+        velocity_ang = iterative_projection_params.getCoMAngVel()
+
+        linear_momentum_dot, angular_momentum_dot = self.compute_inertial_terms(robotMass,
+                                                                               robotInertia,
+                                                                               acceleration_lin,
+                                                                               acceleration_ang,
+                                                                               velocity_ang)
         # linear_momentum_dot = robotMass*acceleration
-        linear_momentum_dot = np.array([0., 0., 0.])
+        # linear_momentum_dot = np.array([0., 0., 0.])
         # linear_momentum_dot = iterative_projection_params. getInertialForces()
-        # print("linear_momentum_dot: ", linear_momentum_dot)
-        angular_momentum_dot = np.array([0., 0., 0.])
+        # angular_momentum_dot = np.array([0., 0., 0.])
         # angular_momentum_dot = iterative_projection_params.getInertialMoments()
-        # print("angular_momentum_dot: ", angular_momentum_dot)
         plane_normal = iterative_projection_params.get_plane_normal()
         projection_plane_z_intercept = iterative_projection_params.get_CoM_plane_z_intercept()
         stanceIndex = iterative_projection_params.getStanceIndex(stanceLegs)
@@ -489,7 +516,10 @@ class ComputationalDynamics:
                                                                  LPparams.externalCentroidalWrench,
                                                                  LPparams.getCoMLinAcc())
 
-        A = np.zeros((6, 0))
+        if np.sum(stanceLegs) == 1:
+            A = np.zeros((5,0))
+        else:
+            A = np.zeros((6,0))
         stanceIndex = LPparams.getStanceIndex(stanceLegs)
         for j in stanceIndex:
             j = int(j)
@@ -502,13 +532,18 @@ class ComputationalDynamics:
                 A = matrix(A)
                 b = matrix(totalCentroidalWrench.reshape((6)))
             else:
-                Atmp = np.zeros((6, 2))
-                Atmp[3:5, 0:2] = np.eye(2)
-                print("Atmp", Atmp)
-                A = np.hstack((A, GraspMat[:, 0:3], Atmp))
-                print(A)
-                A = matrix(A)
-                b = matrix(totalCentroidalWrench.reshape((6)))
+                ''' non-zero foot size case'''
+                if np.sum(stanceLegs) == 1:
+                    print ("ciaooooo")
+                    ''' if there is only one stance foot the problem is overconstrained and we can remove the constraint on tau_z'''
+                    A = np.hstack((A, GraspMat[0:5,0:5]))
+                    A = matrix(A)
+                    totW = totalCentroidalWrench[0:5]
+                    b = matrix(totW.reshape((5)))
+                else:
+                    A = np.hstack((A, GraspMat[:,0:5]))
+                    A = matrix(A)
+                    b = matrix(totalCentroidalWrench.reshape((6)))
 
 
         G, h, isIKoutOfWorkSpace, LP_actuation_polygons = self.constr.getInequalities(LPparams)

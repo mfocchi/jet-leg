@@ -24,6 +24,7 @@ class IterativeProjectionParameters:
 		self.comPositionWF = [0., 0., 0.]
 		self.comLinAcc = [0., 0., 0.]
 		self.comAngAcc = [0., 0., 0.]
+		self.comAngVel = [0., 0., 0.]
 		self.externalForce = [0., 0., 0.]
 		self.externalCentroidalTorque = [0., 0., 0.]
 		self.externalCentroidalWrench = np.hstack([self.externalForce, self.externalCentroidalTorque])
@@ -76,6 +77,7 @@ class IterativeProjectionParameters:
 
 		self.friction = 0.8
 		self.robotMass = 85  # Kg
+		self.robotInertia = np.eye(3)
 		self.numberOfGenerators = 4
 		self.pointContacts = False  # False if contact torques are allowed (e.g. humanoid foot or double support quadruped).
 		self.actual_swing = 0
@@ -124,6 +126,9 @@ class IterativeProjectionParameters:
 	def setCoMAngAcc(self, comAngAcc):
 		self.comAngAcc = comAngAcc
 
+	def setCoMAngVel(self, comAngVel):
+		self.comAngVel = comAngVel
+
 	def setTorqueLims(self, torqueLims):
 		self.torque_limits = torqueLims
 
@@ -152,6 +157,9 @@ class IterativeProjectionParameters:
 
 	def setTotalMass(self, mass):
 		self.robotMass = mass
+	
+	def setTotalInertia(self, inertia):
+		self.robotInertia = inertia
 
 	def set_plane_normal(self, plane_normal):
 		self.plane_normal = plane_normal
@@ -179,6 +187,9 @@ class IterativeProjectionParameters:
 
 	def getCoMAngAcc(self):
 		return self.comAngAcc
+	
+	def getCoMAngVel(self):
+		return self.comAngVel
 
 	def getInertialForces(self):
 		return self.inertialForces
@@ -227,6 +238,9 @@ class IterativeProjectionParameters:
 
 	def getTotalMass(self):
 		return self.robotMass
+	
+	def getTotalInertia(self):
+		return self.robotInertia
 
 	def get_plane_normal(self):
 		return self.plane_normal
@@ -313,6 +327,8 @@ class IterativeProjectionParameters:
 			self.normals[leg] = received_data.normals.data[self.stride * leg: self.stride * leg + 3]
 
 		self.robotMass = received_data.robot_mass
+		# for i in range(3):
+		# 	self.robotInertia[i] = received_data.inertia_matrix[i*3 : i*3+3]
 
 		self.friction = received_data.mu_estimate
 
@@ -331,6 +347,9 @@ class IterativeProjectionParameters:
 			self.target_CoM_WF[dir] = received_data.target_CoM_WF[dir]
 
 		self.comLinAcc = np.array(received_data.desired_acceleration)
+		# self.comAngAcc = np.array(received_data.desired_acceleration)
+		# self.comAngVel = np.array(received_data.desired_acceleration)
+
 		for dir in range(0, 3):
 			self.inertialForces[dir] = received_data.inertial_force[dir]
 		for dir in range(0, 3):
