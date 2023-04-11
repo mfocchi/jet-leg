@@ -335,6 +335,7 @@ def talker():
 			params.setConstraintModes([constraint_mode_IP]*params.getNoOfLegs())
 			params.setNumberOfFrictionConesEdges(ng)
 			frictionRegion, actuation_polygons, computation_time = compDyn.iterative_projection_bretl(params)
+                        #print("frictionRegion: ", frictionRegion)
 			if frictionRegion is not False:
 				p.send_friction_region(name, p.fillPolygon(frictionRegion))
 				old_frictionRegion = frictionRegion
@@ -345,7 +346,8 @@ def talker():
 
 		if (p.plotFeasibleRegionFlag or p.plotExtendedRegionFlag):
 			FEASIBLE_REGION, actuation_polygons_array, computation_time = p.computeFeasibleRegion(params, ng, compDyn)
-			# safety measure use old when you cannot compute
+                        #print("FEASIBLE_REGION: ", FEASIBLE_REGION)
+                        # safety measure use old when you cannot compute
 			if (p.plotFeasibleRegionFlag):
 				if FEASIBLE_REGION is not False:
 					p.send_feasible_polygons(name, p.fillPolygon(FEASIBLE_REGION), foothold_params.option_index,
@@ -376,8 +378,8 @@ def talker():
 			if FEASIBLE_REGION	is not False:
 				EXTENDED_FEASIBLE_REGION = Polygon(FEASIBLE_REGION)
 			reachable_feasible_polygon = np.array([])
-			reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None,
-																							 20. * np.pi / 180, 0.03)
+			start_time = time.time()
+                        reachability_polygon, computation_time_joint = joint_projection.project_polytope(params, None, 20. * np.pi / 180, 0.03)
 
 			if reachability_polygon.size > 0:
 				preachability_polygon = Polygon(reachability_polygon)

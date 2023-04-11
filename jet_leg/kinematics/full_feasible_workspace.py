@@ -141,8 +141,6 @@ class FeasibleWorkspace:
 			for point_y in np.arange(comPosWF_0[0] - boundary_x, comPosWF_0[0] + boundary_x, 0.025):
 				for point_x in np.arange(comPosWF_0[1] - boundary_y, comPosWF_0[1] + boundary_y, 0.015):
 					self.check_point_reachability(point_x, point_y, comPosWF_0[2], params)
-			print "points: ", self.points
-			print "points: ", self.points_states
 			# while theta < 360. * pi / 180.:
 			# 	# print "theta: ", theta
 			#

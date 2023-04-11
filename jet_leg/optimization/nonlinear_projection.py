@@ -100,7 +100,7 @@ class NonlinearProjectionBretl:
 
 		return contactsBF
 
-	def compute_vertix(self, com_pos_x, com_pos_y, plane_normal, CoM_plane_z_intercept, params, theta, min_dir_step, max_iter):
+	def compute_vertix(self, com_pos_x, com_pos_y, plane_normal, CoM_plane_z_intercept, params, q_0, theta, min_dir_step, max_iter):
 		"""
 		Compute vertix of projected polygon in vdir direction.
 
@@ -136,7 +136,7 @@ class NonlinearProjectionBretl:
 			z_coordinate = self.math.compute_z_component_of_plane(c_t_xy, plane_normal, CoM_plane_z_intercept)
 			c_t = np.append(c_t_xy, z_coordinate)
 			contactsBF = self.getcontactsBF(params, c_t)
-			q = self.kin.inverse_kin(contactsBF, foot_vel)
+			q = self.kin.inverse_kin(contactsBF, foot_vel, q_0)
 			q_to_check = np.concatenate([list(q[leg*3 : leg*3+3]) for leg in stanceIndex]) # To check 3 or 4 feet stance
 
 			# if (not self.kin.hyqreal_ik_success) or self.kin.isOutOfJointLims(q, params.getJointLimsMax(), params.getJointLimsMin()):
@@ -147,6 +147,7 @@ class NonlinearProjectionBretl:
 			else:
 				cxy_opt = [c_t[0], c_t[1]]
 				dir_step += dir_step / 2
+				q_0 = q
 
 			i += 1
 
@@ -161,7 +162,7 @@ class NonlinearProjectionBretl:
 			z_coordinate = self.math.compute_z_component_of_plane(c_t_xy, plane_normal, CoM_plane_z_intercept)
 			c_t = np.append(c_t_xy, z_coordinate)
 			contactsBF = self.getcontactsBF(params, c_t)
-			q = self.kin.inverse_kin(contactsBF, foot_vel)
+			q = self.kin.inverse_kin(contactsBF, foot_vel, q_0)
 			q_to_check = np.concatenate([list(q[leg * 3: leg * 3 + 3]) for leg in stanceIndex]) # To check 3 or 4 feet stance
 
 			# If new point is on the same side (feasible or infeasible region) as last point, continue in same direction
@@ -171,6 +172,7 @@ class NonlinearProjectionBretl:
 												   params.getJointLimsMin()[stanceIndex,:])):
 				c_t_feasible = True
 				cxy_opt = [c_t[0], c_t[1]]
+				q_0 = q
 			else:
 				c_t_feasible = False
 
@@ -184,7 +186,7 @@ class NonlinearProjectionBretl:
 
 		return cxy_opt
 
-	def compute_polygon(self, params, theta_step, dir_step, max_iter):
+	def compute_polygon(self, params, q_CoM, theta_step, dir_step, max_iter):
 		"""
 		Compute projected Polytope.
 
@@ -195,6 +197,7 @@ class NonlinearProjectionBretl:
 		"""
 
 		comPosWF_0 = params.getCoMPosWF()
+
 		plane_normal = params.get_plane_normal()
 		CoM_plane_z_intercept = params.get_CoM_plane_z_intercept()
 		polygon = []
@@ -206,7 +209,7 @@ class NonlinearProjectionBretl:
 			# print "theta: ", theta
 
 			# Compute region for the current CoM position (in world frame)
-			v = Vertex(self.compute_vertix(comPosWF_0[0], comPosWF_0[1], plane_normal, CoM_plane_z_intercept, params, theta, dir_step, max_iter))
+			v = Vertex(self.compute_vertix(comPosWF_0[0], comPosWF_0[1], plane_normal, CoM_plane_z_intercept, params, q_CoM, theta, dir_step, max_iter))
 			polygon.append(v)
 
 			theta += theta_step  # increase search angle by step rad
@@ -252,7 +255,8 @@ class NonlinearProjectionBretl:
 				return np.array([]), (time.time() - ip_start)
 
 		# Compute region
-		polygon = self.compute_polygon(params, theta_step, dir_step, max_iter)
+		q_CoM = self.kin.get_current_q()
+		polygon = self.compute_polygon(params, q_CoM, theta_step, dir_step, max_iter)
 		# polygon.sort_vertices()
 		# vertices_list = polygon.export_vertices()
 		vertices_list = polygon

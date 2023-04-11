@@ -12,10 +12,11 @@ from context import jet_leg
 from numpy import array, cross, dot, eye, hstack, vstack, zeros, matrix
 from numpy.linalg import norm
 
-from jet_leg.maths.math_tools import Math
-from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.computational_geometry.math_tools import Math
+from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization import nonlinear_projection
 
+import math as MathPi
 import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
@@ -171,7 +172,7 @@ for roll in range(0, 80, 20):
 	# plotter.plot_polygon(np.transpose(IP_points), x[0],'trunk mass ' + str(trunk_mass*10) + ' N')
 	x = np.hstack([point[:, 0], point[0, 0]])
 	y = np.hstack([point[:, 1], point[0, 1]])
-	h1 = ax.plot(x, y, color=colorVal, linewidth=5., label=r'${}$'.format(roll/100.) + r' $\mathrm{rad}$')
+	h1 = ax.plot(x, y, color=colorVal, linewidth=5., label=r'${}$'.format(int(round(roll/100.*180./MathPi.pi))) + r' $^\circ$')
 
 ax.plot(contacts[0:nc, 0], contacts[0:nc, 1], 'ko', markersize=15, label=r' $\mathrm{Feet}$')
 # constraint_mode = ['ONLY_FRICTION',

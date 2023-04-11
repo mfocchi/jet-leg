@@ -6,6 +6,7 @@ Created on Tue Jun 12 10:54:31 2018
 """
 
 import numpy as np
+import time
 
 from jet_leg.plotting.plotting_tools import Plotter
 import random
@@ -100,6 +101,7 @@ com_check = None
 # polygon, computation_time = projection.project_polytope(params, com_check)
 polygon, computation_time = projection.project_polytope(params, com_check, 10. * np.pi / 180, 0.01)
 final = polygon
+print("Computation time: ", computation_time)
 
 plt.close()
 h1 = plt.figure()
