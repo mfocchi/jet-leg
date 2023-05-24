@@ -2,62 +2,60 @@
 <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/force_polygons.png" alt="hyqgreen" width="400"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/foothold_planning.png" alt="planning" width="400"/>
 
 
-# Feasible Region: an Actuation-Aware Extension of the Support Region
-This python library contains the code used for the motion planning formulation proposed in this [preprint](https://arxiv.org/abs/1903.07999#). In here you can also find the code used to generate the figures and plots of the manuscript. 
+# Improved Feasible Region
+This python library contains the code used for the computation of the feasibilty criteria in [preprint](https://arxiv.org/abs/2011.07967). In here you can also find the code used to generate the figures and plots of the manuscript. 
 
 <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/3contacts_F%26A.png" alt="hyqgreen" width="200"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/3contacts_onlyA.png" alt="planning" width="200"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/4contacts_F%26A.png" alt="hyqgreen" width="200"/>  <img src="https://github.com/orsoromeo/jet-leg/blob/master/figs/4contacts_onlyA.png" alt="planning" width="200"/>
 
-Jet-leg performs common operations over [convex
-polyhedra](https://en.wikipedia.org/wiki/Convex_polyhedron) in higher dimensions in order to assess the problem of stability and motion feasibility of legged robots.
-
 ## What you can do with Jet-leg:
 - compute the Support region of legged robots as in [Bretl. et al. 2008](https://ieeexplore.ieee.org/abstract/document/4598894); 
-- compute the Feasible region of legged robots as in [Orsolino. et al. 2019](https://arxiv.org/abs/1903.07999#);
+- compute the Feasible region of legged robots as in [Orsolino. et al. 2019](https://arxiv.org/abs/1903.07999#) with the incorportation of the robot inertial effects as in [Abdalla. et al. 2023](https://arxiv.org/abs/2011.07967);
+- compute the Reachable region as in [Abdalla. et al. 2023](https://arxiv.org/abs/2011.07967);
 - compute force polytopes of legged robots given their URDF;
 - compare different leg designs and understand their consequences on the robot's balancing capabilities; 
 - test various formulations of linear, convex or nonlinear trajectory optimization problems;
 
 
 ## Dependencies
-APT dependencies:
-- CVXOPT
-- GLPK
-- Cython
-- Scipy
+
 - Numpy
-
-ROS dependencies:
-```
-sudo apt-get  install ros-kinetic-graph-msgs
-```
-
-Python dependencies:
-- Pycddlib
-- Matplotlib
+- PyYAML
 - Shapely
+- Pycddlib
+- Scipy
+- CVXOPT
+- Matplotlib
 - Pathos (multiprocessing)
-The above dependencies can be installed with the following commands:
+
+The above dependencies can be installed for Python 3.5 with the following commands:
 ```
-CVXOPT_BUILD_GLPK=1 pip install cvxopt --user
-sudo apt-get install  libglpk-dev python python-dev python-pip cython python-scipy  python-numpy
-pip install pycddlib --user
-pip install --user matplotlib
+pip install --user numpy
+pip install --user pyyaml
 pip install --user shapely
-pip install --user pathos
+pip install --user pycddlib
+pip install --user scipy
+pip install --user cvxopt==1.2.5
+pip install --user matplotlib
+pip install --user pathos==0.2.7
 ```
+
+You can remove all ``--user`` arguments to install these Python modules system-wide.
 
 Other dependencies:
 - [Pinocchio](https://github.com/stack-of-tasks/pinocchio) 
+- [Pypoman](https://github.com/stephane-caron/pypoman) for the manipulation of polyhedrical object
 
 after cloning remember to do in the jetleg folder:
 ```
 git submodules update --init --recursive
 ```
 
-You can remove all ``--user`` arguments to install these Python modules system-wide.
-
 ## Optional dependencies:
 
+- [rospkg]
+```
+pip install rospkg
+```
 - [Ipopt](https://projects.coin-or.org/Ipopt) and its Python interface [Pypi](https://pypi.org/project/ipopt/) for the solution of large-scale nonlinear optimization problems
 - [ffmpeg](https://www.ffmpeg.org/) for the generation of Matplotlib animations
 ```
