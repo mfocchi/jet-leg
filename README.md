@@ -23,6 +23,8 @@ APT dependencies:
 - CVXOPT
 - GLPK
 - Cython
+- Scipy
+- Numpy
 
 ROS dependencies:
 ```
@@ -30,20 +32,28 @@ sudo apt-get  install ros-kinetic-graph-msgs
 ```
 
 Python dependencies:
-- Numpy
-- Scipy
 - Pycddlib
 - Matplotlib
-- [Pypoman](https://github.com/stephane-caron/pypoman) for the manipulation of polyhedrical object
-- [Pinocchio](https://github.com/stack-of-tasks/pinocchio) 
-
+- Shapely
+- Pathos (multiprocessing)
 The above dependencies can be installed with the following commands:
 ```
-sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy
 CVXOPT_BUILD_GLPK=1 pip install cvxopt --user
+sudo apt-get install  libglpk-dev python python-dev python-pip cython python-scipy  python-numpy
 pip install pycddlib --user
-pip install pypoman
+pip install --user matplotlib
+pip install --user shapely
+pip install --user pathos
 ```
+
+Other dependencies:
+- [Pinocchio](https://github.com/stack-of-tasks/pinocchio) 
+
+after cloning remember to do in the jetleg folder:
+```
+git submodules update --init --recursive
+```
+
 You can remove all ``--user`` arguments to install these Python modules system-wide.
 
 ## Optional dependencies:

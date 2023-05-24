@@ -10,9 +10,9 @@ import numpy as np
 from numpy import array
 from jet_leg.plotting.plotting_tools import Plotter
 import random
-from jet_leg.maths.math_tools import Math
+from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
-from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 
 import matplotlib.pyplot as plt
 from jet_leg.plotting.arrow3D import Arrow3D
@@ -44,7 +44,7 @@ comp_dyn = ComputationalDynamics(robot_name)
 
 stackedForcePolytopesLF = np.zeros((3,8))
 stackedFootPosLF = []
-for lf_x in np.arange(-0.2, 0.2, 0.1):
+for lf_x in np.arange(0.0, 0.7, 0.05):
 
     """ contact points in the World Frame"""
     LF_foot = np.array([lf_x, 0.2, -0.4])
@@ -129,23 +129,46 @@ for lf_x in np.arange(-0.2, 0.2, 0.1):
 number_of_samples = np.shape(stackedForcePolytopesLF)[1]/8 -1
 print number_of_samples
 plt.figure()
+
+amplitude = []
+for j in np.arange(0,number_of_samples):
+    tmpVX = stackedForcePolytopesLF[0]
+    tmpVY = stackedForcePolytopesLF[1]
+    tmpVZ = stackedForcePolytopesLF[2]
+    vx = []
+    vy = []
+    vz = []
+    amp = 0.0
+    for i in np.arange(0,8):
+        new_vx = tmpVX[8 + j * 8 + i]
+        vx = np.hstack([vx, new_vx])
+        vy = np.hstack([vy, tmpVY[8 + j * 8 + i]])
+        vz = np.hstack([vz, tmpVZ[8 + j * 8 + i]])
+        tmp_amp = np.sqrt(np.power(vx[-1],2) + np.power(vy[-1],2) + np.power(vz[-1],2))
+        print tmp_amp
+        if tmp_amp>amp:
+            amp = tmp_amp
+    amplitude = np.hstack([amplitude, amp])
+print "amplitude", amplitude
+
+plt.plot(stackedFootPosLF, amplitude, '-o', markersize=15, label='vertices')
+
+tmpVX = stackedForcePolytopesLF[0]
+tmpVY = stackedForcePolytopesLF[1]
+tmpVZ = stackedForcePolytopesLF[2]
 for i in np.arange(0,8):
     vx = []
     vy = []
     vz = []
     for j in np.arange(0,number_of_samples):
-        tmpVX = stackedForcePolytopesLF[0]
-        tmpVY = stackedForcePolytopesLF[1]
-        tmpVZ = stackedForcePolytopesLF[2]
         print np.shape(tmpVX)
         print j
         vx = np.hstack([vx, tmpVX[8 + j * 8 + i]])
         vy = np.hstack([vy, tmpVY[8 + j * 8 + i]])
         vz = np.hstack([vz, tmpVZ[8 + j * 8 + i]])
-
-    print vx
-    print vy
-    plt.plot(stackedFootPosLF, vz, '-o', markersize=15, label='CoM')
+        amp = np.sqrt(np.power(vx,2) + np.power(vy,2) + np.power(vz,2))
+        amplitude = np.hstack([amplitude, amp])
+     #plt.plot(stackedFootPosLF, vz, '-o', markersize=15, label='vertices')
 
 plt.grid()
 plt.xlabel("X [m]")

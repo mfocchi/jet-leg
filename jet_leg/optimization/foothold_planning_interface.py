@@ -16,21 +16,21 @@ import threading
 
 from copy import deepcopy
 
-from gazebo_msgs.srv import ApplyBodyWrench
-from geometry_msgs.msg import Vector3, Wrench
-from rosgraph_msgs.msg import Clock
-from geometry_msgs.msg import Point
-from dls_msgs.msg import StringDoubleArray
-from feasible_region.msg import Polygon3D, LegsPolygons
-from dwl_msgs.msg import WholeBodyState, WholeBodyTrajectory, JointState, ContactState, BaseState
-from sensor_msgs.msg import JointState
-from std_msgs.msg import Float32, Header
-from std_srvs.srv import Empty
-from termcolor import colored
+# from gazebo_msgs.srv import ApplyBodyWrench
+# from geometry_msgs.msg import Vector3, Wrench
+# from rosgraph_msgs.msg import Clock
+# from geometry_msgs.msg import Point
+# from dls_msgs.msg import StringDoubleArray
+# from feasible_region.msg import Polygon3D, LegsPolygons
+# from dwl_msgs.msg import WholeBodyState, WholeBodyTrajectory, JointState, ContactState, BaseState
+# from sensor_msgs.msg import JointState
+# from std_msgs.msg import Float32, Header
+# from std_srvs.srv import Empty
+# from termcolor import colored
 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
-from jet_leg.maths.computational_geometry import ComputationalGeometry
-from jet_leg.maths.math_tools import Math
+from jet_leg.computational_geometry.computational_geometry import ComputationalGeometry
+from jet_leg.computational_geometry.math_tools import Math
 
 
 stderr = sys.stderr

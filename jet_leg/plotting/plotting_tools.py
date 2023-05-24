@@ -7,7 +7,7 @@ Created on Mon May 28 12:36:24 2018
 
 import matplotlib.pyplot as plt
 import numpy as np
-from jet_leg.maths.computational_geometry import ComputationalGeometry
+from jet_leg.computational_geometry.computational_geometry import ComputationalGeometry
 
 class Plotter:
     
@@ -19,7 +19,7 @@ class Plotter:
           x = np.hstack([points[0,:], points[0,0]])
           y = np.hstack([points[1,:], points[1,0]])
           
-      plt.plot(x, y, color, linewidth=10., label = Label)
+      plt.plot(x, y, color, linewidth=5., label = Label)
     
   def plot_line(self, ax, line_coefficients):
       a = line_coefficients[0]

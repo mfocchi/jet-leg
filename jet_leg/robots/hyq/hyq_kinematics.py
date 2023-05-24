@@ -4,7 +4,15 @@ Created on Mon Jul  2 05:34:42 2018
 
 @author: romeo orsolino
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
+import yaml
+import sys
+import os
 
 from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
@@ -23,7 +31,7 @@ class HyQKinematics:
         self.BASE2HAA_offset_z = 0.08;
         self.HAA2HFE = 0.08;
 
-        self.isOutOfWorkSpace = False
+        # self.isOutOfWorkSpace = False
         
         self.fr_LF_lowerleg_Xh_LF_foot = np.zeros((4,4));	
         self.fr_RF_lowerleg_Xh_RF_foot = np.zeros((4,4));
@@ -108,6 +116,28 @@ class HyQKinematics:
         '''initialize quantities'''
         self.init_jacobians()
         self.init_homogeneous()
+
+
+        if sys.version_info[:2] == (2, 7):
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{}/'.format('hyq')
+            self.URDF = self.PKG + 'urdf/{}.urdf'.format('hyq')
+        else:
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{robotName}/'
+            self.URDF = self.PKG + 'urdf/{robotName}.urdf'
+
+        self.FEET = self.PKG + 'robot_data.yaml'
+
+        yaml_data = []
+        self.default_q = []
+        with open(self.FEET, 'r') as stream:
+            try:
+                yaml_data = yaml.safe_load(stream)
+
+            except yaml.YAMLError as exc:
+                print(exc)
+
+        self.default_q = yaml_data['Default_q']
+        self.q = self.default_q  # Last q computed
         
 
     def init_jacobians(self):
@@ -794,8 +824,11 @@ class HyQKinematics:
         return self.fr_trunk_J_LF_foot[3:6,:] , self.fr_trunk_J_RF_foot[3:6,:], self.fr_trunk_J_LH_foot[3:6,:], self.fr_trunk_J_RH_foot[3:6,:]
 
     def getLegJacobians(self):
-        return self.fr_trunk_J_LF_foot[3:6,:] , self.fr_trunk_J_RF_foot[3:6,:], self.fr_trunk_J_LH_foot[3:6,:], self.fr_trunk_J_RH_foot[3:6,:], self.isOutOfWorkSpace
+        return np.array([self.fr_trunk_J_LF_foot[3:6,:] , self.fr_trunk_J_RF_foot[3:6,:], self.fr_trunk_J_LH_foot[3:6,:], self.fr_trunk_J_RH_foot[3:6,:]]), False
 
+    def getCurrentQ(self):
+
+        return self.q
 
     def forward_kin(self, q):
         LF_foot = self.fr_trunk_Xh_LF_foot[0:3,3]
@@ -820,7 +853,7 @@ class HyQKinematics:
         elif legID == 3:
             q = self.hyq_RH_chain.inverse_kinematics(target_frame)
         else:
-            print "warning: leg ID is wrong"
+            print("warning: leg ID is wrong")
         q_leg = q[1:4]
         return q_leg
 
@@ -948,7 +981,7 @@ class HyQKinematics:
 #       //Check if the outputs are inf or nan
         for joint in self.dog.legJoints:
             if not np.isfinite(q_leg[joint]):
-                print "Position of joint ",joint," and leg ", 0," is not finite !!!" 
+                print("Position of joint ",joint," and leg ", 0," is not finite !!!") 
 #            return false;
             
         return q_leg
@@ -959,8 +992,25 @@ class HyQKinematics:
             q_leg = self.leg_inverse_kin(legID, contactsBF[legID,:], foot_vel[legID,:])
             q = np.hstack([q, q_leg])
 
+        self.q = q
         self.update_homogeneous(q)
         self.update_jacobians(q)
         return q
 
-        
+    def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
+
+        no_of_legs_to_check = joint_positions.size//3
+        q = joint_positions.reshape((no_of_legs_to_check, 3))
+        # print "q: ", q
+        # print "leq than max ", np.all(np.less_equal(q, joint_limits_max))
+        # print "geq than min ", np.all(np.greater_equal(q, joint_limits_min))
+        return not np.all(np.less_equal(q, joint_limits_max)) \
+               or not np.all(np.greater_equal(q, joint_limits_min))
+
+    def isOutOfWorkSpace(self, contactsBF_check, joint_limits_max, joint_limits_min, stance_index, foot_vel):
+
+        q = self.fixedBaseInverseKinematics(contactsBF_check, foot_vel)
+        self.q = q
+        q_to_check = np.concatenate([list(q[leg * 3: leg * 3 + 3]) for leg in stance_index])
+
+        return self.isOutOfJointLims(q_to_check, joint_limits_max[stance_index,:], joint_limits_min[stance_index,:])

@@ -1,0 +1,28 @@
+# List of feet names in a similar order to feet variables (position, etc...)
+Feet_names:
+- lf_foot
+- rf_foot
+- lh_foot
+- rh_foot
+- lc_foot
+- rc_foot
+# Nominal joint angles ordered in alphabetical order # LC LF LH RC RF RH
+Default_q:
+- -0.32
+- 0.6
+- -0.60
+- -0.23
+- 0.6
+- -0.60
+- -1.5
+- 0.6
+- -0.6
+- 0.32
+- -0.6
+- 0.60
+- 0.23
+- -0.6
+- 0.6
+- 1.5
+- -0.6
+- 0.6

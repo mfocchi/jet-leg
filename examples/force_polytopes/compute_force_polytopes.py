@@ -10,9 +10,9 @@ import numpy as np
 from numpy import array
 from jet_leg.plotting.plotting_tools import Plotter
 import random
-from jet_leg.maths.math_tools import Math
+from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
-from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 
 import matplotlib.pyplot as plt
 from jet_leg.plotting.arrow3D import Arrow3D
@@ -36,7 +36,7 @@ constraint_mode_IP = ['FRICTION_AND_ACTUATION',
 
 # number of decision variables of the problem
 # n = nc*6
-comWF = np.array([0.0, -0.0, 0.0])
+comWF = np.array([0.0, 0.0, 0.0])
 
 """ contact points in the World Frame"""
 LF_foot = np.array([0.4, 0.3, -0.5])
@@ -73,17 +73,6 @@ n3 = np.transpose(np.transpose(math.rpyToRot(0.0, 0.0, 0.0)).dot(axisZ))  # LH
 n4 = np.transpose(np.transpose(math.rpyToRot(0.0, 0.0, 0.0)).dot(axisZ))  # RH
 normals = np.vstack([n1, n2, n3, n4])
 
-''' torque limits for each leg (this code assumes a hyq-like design, i.e. three joints per leg)
-HAA = Hip Abduction Adduction
-HFE = Hip Flextion Extension
-KFE = Knee Flextion Extension
-'''
-LF_tau_lim = [50.0, 100.0, 100.0]  # HAA, HFE, KFE
-RF_tau_lim = [50.0, 100.0, 100.0]  # HAA, HFE, KFE
-LH_tau_lim = [50.0, 100.0, 100.0]  # HAA, HFE, KFE
-RH_tau_lim = [50.0, 100.0, 100.0]  # HAA, HFE, KFE
-torque_limits = np.array([LF_tau_lim, RF_tau_lim, LH_tau_lim, RH_tau_lim])
-
 ''' extForceW is an optional external pure force (no external torque for now) applied on the CoM of the robot.'''
 extForceW = np.array([0.0, 0.0, 0.0])  # units are Nm
 
@@ -94,7 +83,7 @@ comp_dyn = ComputationalDynamics('anymal')
 params = IterativeProjectionParameters()
 params.setContactsPosWF(contacts)
 params.setCoMPosWF(comWF)
-params.setTorqueLims(torque_limits)
+params.setTorqueLims(comp_dyn.robotModel.robotModel.torque_limits)
 params.setActiveContacts(stanceFeet)
 params.setConstraintModes(constraint_mode_IP)
 params.setContactNormals(normals)

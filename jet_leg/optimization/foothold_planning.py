@@ -6,6 +6,10 @@ Created on Wed Oct  3 13:38:45 2018
 @author: Romeo Orsolino
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import copy
 import numpy as np
 import os
@@ -17,23 +21,23 @@ import threading
 
 from copy import deepcopy
 
-from gazebo_msgs.srv import ApplyBodyWrench
-from geometry_msgs.msg import Vector3, Wrench
-from rosgraph_msgs.msg import Clock
-from geometry_msgs.msg import Point
-from dls_msgs.msg import StringDoubleArray
-from feasible_region.msg import Polygon3D, LegsPolygons
-from dwl_msgs.msg import WholeBodyState, WholeBodyTrajectory, JointState, ContactState, BaseState
-from sensor_msgs.msg import JointState
-from std_msgs.msg import Float32, Header
-from std_srvs.srv import Empty
-from termcolor import colored
+# from gazebo_msgs.srv import ApplyBodyWrench
+# from geometry_msgs.msg import Vector3, Wrench
+# from rosgraph_msgs.msg import Clock
+# from geometry_msgs.msg import Point
+# from dls_msgs.msg import StringDoubleArray
+# from feasible_region.msg import Polygon3D, LegsPolygons
+# from dwl_msgs.msg import WholeBodyState, WholeBodyTrajectory, JointState, ContactState, BaseState
+# from sensor_msgs.msg import JointState
+# from std_msgs.msg import Float32, Header
+# from std_srvs.srv import Empty
+# from termcolor import colored
 
 #from context import jet_leg 
 from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
-from jet_leg.maths.computational_geometry import ComputationalGeometry
+from jet_leg.computational_geometry.computational_geometry import ComputationalGeometry
 from jet_leg.optimization.foothold_planning_interface import FootholdPlanningInterface
-from jet_leg.maths.math_tools import Math
+from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 
@@ -61,10 +65,11 @@ class FootHoldPlanning:
 #        print "sample contacts" , params.sample_contacts
         
 #        footPlanningParams.numberOfFeetOptions = np.size(footPlanningParams.footOptions,0)
-        print 'number of feet options ',footPlanningParams.numberOfFeetOptions
+        print('number of feet options ',footPlanningParams.numberOfFeetOptions)
 #        print numberOfFeetOptions
         feasible_regions = []
         area = []
+        # Loop over all the possible (default is 9) foothold options
         for i in range(0, footPlanningParams.numberOfFeetOptions):
             #these two lines go together to overwrite the future swing foot
                      
@@ -73,13 +78,13 @@ class FootHoldPlanning:
 
 #            print 'IAR', IAR
             d = self.math.find_residual_radius(IAR, footPlanningParams.com_position_to_validateW)
-            print 'residual radius', d
+            print('residual radius', d)
             feasible_regions.append(IAR)
 #            print 'FR', feasible_regions
             area.append( self.compGeo.computePolygonArea(IAR))
         
-        print 'area ', area
-        print 'max arg ',np.argmax(np.array(area), axis=0)
+        print('area ', area)
+        print('max arg ',np.argmax(np.array(area), axis=0))
         return np.argmax(np.array(area), axis=0), feasible_regions
         
     def selectMinumumRequiredFeasibleAreaResidualRadius(self,  footPlanningParams, params):
@@ -101,7 +106,7 @@ class FootHoldPlanning:
         mapFootHoldIdxToPolygonIdx = []
         
 #        counter = 0
-        print 'number of feet options ',footPlanningParams.numberOfFeetOptions
+        print('number of feet options ',footPlanningParams.numberOfFeetOptions)
         numberOfOptions = footPlanningParams.numberOfFeetOptions
         
         #check the prediction point at the beginning
@@ -160,7 +165,7 @@ class FootHoldPlanning:
                             feasible_regions.append(IAR)
                             residualRadiusToStack.append(residualRadius)
                             area.append(newArea)
-            print 'area ', area
+            print('area ', area)
             
         else:
             foothold_index = -1
@@ -224,7 +229,7 @@ class FootHoldPlanning:
         else:  # you are already in the max
             searchDirection = 0
             #                    print 'final foothold index', foothold_index
-            print 'RETURN before entering while loop'
+            print('RETURN before entering while loop')
             gradient = False
             return gradient, searchDirection, residualRadius, foothold_index, residualRadiusToStack, feasible_regions, mapFootHoldIdxToPolygonIdx
 
@@ -250,9 +255,9 @@ class FootHoldPlanning:
         mapFootHoldIdxToPolygonIdx = []
 
         #        counter = 0
-        print 'number of feet options ', footPlanningParams.numberOfFeetOptions
+        print('number of feet options ', footPlanningParams.numberOfFeetOptions)
         numberOfOptions = footPlanningParams.numberOfFeetOptions
-        print footPlanningParams.footOptions
+        print(footPlanningParams.footOptions)
 
         # check the prediction point at the beginning
         if numberOfOptions > 0:
@@ -272,12 +277,12 @@ class FootHoldPlanning:
                     feasible_regions.append(IAR)
                     residualRadiusToStack.append(residualRadius)
                     area.append(newArea)
-            print 'area ', area
+            print('area ', area)
             if np.size(area, 0) > 0:
                 maxFootIndex = np.argmax(area)
             else:
                 maxFootIndex = -1
-            print 'max foothold: ', maxFootIndex
+            print('max foothold: ', maxFootIndex)
 
         else:
             maxFootIndex = -1
