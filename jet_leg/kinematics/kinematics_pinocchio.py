@@ -14,7 +14,7 @@ import math
 
 class robotKinematics():
     def __init__(self, robotName):
-        if sys.version_info[:2] == (2, 7):
+        if sys.version_info[:2] == (2, 7) or sys.version_info[:2] == (3, 5):
             self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../resources/urdfs/{}/'.format(robotName)
             self.URDF = self.PKG + 'urdf/{}.urdf'.format(robotName)
         else:

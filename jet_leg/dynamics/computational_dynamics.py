@@ -43,11 +43,13 @@ class ComputationalDynamics:
                                velocity_ang = [[0.], [0.], [0.]]):
 
         linear_momentum_dot = np.multiply(robotMass, acceleration_lin)
-
         coriolis = robotInertia.dot(velocity_ang)
         coriolis = np.cross(np.transpose(velocity_ang), np.transpose(coriolis))
         coriolis = coriolis[0]
-        angular_momentum_dot = np.matmul(robotInertia, comAngAcc) + coriolis
+        angular_momentum_dot = np.matmul(robotInertia, acceleration_ang) + coriolis
+        
+        return linear_momentum_dot, angular_momentum_dot
+
 
 
     ''' 
@@ -87,7 +89,7 @@ class ComputationalDynamics:
         extForce = iterative_projection_params.getExternalForce()
         extTorque = iterative_projection_params.getExternalCentroidalTorque()
         acceleration_lin = iterative_projection_params.getCoMLinAcc()
-        acceleration_ang = iterative_projection_params.getComAngAcc()
+        acceleration_ang = iterative_projection_params.getCoMAngAcc()
         velocity_ang = iterative_projection_params.getCoMAngVel()
 
         linear_momentum_dot, angular_momentum_dot = self.compute_inertial_terms(robotMass,
@@ -114,7 +116,6 @@ class ComputationalDynamics:
                 graspMatrix = self.math.getGraspMatrix(r)[:,0:3]  # forces (3D)
             else:
                 graspMatrix = self.math.getGraspMatrix(r)[:,0:5]  # wrenches (6D)
-            print("grasp mat", graspMatrix)
             Ex = hstack([Ex, -graspMatrix[4]])
             Ey = hstack([Ey, graspMatrix[3]])
             # print "Ex", Ex
@@ -161,6 +162,7 @@ class ComputationalDynamics:
 
         contactsWF = iterative_projection_params.getContactsPosWF()
         robotMass = iterative_projection_params.robotMass
+        robotInertia = iterative_projection_params.getTotalInertia()
         g = 9.81
         contactsNumber = np.sum(stanceLegs)
 
