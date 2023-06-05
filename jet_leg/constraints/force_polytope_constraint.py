@@ -37,7 +37,7 @@ class ForcePolytopeConstraint:
         if isOutOfWorkspace:
             C1 = np.zeros((0, 0))
             d1 = np.zeros((1, 0))
-            actuation_polygons = 0
+            actuation_polygons_WF = 0
             print('Out of workspace IK!!!')
         else:
             #            print 'Jacobians',jacobianMatrices
