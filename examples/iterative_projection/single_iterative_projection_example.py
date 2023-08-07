@@ -25,7 +25,7 @@ plt.close('all')
 math = Math()
 
 ''' Set the robot's name (either 'hyq', 'hyqreal' or 'anymal')'''
-robot_name = 'anymal'
+robot_name = 'hyq'
 
 ''' number of generators, i.e. rays/edges used to linearize the friction cone '''
 ng = 4
@@ -36,24 +36,25 @@ possible constraints for each foot:
  ONLY_FRICTION = only friction cone constraints are enforced
  FRICTION_AND_ACTUATION = both friction cone constraints and joint-torque limits
 '''
-constraint_mode_IP = ['FRICTION_AND_ACTUATION',
-                      'FRICTION_AND_ACTUATION',
-                      'FRICTION_AND_ACTUATION',
-                      'FRICTION_AND_ACTUATION']
+constraint_mode_IP = ['ONLY_FRICTION',
+                      'ONLY_FRICTION',
+                      'ONLY_FRICTION',
+                      'ONLY_FRICTION']
 
 # number of decision variables of the problem
 #n = nc*6
-comWF = np.array([-0.009, 0.0001, 0.47])  # pos of COM in world frame w. trunk controller
+comWF = np.array([-0.009, 0.0001, 0.25])  # pos of COM in world frame w. trunk controller
 comBF = np.array([-0.0094, 0.0002, -0.0458])  # pos of COM in body frame w. trunk controller
 rpy = np.array([0.00001589, -0.00000726, -0.00000854])  # orientation of body frame w. trunk controller
 comWF_lin_acc = np.array([.0, .0, .0])
 comWF_ang_acc = np.array([.0, .0, .0])
 
 """ contact points in the World Frame"""
-LF_foot = np.array([0.36, 0.21, 0.02])  # Starting configuration w.o. trunk controller
-RF_foot = np.array([0.36, -0.21, 0.02])
-LH_foot = np.array([-0.36, 0.21, 0.02])
-RH_foot = np.array([-0.36, -0.21, 0.02])
+LF_foot = np.array([0.20, 0.18, 0.02])  # Starting configuration w.o. trunk controller
+RF_foot = np.array([0.20, -0.18, 0.02])
+LH_foot = np.array([-0.16, 0.18, 0.02])
+RH_foot = np.array([-0.16, -0.18, 0.02])
+
 
 contactsWF = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot))
 

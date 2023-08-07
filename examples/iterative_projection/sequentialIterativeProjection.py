@@ -86,8 +86,8 @@ params.setNumberOfFrictionConesEdges(ng)
 params.setTrunkMass(trunk_mass)
 
 feasible, unfeasible, contact_forces = compDyn.LP_projection(params, useVariableJacobian, 0.2, 0.2)
-print feasible
-print unfeasible
+print(feasible)
+print(unfeasible)
 #desired_direction = [-1.0, -1.0]
 
 IP_points1, actuation_polygons, comp_time = compDyn.iterative_projection_bretl(params)
@@ -122,7 +122,7 @@ plt.grid()
 plt.xlabel("X [m]")
 plt.ylabel("Y [m]")
 contacts = params.getContactsPos()
-print nc, contacts
+print (nc, contacts)
 h1 = plt.plot(contacts[0:nc,0],contacts[0:nc,1],'ko',markersize=15, label='feet')
 
 plotter.plot_polygon(np.transpose(IP_points1), color = 'b')
@@ -139,7 +139,7 @@ for j in range(0, feasiblePointsSize):
         plt.scatter(feasible[j,0], feasible[j,1],c='g',s=50)
         lastFeasibleIndex = j
 unfeasiblePointsSize = np.size(unfeasible,0)
-print unfeasiblePointsSize
+print (unfeasiblePointsSize)
 for j in range(0, unfeasiblePointsSize):
     if (unfeasible[j,2]<0.01)&(unfeasible[j,2]>-0.01):
         plt.scatter(unfeasible[j,0], unfeasible[j,1],c='r',s=50)
@@ -148,8 +148,8 @@ for j in range(0, unfeasiblePointsSize):
 #h3 = plt.scatter(unfeasible[lastUnfeasibleIndex,0], unfeasible[lastUnfeasibleIndex,1],c='r',s=50, label='LP unfeasible')
 
 #
-#print "final vertices: ", vx
-#print "number of vertices: ", np.size(vx, 0)
+#print( "final vertices: ", vx)
+#print( "number of vertices: ", np.size(vx, 0))
 plt.legend()
 plt.show()
 

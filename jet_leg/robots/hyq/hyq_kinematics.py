@@ -122,8 +122,8 @@ class HyQKinematics:
             self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{}/'.format('hyq')
             self.URDF = self.PKG + 'urdf/{}.urdf'.format('hyq')
         else:
-            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{robotName}/'
-            self.URDF = self.PKG + 'urdf/{robotName}.urdf'
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/hyq/'
+            self.URDF = self.PKG + 'urdf/hyq.urdf'
 
         self.FEET = self.PKG + 'robot_data.yaml'
 

@@ -18,8 +18,8 @@ class robotKinematics():
             self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../resources/urdfs/{}/'.format(robotName)
             self.URDF = self.PKG + 'urdf/{}.urdf'.format(robotName)
         else:
-            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../resources/urdfs/{robotName}/'
-            self.URDF = self.PKG + 'urdf/{robotName}.urdf'
+            self.PKG = os.path.dirname(os.path.abspath(__file__)) + f'/../../resources/urdfs/{robotName}/'
+            self.URDF = self.PKG + f'urdf/{robotName}.urdf'
 
         self.FEET = self.PKG + 'robot_data.yaml'
         if self.PKG is None:

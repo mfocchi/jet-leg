@@ -37,7 +37,7 @@ yaw_angle = 0.04
 
 
 '''Implementation '''
-print "angle is: ", yaw_angle
+print ("angle is: ", yaw_angle)
 dir_x = np.cos(yaw_angle)
 dir_y = np.sin(yaw_angle)
 desired_direction = np.array([dir_x, dir_y, 0.0])

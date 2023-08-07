@@ -56,17 +56,17 @@ class VertexVariableConstraints():
             #print comWorldFrame
             #comWorldFrame = np.array([0.0, 0.0, 0.0])
             z, error = optimize_direction_variable_constraint(comWorldFrame, direction)
-            print 'error: ', error
+            print('error: ', error)
         except ValueError:
             self.expanded = True
             return False, None
         xopt, yopt = z
         delta_area = cross([xopt-v1.x, yopt-v1.y], [v1.x-v2.x, v1.y-v2.y])
         delta_area_abs = abs(cross([xopt-v1.x, yopt-v1.y], [v1.x-v2.x, v1.y-v2.y]))
-        print "Area: ",delta_area
+        print ("Area: ",delta_area)
         if delta_area_abs < 1e-3:
             self.expanded = True
-            print "the area is small enough so the vertex expansion is over"
+            print ("the area is small enough so the vertex expansion is over")
             return False, None
         else:
             vnew = VertexVariableConstraints([xopt, yopt])

@@ -131,7 +131,7 @@ class FeasibleWorkspace:
 		contactsBF = self.getcontactsBF(params, comPosWF_0)
 		foot_vel = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]])
 		if self.kin.isOutOfWorkSpace(contactsBF, params.getJointLimsMax(), params.getJointLimsMin(), stanceIndex, foot_vel):
-			print "Couldn't compute a reachable region! Current configuration is already out of joint limits!"
+			print ("Couldn't compute a reachable region! Current configuration is already out of joint limits!")
 		else:
 			# polygon = Polygon()
 			theta = 0

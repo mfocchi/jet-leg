@@ -52,9 +52,9 @@ tripleStance = False
 randomSwingLeg = random.randint(0, 3)  # if you want you can define a swing leg using this variable
 
 if tripleStance:
-    print 'Swing leg', randomSwingLeg
+    print ('Swing leg', randomSwingLeg)
     stanceFeet[randomSwingLeg] = 0
-print 'stanceLegs ', stanceFeet
+print ('stanceLegs ', stanceFeet)
 
 ''' joint position limits for each leg (this code assumes a hyq-like design, i.e. three joints per leg)
 HAA = Hip Abduction Adduction
@@ -90,8 +90,8 @@ com_check = None
 polygon, computation_time = projection.project_polytope(params, com_check, 20. * np.pi / 180, 0.03)
 final = polygon
 # polygon, computation_time = projection.project_polytope(params)
-print "vertices", polygon
-print "Computation Time: ", computation_time, " seconds"
+print ("vertices"), polygon
+print ("Computation Time: ", computation_time, " seconds")
 
 # joint_lim_polygon = Polygon(polygon)
 # test_polygon = Polygon([(-0.215, -0.34), (0.225, -0.34), (0.225, 0.34), (-0.215, 0.34)])
