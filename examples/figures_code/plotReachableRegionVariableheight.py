@@ -11,9 +11,8 @@ from context import jet_leg
 
 from numpy import array, cross, dot, eye, hstack, vstack, zeros, matrix
 from numpy.linalg import norm
-
-from jet_leg.maths.math_tools import Math
-from jet_leg.maths.iterative_projection_parameters import IterativeProjectionParameters
+from jet_leg.computational_geometry.math_tools import Math
+from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization import nonlinear_projection
 
 import matplotlib as mpl
