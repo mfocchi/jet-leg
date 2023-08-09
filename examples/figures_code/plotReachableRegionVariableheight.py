@@ -96,7 +96,7 @@ stanceLegs = [1, 1, 1, 1]
 nc = np.sum(stanceLegs)
 stanceIndex = []
 swingIndex = []
-print 'stance', stanceLegs
+print('stance', stanceLegs)
 for iter in range(0, 4):
 	if stanceLegs[iter] == 1:
 		#               print 'new poly', stanceIndex, iter
@@ -135,7 +135,6 @@ normals = np.vstack([n1, n2, n3, n4])
 
 ''' Add 2D figure '''
 mpl.rcParams['text.usetex'] = True
-mpl.rcParams['text.latex.unicode'] = True
 fig = plt.figure(1)
 
 scale = np.linspace(50, 150, 6)
@@ -202,7 +201,6 @@ plt.rc('font', family='serif', size=20)
 plt.grid()
 plt.xlabel("x [m]")
 plt.ylabel("y [m]")
-ax.legend(bbox_to_anchor=(1.17, 0.83), fontsize=18, framealpha=0.6)
+ax.legend( fontsize=12, framealpha=0.6)
 
-plt.savefig("foo.pdf")
 plt.show()
