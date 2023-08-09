@@ -9,12 +9,10 @@ import numpy as np
 
 from jet_leg.plotting.plotting_tools import Plotter
 import random
-from jet_leg.kinematics import kinematics_interface
 from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization import nonlinear_projection
-from shapely.geometry import Polygon
-from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
+
 
 import matplotlib.pyplot as plt
 
@@ -29,7 +27,8 @@ math = Math()
 # comWF = np.array([0.0107, 0.0003, 0.5])  # pos of COM in world frame w.o. trunk controller
 comWF = np.array([0.009, 0.0001, 0.549])  # pos of COM in world frame w. trunk controller
 # comBF = np.array([0.0094,  0.0002, -0.0433])  # pos of COM in body frame w.o. trunk controller
-comBF = np.array([0.0094, 0.0002, -0.0458])  # pos of COM in body frame w. trunk controller
+# IMPORTANT approx! we assume fixed offset computed in default config
+comBF = np.array([0.0094, 0.0002, -0.0458])  # pos of COM in body frame w. trunk controller (we assume that joints have no influene on com)
 # rpy = np.array([0.00012, 0.00601, 3.6e-05])  # orientation of body frame w.o. trunk controller
 rpy = np.array([0.00001589, -0.00000726, -0.00000854])  # orientation of body frame w. trunk controller
 
