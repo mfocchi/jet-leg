@@ -65,7 +65,7 @@ mu = 0.5
 stanceFeet = [0,1,1,1]
 
 randomSwingLeg = random.randint(0,3)
-tripleStance = False # if you want you can define a swing leg using this variable
+tripleStance = False # if you want you can define a random swing leg using this variable
 if tripleStance:
     print ('Swing leg', randomSwingLeg)
     stanceFeet[randomSwingLeg] = 0
@@ -85,6 +85,12 @@ comp_dyn = ComputationalDynamics(robot_name)
 '''You now need to fill the 'params' object with all the relevant 
     informations needed for the computation of the IP'''
 params = IterativeProjectionParameters()
+
+# if you have more than 2 feet in contact, just set pointContacts to True
+# since the feasible region is a region, when you have only two feet on the ground, the region would degenerate, and the
+# algorithm cannot find a solution. so what we did is that we introduced an infinitismal contact torque for each feet,
+# even if the foot is a point foot just to give a small degree of freedom for the region to be a polygon and not a line
+params.pointContacts = True
 
 params.setContactsPosWF(contactsWF)
 params.externalCentroidalWrench = extCentroidalWrench
@@ -159,4 +165,26 @@ plt.grid()
 plt.xlabel("X [m]")
 plt.ylabel("Y [m]")
 plt.legend()
+
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.spatial import ConvexHull
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.set_xlabel('X axis')
+ax.set_ylabel('Y axis')
+ax.set_zlabel('Z axis')
+ax.scatter(FWP[0, :], FWP[1, :], FWP[2, :], marker='o', color='purple')
+
+
+points = FWP[:3, :].T
+hull = ConvexHull(points)
+for i in hull.simplices:
+    plt.plot(points[i, 0], points[i, 1], points[i, 2], 'r-')
+
+plt.show()
+
+
+
+
 plt.show()
