@@ -110,7 +110,6 @@ nc = np.sum(stanceFeet)
 stanceID = params.getStanceIndex(stanceFeet)
 force_scaling_factor = 1500
 # plt.plot(contacts[0:nc,0],contacts[0:nc,1],'ko',markersize=15)
-fz_tot = 0.0
 for j in range(0,
                nc):  # this will only show the contact positions and normals of the feet that are defined to be in stance
     idx = int(stanceID[j])
@@ -125,8 +124,6 @@ for j in range(0,
     ''' The black spheres represent the projection of the contact points on the same plane of the feasible region'''
     ax.scatter(contacts[idx, 0], contacts[idx, 1], 0.0, c='k', s=100)
     ax.add_artist(a)
-
-print 'sum of vertical forces is', fz_tot
 
 ''' plotting Iterative Projection points '''
 plotter = Plotter()
