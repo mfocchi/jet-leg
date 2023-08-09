@@ -33,7 +33,7 @@ class VertexBasedProjection():
         hull_matrix = np.zeros((0,np.size(input_matrix,0)))  
         input_matrix_t = np.transpose(input_matrix)
         #print input_matrix_t
-        hull = scipy.spatial.ConvexHull(input_matrix_t, qhull_options="QbB") #is pX6    
+        hull = scipy.spatial.ConvexHull(input_matrix_t, qhull_options="QJ") #is pX6
         #get the matrix
         indices = hull.vertices
         n = len(indices)    
