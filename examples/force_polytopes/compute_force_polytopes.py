@@ -130,7 +130,7 @@ plotter = Plotter()
 for j in range(0, nc):  # this will only show the force polytopes of the feet that are defined to be in stance
     idx = int(stanceID[j])
     if (constraint_mode_IP[idx] == 'ONLY_ACTUATION') or (constraint_mode_IP[idx] == 'FRICTION_AND_ACTUATION'):
-        plotter.plot_actuation_polygon(ax, forcePolytopes[idx], contacts[idx, :], force_scaling_factor)
+        plotter.plot_actuation_polygon(ax, forcePolytopes.forcePolytope[idx].vertices, contacts[idx, :], force_scaling_factor)
 
 plt.grid()
 plt.xlabel("X [m]")
