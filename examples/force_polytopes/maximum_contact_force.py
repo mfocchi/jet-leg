@@ -51,7 +51,7 @@ for lf_x in np.arange(0.0, 0.7, 0.05):
     RF_foot = np.array([0.3, -0.2, -0.4])
     LH_foot = np.array([-0.3, 0.2, -0.4])
     RH_foot = np.array([-0.3, -0.2, -0.4])
-    print (LF_foot)
+    print('LF_foot', LF_foot)
     contacts = np.vstack((LF_foot, RF_foot, LH_foot, RH_foot))
 
     # contacts = contactsToStack[0:nc+1, :]
@@ -126,12 +126,12 @@ for lf_x in np.arange(0.0, 0.7, 0.05):
         stackedFootPosLF = np.hstack([stackedFootPosLF, lf_x])
 
 ''' 2D figure '''
-number_of_samples = np.shape(stackedForcePolytopesLF)[1]/8 -1
-print (number_of_samples)
+number_of_samples = int(np.shape(stackedForcePolytopesLF)[1]/8 -1)
+print('number_of_samples', number_of_samples)
 plt.figure()
 
 amplitude = []
-for j in np.arange(0,number_of_samples):
+for j in range(0,number_of_samples):
     tmpVX = stackedForcePolytopesLF[0]
     tmpVY = stackedForcePolytopesLF[1]
     tmpVZ = stackedForcePolytopesLF[2]
@@ -139,13 +139,13 @@ for j in np.arange(0,number_of_samples):
     vy = []
     vz = []
     amp = 0.0
-    for i in np.arange(0, 8):
+    for i in range(0, 8):
         new_vx = tmpVX[8 + j * 8 + i]
         vx = np.hstack([vx, new_vx])
         vy = np.hstack([vy, tmpVY[8 + j * 8 + i]])
         vz = np.hstack([vz, tmpVZ[8 + j * 8 + i]])
         tmp_amp = np.sqrt(np.power(vx[-1],2) + np.power(vy[-1],2) + np.power(vz[-1],2))
-        print (tmp_amp)
+        print ('tmp_amp', tmp_amp)
         if tmp_amp>amp:
             amp = tmp_amp
     amplitude = np.hstack([amplitude, amp])
@@ -156,11 +156,11 @@ plt.plot(stackedFootPosLF, amplitude, '-o', markersize=15, label='vertices')
 tmpVX = stackedForcePolytopesLF[0]
 tmpVY = stackedForcePolytopesLF[1]
 tmpVZ = stackedForcePolytopesLF[2]
-for i in np.arange(0,8):
+for i in range(0,8):
     vx = []
     vy = []
     vz = []
-    for j in np.arange(0,number_of_samples):
+    for j in range(0,number_of_samples):
         print (np.shape(tmpVX))
         print (j)
         vx = np.hstack([vx, tmpVX[8 + j * 8 + i]])
