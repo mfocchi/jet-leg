@@ -117,13 +117,8 @@ class HyQKinematics:
         self.init_jacobians()
         self.init_homogeneous()
 
-
-        if sys.version_info[:2] == (2, 7):
-            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{}/'.format('hyq')
-            self.URDF = self.PKG + 'urdf/{}.urdf'.format('hyq')
-        else:
-            self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/hyq/'
-            self.URDF = self.PKG + 'urdf/hyq.urdf'
+        self.PKG = os.path.dirname(os.path.abspath(__file__)) + '/../../../resources/urdfs/{}/'.format('hyq')
+        self.URDF = self.PKG + 'urdf/{}.urdf'.format('hyq')
 
         self.FEET = self.PKG + 'robot_data.yaml'
 
