@@ -272,7 +272,7 @@ class robotKinematics():
 
     def isOutOfJointLims(self, joint_positions, joint_limits_max, joint_limits_min):
 
-        no_of_legs_to_check = joint_positions.size/3
+        no_of_legs_to_check = int(joint_positions.size/3)
         q = joint_positions.reshape((no_of_legs_to_check, 3))
 
         # print "q: ", q
