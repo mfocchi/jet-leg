@@ -5,12 +5,14 @@ Created on Fri Aug 10 16:08:43 2018
 @author: romeoorsolino
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 
 from context import jet_leg
 
-from numpy import array, cross, dot, eye, hstack, vstack, zeros, matrix
-from numpy.linalg import norm
 from jet_leg.computational_geometry.math_tools import Math
 from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 from jet_leg.optimization import nonlinear_projection
@@ -105,7 +107,7 @@ for iter in range(0, 4):
 ''' parameters to be tuned'''
 g = 9.81
 mu = 0.8
-axisZ = array([[0.0], [0.0], [1.0]])
+axisZ = np.array([[0.0], [0.0], [1.0]])
 
 n1 = np.transpose(np.transpose(math.rpyToRot(0.0, 0.0, 0.0)).dot(axisZ))
 n2 = np.transpose(np.transpose(math.rpyToRot(0.0, 0.0, 0.0)).dot(axisZ))
