@@ -164,7 +164,7 @@ class FeasibleWorkspace:
 		vertices: list of arrays List of vertices of the
 				projected polygon.
 		"""
-		print theta_step
+		print(theta_step)
 		ip_start = time.time()
 		polygon, polygon_states = self.compute_polygon(params, theta_step, dir_step)
 		# polygon.sort_vertices()
