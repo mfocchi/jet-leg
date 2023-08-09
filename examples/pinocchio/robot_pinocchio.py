@@ -16,7 +16,7 @@ RH_foot = np.array([-0.2183, -0.10884, -0.1976])
 # RC_foot = np.array([0.0152, -0.3777,-0.1912])
 
 #use a reasonable guess 
-q0 = np.vstack((np.array([-0.2, 0.75, -1.5]), 
+q0 = np.hstack((np.array([-0.2, 0.75, -1.5]),
                np.array([-0.2, 0.75, -1.5]), 
               np.array([-0.2, 0.75, -1.5]),
               np.array([-0.2, 0.75, -1.5])))        
