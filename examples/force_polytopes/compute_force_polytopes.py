@@ -60,9 +60,9 @@ stanceFeet = [1, 1, 1, 1]
 randomSwingLeg = random.randint(0, 3)
 tripleStance = False  # if you want you can define a swing leg using this variable
 if tripleStance:
-    print 'Swing leg', randomSwingLeg
+    print('Swing leg', randomSwingLeg)
     stanceFeet[randomSwingLeg] = 0
-print 'stanceLegs ', stanceFeet
+print('stanceLegs ', stanceFeet)
 
 ''' now I define the normals to the surface of the contact points. By default they are all vertical now'''
 axisZ = array([[0.0], [0.0], [1.0]])
