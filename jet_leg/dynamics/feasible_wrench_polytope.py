@@ -98,16 +98,7 @@ class FeasibleWrenchPolytope():
 
         return forcePolygonsVertices
 
-    def computeFeasibleWrenchPolytopeVRep(self, fwp_params, forcePolytopes):
-
-        intersectionVx = self.get3DforcePolytopeVertices(fwp_params, forcePolytopes)
-        #forcePolygonsVertices = forcePolytopes.getVertices()
-        #intersectionVx = self.computedPolytopeConeIntersection(fwp_params, forcePolytopes)
-
-
-        actuationWrenchPolytopesVRep = self.computeAngularPart(fwp_params, intersectionVx)
-        stanceLegs = fwp_params.getStanceFeet()
-        contactsNumber = np.sum(stanceLegs)
+    def minkowskySum(self, contactsNumber, actuationWrenchPolytopesVRep):
         polytopesInContact = []
         for i in range(0, contactsNumber):
             polytopesInContact.append(actuationWrenchPolytopesVRep[i])
@@ -121,8 +112,20 @@ class FeasibleWrenchPolytope():
         print (np.shape(tmpSum))
         currentPolygonSum = self.vProj.convex_hull(tmpSum)
         print (np.shape(currentPolygonSum))
-
         return currentPolygonSum
+
+
+    def computeFeasibleWrenchPolytopeVRep(self, fwp_params, forcePolytopes):
+
+        intersectionVx = self.get3DforcePolytopeVertices(fwp_params, forcePolytopes)
+        #forcePolygonsVertices = forcePolytopes.getVertices()
+        #intersectionVx = self.computedPolytopeConeIntersection(fwp_params, forcePolytopes)
+
+        actuationWrenchPolytopesVRep = self.computeAngularPart(fwp_params, intersectionVx)
+        print("Intersection VX", actuationWrenchPolytopesVRep)
+        stanceLegs = fwp_params.getStanceFeet()
+        contactsNumber = np.sum(stanceLegs)
+        return self.minkowskySum(contactsNumber, actuationWrenchPolytopesVRep)
 
     def getPiramidsVertices(self):
         pass
