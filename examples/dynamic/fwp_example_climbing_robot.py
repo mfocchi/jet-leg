@@ -68,7 +68,16 @@ print("6-D force sets:", feasible_sets_6D)
 
 FWP = fwp.minkowskySum(feasible_sets_6D)
 print("Number of vertices", np.shape(FWP)[1])
-# print("Vertices", FWP)
+
+
+# Compute centroidal wrench
+mass = 10
+external_wrench = [0]*6
+w_gi = comp_dyn.rbd.computeCentroidalWrench(mass, comWF, external_wrench)
+'''I now check whether the given CoM configuration is dynamically stable or not (see "Feasible Wrench Polytope")'''
+start = time.time()
+isFWPStable = fwp.checkDynamicStability(FWP, w_gi)
+print("isFWPStable?", isFWPStable)
 
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import ConvexHull
