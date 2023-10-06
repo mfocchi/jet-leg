@@ -28,7 +28,7 @@ class FrictionConeConstraint:
         # print "constr WF", constraints_world_frame
         return constraints_world_frame, d_cone
 
-    def linearized_cone_vertices(self, ng, mu, cone_height=100.):
+    def linearized_cone_vertices(self, ng, mu, cone_height=100., normal =  np.array([0, 0, 1])):
         if ng == 4:
             c_force = np.array([
                 [0., 0., 0],
@@ -48,6 +48,14 @@ class FrictionConeConstraint:
                 [+mu * cone_height * np.cos(angle[5]), +mu * cone_height * np.sin(angle[5]), cone_height],
                 [+mu * cone_height * np.cos(angle[6]), +mu * cone_height * np.sin(angle[6]), cone_height],
                 [+mu * cone_height * np.cos(angle[7]), +mu * cone_height * np.sin(angle[7]), cone_height]])
+
+        n = self.math.normalize(normal)
+        rotationMatrix = self.math.rotation_matrix_from_normal(n)
+        v_wf = c_force
+        for i, v in enumerate(c_force):
+            v_wf[i,:] = np.dot(v, rotationMatrix.T)
+        
+        print("C force", v_wf)
 
         return c_force
 
