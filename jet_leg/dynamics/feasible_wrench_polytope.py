@@ -39,23 +39,20 @@ class FeasibleWrenchPolytope():
     #    w_gi = np.hstack([linear_aggr_wrench, angular_aggr_wrench])
     #    return w_gi
 
-    def computeAngularPart(self, fwp_params, forcePolygonsVertices):
+    def computeAngularPart(self, contactsWF, stanceLegs, stanceIndex, forcePolygonsVertices):
 
-        contactsWF = fwp_params.getContactsPosWF().T
         wrenchPolytopes = []
-        stanceLegs = fwp_params.getStanceFeet()
-        stanceIndex = fwp_params.getStanceIndex(stanceLegs)
-        print(stanceIndex)
         contactsNumber = np.sum(stanceLegs)
         for i in range(0, contactsNumber):
             index = int(stanceIndex[i])
-            print(index)
             footPosWF = contactsWF[:, index]
             currentPolytope = np.array(list(forcePolygonsVertices[i]))
             dim, numOfVertices = np.shape(currentPolytope)
+            # print("New force polytope", currentPolytope, "number of vertices", numOfVertices)
             angularPart = np.zeros((3, numOfVertices))
             for j in np.arange(0, numOfVertices):
                 linear = currentPolytope[:, j]
+                # print("Vertex", j, "is", linear, "foot pos is", footPosWF)
                 angularPart[:, j] = np.cross(footPosWF, linear)
 
             sixDpoly = np.vstack([currentPolytope, angularPart])
@@ -98,7 +95,12 @@ class FeasibleWrenchPolytope():
 
         return forcePolygonsVertices
 
-    def minkowskySum(self, contactsNumber, actuationWrenchPolytopesVRep):
+    ### If contactsNumber=len(actuationWrenchPolytopesVRep) this corresponds to the case where every contact is active
+    def minkowskySum(self, actuationWrenchPolytopesVRep, contactsNumber=None):
+
+        if contactsNumber is None:
+            contactsNumber = len(actuationWrenchPolytopesVRep)
+            
         polytopesInContact = []
         for i in range(0, contactsNumber):
             polytopesInContact.append(actuationWrenchPolytopesVRep[i])
@@ -106,26 +108,27 @@ class FeasibleWrenchPolytope():
         tmpSum = np.array(polytopesInContact[0])
         for j in np.arange(0, contactsNumber - 1):
             nextPolygon = np.array(polytopesInContact[j + 1])
-            print (np.shape(nextPolygon))
             tmpSum = self.vProj.minksum(tmpSum, nextPolygon)
 
-        print (np.shape(tmpSum))
+        # print (np.shape(tmpSum))
         currentPolygonSum = self.vProj.convex_hull(tmpSum)
-        print (np.shape(currentPolygonSum))
+        # print (np.shape(currentPolygonSum))
         return currentPolygonSum
 
 
     def computeFeasibleWrenchPolytopeVRep(self, fwp_params, forcePolytopes):
 
         intersectionVx = self.get3DforcePolytopeVertices(fwp_params, forcePolytopes)
-        #forcePolygonsVertices = forcePolytopes.getVertices()
-        #intersectionVx = self.computedPolytopeConeIntersection(fwp_params, forcePolytopes)
 
-        actuationWrenchPolytopesVRep = self.computeAngularPart(fwp_params, intersectionVx)
+        contactsWF = fwp_params.getContactsPosWF().T
+        stanceLegs = fwp_params.getStanceFeet()
+        stanceIndex = fwp_params.getStanceIndex(stanceLegs)
+
+        actuationWrenchPolytopesVRep = self.computeAngularPart(contactsWF, stanceLegs, stanceIndex, intersectionVx)
         print("Intersection VX", actuationWrenchPolytopesVRep)
         stanceLegs = fwp_params.getStanceFeet()
         contactsNumber = np.sum(stanceLegs)
-        return self.minkowskySum(contactsNumber, actuationWrenchPolytopesVRep)
+        return self.minkowskySum(actuationWrenchPolytopesVRep, contactsNumber)
 
     def getPiramidsVertices(self):
         pass
