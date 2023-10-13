@@ -10,10 +10,66 @@ from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 import time
 import matplotlib.pyplot as plt
+from scipy.optimize import linprog
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.spatial import ConvexHull
 
 
 plt.close('all')
 math = Math()
+
+def plot_FWP(FWP, max_force = np.array([0,0,0, 0,0,0]), title="FWP"):
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111, projection="3d")
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Z axis')
+    ax.scatter(FWP[0, :], FWP[1, :], FWP[2, :], marker='o', color='royalblue', alpha=0.2)
+    ax.scatter(max_force[0], max_force[1], max_force[2], marker='o', color='r', s=1000)
+    plt.title(title)
+    points = FWP[:3, :].T
+    FWP3d_hull = ConvexHull(points)
+    for i in FWP3d_hull.simplices:
+        plt.plot(points[i, 0], points[i, 1], points[i, 2], color='b')
+
+    vertices = points[FWP3d_hull.vertices]
+    ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], marker='o', color='b')
+
+    plt.show()
+
+def computeMargin(FWP, direction_v =np.array([1,0,0,0,0,0]), offset =  np.array([0,0,0,0,0,0])):
+
+    # # be sure is a unit vector
+    # direction_v_unit= direction_v/ np.linalg.norm(direction_v)
+    # # FWP_hull = ConvexHull(FWP.T, qhull_options="QJ")
+    # c = -direction_v_unit
+    # A_ub = FWP_hull.equations[:, :-1]
+    # b_ub = -FWP_hull.equations[:, -1]
+    # A_eq = np.eye(6) -np.outer(direction_v_unit,direction_v_unit.T)
+    # b_eq = offset
+
+    # for debugging use 3d version
+    FWP_hull3d = ConvexHull(FWP[:3, :].T)#, qhull_options="QJ")
+    # be sure is a unit vector
+    direction_v_unit = direction_v[:3] / np.linalg.norm(direction_v[:3])
+    c = -direction_v_unit
+    A_ub = FWP_hull3d.equations[:, :-1]
+    b_ub = -FWP_hull3d.equations[:, -1]
+    # A_eq = np.eye(3) -np.outer(direction_v_unit,direction_v_unit.T)
+    # b_eq = np.array([0,1600,0])
+
+    A_eq = None
+    b_eq = None
+
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=None, method='highs-ds',
+                  callback=None, options=None, x0=None)
+    #debug
+    # res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=None, b_eq=None, bounds=None, method='highs-ds',
+    #               callback=None, options=None, x0=None)
+    print(A_eq)
+    #print("Max force Fz", res.x[2])
+    return res
+
 
 '''You now need to fill the 'params' object with all the relevant 
     informations needed for the computation of the IP'''
@@ -79,10 +135,15 @@ start = time.time()
 isFWPStable = fwp.checkDynamicStability(FWP, w_gi)
 print("isFWPStable?", isFWPStable)
 
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.spatial import ConvexHull
 
-fig = plt.figure()
+res = computeMargin(FWP, np.array([0.,  0.5,  1. ,0,0,0]), offset = np.array([0,1600,0,0,0,0]))
+plot_FWP(FWP, res.x, "FWP")
+
+
+
+
+
+fig = plt.figure(2)
 ax = fig.add_subplot(111, projection="3d")
 ax.set_xlabel('X axis')
 ax.set_ylabel('Y axis')
@@ -95,3 +156,4 @@ for i in hull.simplices:
     plt.plot(points[i, 0], points[i, 1], points[i, 2], 'r-')
 
 plt.show()
+
