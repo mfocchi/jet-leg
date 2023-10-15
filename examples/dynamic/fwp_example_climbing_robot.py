@@ -90,33 +90,38 @@ stanceIndex = params.getStanceIndex(stanceLegs)
 
 # Set contact points
 comWF = np.array([0., 0., 0.0])
-contact1 = np.array([0.3, 0.2, -0.4])
-contact2 = np.array([0.3, -0.2, -0.4])
-contact3 = np.array([-0.3, 0.15, -0.4])
-contact4 = np.array([-0.3, -0.2, -0.4])
+
+lower_landing_leg = 0.3
+offset_base_y = 0.08
+contact1 = np.array([-lower_landing_leg*np.sin(np.pi/3), - offset_base_y - lower_landing_leg*np.cos(np.pi/3), 0.025]) # left foot
+contact2 = np.array([-lower_landing_leg*np.sin(np.pi/3), offset_base_y + lower_landing_leg*np.cos(np.pi/3), 0.025]) # right foot
+contact3 = np.array([0, -0.05, 0.05]) # rope (attachment)
+contact4 = np.array([0, 0.05, 0.05]) # rope (attachment)
+
 contactsWF = np.vstack((contact1+comWF, contact2+comWF, contact3+comWF, contact4+comWF))
 print("Contacts", contactsWF)
 
-n1 =  np.array([0, 1, 0])
+n1 =  np.array([1, 0, 0])
 FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_normal_force, normal=n1).T
 
-n2 =  np.array([0, 1, 0])
+n2 =  np.array([1, 0, 0])
 FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_normal_force, normal=n2).T
 
-line1 = np.array([[100, -100],
-[500, 500],
-[100, -100]])
+# TO DO: compute the segments as a function of the rope angle
+line1 = np.array([[0, 100],
+                    [0, -500],
+                    [0, 100]])
 
-line2 = np.array([[100, -100],
-[500, 500],
-[-100, 100]])
+line2 = np.array([[0, 100],
+                    [0, 500],
+                    [0, 100]])
 
 # The order you use to append the feasible sets should match the order of the contacts
 friction_cone_v = []
 friction_cone_v.append(FC1)
 friction_cone_v.append(FC2)
 friction_cone_v.append(line1)
-friction_cone_v.append(line2)
+friction_cone_v.append(line2) 
 
 feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, stanceLegs, stanceIndex, friction_cone_v)
 
