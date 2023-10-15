@@ -61,7 +61,9 @@ def computeMargin(FWP, direction_v =np.array([1,0,0,0,0,0]), offset =  np.array(
     A_eq = None
     b_eq = None
 
-    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=None, method='highs-ds',
+    bound = (-np.inf, np.inf)
+
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bound]*len(c), method='highs-ds',
                   callback=None, options=None, x0=None)
     #debug
     # res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=None, b_eq=None, bounds=None, method='highs-ds',
