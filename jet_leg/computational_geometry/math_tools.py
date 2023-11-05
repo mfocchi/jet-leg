@@ -24,8 +24,10 @@ class Math:
 
     def rotation_matrix_from_normal(self, n):
         n = n.reshape((3,))
-        e_x = np.array([1., 0., 0.])
-        t = e_x - np.dot(e_x, n) * n
+        nz = np.array([0., 0., 1.])
+        nx = np.array([1., 0., 0.])
+        e_z = nx if np.all(n == nz) else nz
+        t = e_z - np.dot(e_z, n) * n
         t = t / np.linalg.norm(t)
         b = np.cross(n, t)
         return np.vstack([t, b, n]).T
