@@ -118,7 +118,7 @@ class TestClimbingRobot(unittest.TestCase):
         print("Hull", hull.vertices)
         self.assertEqual(len(hull.vertices), 8)
 
-    def test_linearized_cone(self):
+    def setup_linearized_cone_3d(self, normal, direction):
         '''You now need to fill the 'params' object with all the relevant 
             informations needed for the computation of the IP'''
         params = IterativeProjectionParameters()
@@ -137,7 +137,7 @@ class TestClimbingRobot(unittest.TestCase):
         stanceIndex = params.getStanceIndex(stanceLegs)
         comWF = np.array([0., 0., 0.0])
 
-        n1 =  np.array([1, 0, 0])
+        n1 =  normal
         FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_normal_force, normal=n1).T
         print("FC", FC1)
         FWP = FC1 #fwp.minkowskySum(feasible_sets_6D)
@@ -148,98 +148,117 @@ class TestClimbingRobot(unittest.TestCase):
         isFWPStable = fwp.checkDynamicStability(FWP, w_gi)
         self.assertEqual(isFWPStable, True)
 
-        res = self.computeMargin(FWP, np.array([1, 0, 0, 0, 0, 0]), offset = np.array([0,1600,0,0,0,0]))
-        print("Result", res.x)
-        self.assertEqual(res.x[0], 500)
-
-        res = self.computeMargin(FWP, np.array([-1, 0, 0, 0, 0, 0]), offset = np.array([0,1600,0,0,0,0]))
-        print("Result", res.x)
-        self.assertEqual(res.x[0], 0)
-        self.assertEqual(res.x[1], 0)
-        self.assertEqual(res.x[2], 0)
-
         points = FWP[:3, :].T
         hull = ConvexHull(points)
 
         print("Hull", hull.vertices)
         self.assertEqual(len(hull.vertices), 5)
 
-    # def test_climbing(self):
-    #     '''You now need to fill the 'params' object with all the relevant 
-    #         informations needed for the computation of the IP'''
-    #     params = IterativeProjectionParameters()
-    #     fwp = FeasibleWrenchPolytope(params)
-    #     robot_name="hyq" # The robot name is only needed in the case you want to compute the force polytopes (using the leg Jacobians)
-    #     comp_dyn = ComputationalDynamics(robot_name)
-    #     fwp.no_of_legs = 4
+        return self.computeMargin(FWP, np.array([direction[0], direction[1], direction[2], 0, 0, 0]), offset = np.array([0,1600,0,0,0,0]))
 
-    #     # Set number of edges of the friction cones and value of the cap plane
-    #     num_generators = 4
-    #     max_normal_force = 500
+    def test_linearized_cone_3d_x(self):
 
-    #     # Set active contacts
-    #     mu = 0.2
-    #     stanceLegs = [1,1,1,1]
-    #     stanceIndex = params.getStanceIndex(stanceLegs)
+        direction = n =  np.array([1, 0, 0])
+        res = self.setup_linearized_cone_3d(n, direction)
+        self.assertEqual(res.x[0], 500)
 
-    #     # Set contact points
-    #     comWF = np.array([0., 0., 0.0])
+        direction =  np.array([-1, 0, 0])
+        res = self.setup_linearized_cone_3d(n, direction)
+        print("Result", res.x)
+        self.assertEqual(res.x[0], 0)
+        self.assertEqual(res.x[1], 0)
+        self.assertEqual(res.x[2], 0)
 
-    #     lower_landing_leg = 0.3
-    #     offset_base_y = 0.08
-    #     contact1 = np.array([-lower_landing_leg*np.sin(np.pi/3), - offset_base_y - lower_landing_leg*np.cos(np.pi/3), 0.025]) # left foot
-    #     contact2 = np.array([-lower_landing_leg*np.sin(np.pi/3), offset_base_y + lower_landing_leg*np.cos(np.pi/3), 0.025]) # right foot
-    #     contact3 = np.array([0, -0.05, 0.05]) # rope (attachment)
-    #     contact4 = np.array([0, 0.05, 0.05]) # rope (attachment)
+    def test_linearized_cone_3d_x(self):
 
-    #     contactsWF = np.vstack((contact1+comWF, contact2+comWF, contact3+comWF, contact4+comWF))
-    #     # print("Contacts", contactsWF)
+        direction = n =  np.array([1, 0, 0])
+        res = self.setup_linearized_cone_3d(n, direction)
+        self.assertEqual(res.x[0], 500)
 
-    #     n1 =  np.array([1, 0, 0])
-    #     FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_normal_force, normal=n1).T
+        direction =  np.array([-1, 0, 0])
+        res = self.setup_linearized_cone_3d(n, direction)
+        print("Result", res.x)
+        self.assertEqual(res.x[0], 0)
+        self.assertEqual(res.x[1], 0)
+        self.assertEqual(res.x[2], 0)
+        
+    def test_climbing(self):
+        '''You now need to fill the 'params' object with all the relevant 
+            informations needed for the computation of the IP'''
+        params = IterativeProjectionParameters()
+        fwp = FeasibleWrenchPolytope(params)
+        robot_name="hyq" # The robot name is only needed in the case you want to compute the force polytopes (using the leg Jacobians)
+        comp_dyn = ComputationalDynamics(robot_name)
+        fwp.no_of_legs = 4
 
-    #     n2 =  np.array([1, 0, 0])
-    #     FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_normal_force, normal=n2).T
+        # Set number of edges of the friction cones and value of the cap plane
+        num_generators = 4
+        max_normal_force = 500
 
-    #     # TO DO: compute the segments as a function of the rope angle
-    #     line1 = np.array([[0, 100],
-    #                         [0, -500],
-    #                         [0, 100]])
+        # Set active contacts
+        mu = 0.2
+        stanceLegs = [1,1,1,1]
+        stanceIndex = params.getStanceIndex(stanceLegs)
 
-    #     line2 = np.array([[0, 100],
-    #                         [0, 500],
-    #                         [0, 100]])
+        # Set contact points
+        comWF = np.array([0., 0., 0.0])
 
-    #     # The order you use to append the feasible sets should match the order of the contacts
-    #     friction_cone_v = []
-    #     friction_cone_v.append(FC1)
-    #     friction_cone_v.append(FC2)
-    #     friction_cone_v.append(line1)
-    #     friction_cone_v.append(line2) 
+        lower_landing_leg = 0.3
+        offset_base_y = 0.08
+        contact1 = np.array([-lower_landing_leg*np.sin(np.pi/3), - offset_base_y - lower_landing_leg*np.cos(np.pi/3), 0.025]) # left foot
+        contact2 = np.array([-lower_landing_leg*np.sin(np.pi/3), offset_base_y + lower_landing_leg*np.cos(np.pi/3), 0.025]) # right foot
+        contact3 = np.array([0, -0.05, 0.05]) # rope (attachment)
+        contact4 = np.array([0, 0.05, 0.05]) # rope (attachment)
 
-    #     # print("Friction cove v", friction_cone_v)
-    #     feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, stanceLegs, stanceIndex, friction_cone_v)
-    #     # feasible_sets_6D = friction_cone_v
+        contactsWF = np.vstack((contact1+comWF, contact2+comWF, contact3+comWF, contact4+comWF))
+        # print("Contacts", contactsWF)
 
-    #     # print("6-D force sets:", feasible_sets_6D)
+        n1 =  np.array([1, 0, 0])
+        FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_normal_force, normal=n1).T
 
-    #     FWP = fwp.minkowskySum(feasible_sets_6D)
-    #     # print("Number of vertices", np.shape(FWP)[1])
+        n2 =  np.array([1, 0, 0])
+        FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_normal_force, normal=n2).T
 
-    #     '''I now check whether the given CoM configuration is dynamically stable or not (see "Feasible Wrench Polytope")'''
-    #     start = time.time()
-    #     mass = 0
-    #     external_wrench = [0]*6
-    #     w_gi = comp_dyn.rbd.computeCentroidalWrench(mass, comWF, external_wrench)
-    #     isFWPStable = fwp.checkDynamicStability(FWP, w_gi)
-    #     self.assertEqual(isFWPStable, True)
+        # TO DO: compute the segments as a function of the rope angle
+        line1 = np.array([[0, 100],
+                            [0, -500],
+                            [0, 100]])
 
-    #     res = self.computeMargin(FWP, np.array([0.,  0.5,  1. ,0,0,0]), offset = np.array([0,1600,0,0,0,0]))
-    #     print("Result", res.x)
+        line2 = np.array([[0, 100],
+                            [0, 500],
+                            [0, 100]])
 
-    #     points = FWP[:3, :].T
-    #     hull = ConvexHull(points)
+        # The order you use to append the feasible sets should match the order of the contacts
+        friction_cone_v = []
+        friction_cone_v.append(FC1)
+        friction_cone_v.append(FC2)
+        friction_cone_v.append(line1)
+        friction_cone_v.append(line2) 
 
-    #     print("Hull", hull.vertices)
-    #     self.assertEqual(len(hull.vertices), 14)
+        # print("Friction cove v", friction_cone_v)
+        feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, stanceLegs, stanceIndex, friction_cone_v)
+        # feasible_sets_6D = friction_cone_v
 
+        # print("6-D force sets:", feasible_sets_6D)
+
+        FWP = fwp.minkowskySum(feasible_sets_6D)
+        # print("Number of vertices", np.shape(FWP)[1])
+
+        '''I now check whether the given CoM configuration is dynamically stable or not (see "Feasible Wrench Polytope")'''
+        start = time.time()
+        mass = 0
+        external_wrench = [0]*6
+        w_gi = comp_dyn.rbd.computeCentroidalWrench(mass, comWF, external_wrench)
+        isFWPStable = fwp.checkDynamicStability(FWP, w_gi)
+        self.assertEqual(isFWPStable, True)
+
+        res = self.computeMargin(FWP, np.array([0., 0.5, 1., 0, 0, 0]), offset = np.array([0, 1600, 0, 0, 0, 0]))
+        print("Result", res.x)
+
+        points = FWP[:3, :].T
+        hull = ConvexHull(points)
+
+        print("Hull", hull.vertices)
+        self.assertEqual(len(hull.vertices), 14)
+
+    
