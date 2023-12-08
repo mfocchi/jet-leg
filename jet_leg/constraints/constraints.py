@@ -20,15 +20,18 @@ from jet_leg.constraints.friction_cone_constraint import FrictionConeConstraint
 from jet_leg.constraints.force_polytope_constraint import ForcePolytopeConstraint
 
 class Constraints:    
-    def __init__(self, robot_kinematics, robot_model):
+    def __init__(self, robot_kinematics=None, robot_model=None):
         #self.robotName = robot_name
         self.kin = robot_kinematics
         self.math = Math()
+
         self.dog = DogInterface()
         self.rbd = RigidBodyDynamics()
         self.frictionConeConstr = FrictionConeConstraint()
-        self.forcePolytopeConstr = ForcePolytopeConstraint(robot_kinematics)
-        self.model = robot_model
+        if robot_kinematics is not None:
+            self.forcePolytopeConstr = ForcePolytopeConstraint(robot_kinematics)
+        if robot_model is not None:
+            self.model = robot_model
     
     def getInequalities(self, params, saturate_normal_force = False):
 

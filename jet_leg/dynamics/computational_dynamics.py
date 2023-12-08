@@ -24,13 +24,17 @@ import time
 
 
 class ComputationalDynamics:
-    def __init__(self, robot_name):
+    def __init__(self, robot_name = None):
         self.robotName = robot_name
         self.geom = Geometry()
         self.math = Math()
-        self.kin = KinematicsInterface(self.robotName)
-        self.robotModel = RobotModelInterface(self.robotName)
-        self.constr = Constraints(self.kin, self.robotModel)
+
+        if robot_name is not None:
+            self.kin = KinematicsInterface(self.robotName)
+            self.robotModel = RobotModelInterface(self.robotName)
+            self.constr = Constraints(self.kin, self.robotModel)
+        else:
+            self.constr = Constraints()
         self.ineq = ([],[])
         self.eq = ([],[])
         self.rbd = RigidBodyDynamics()

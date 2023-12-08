@@ -19,7 +19,8 @@ from jet_leg.robots.dog_interface import DogInterface
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 from jet_leg.constraints.friction_cone_constraint import FrictionConeConstraint
 from numpy import matlib
-
+import scipy
+scipy_subversion = int( (scipy.__version__).split('.')[1] )
 
 class ForcePolytopeConstraint:
     def __init__(self, robot_kinematics):
@@ -43,7 +44,10 @@ class ForcePolytopeConstraint:
             #            print 'Jacobians',jacobianMatrices
             actuation_polygons = self.computeActuationPolygons(jacobianMatrices, torque_limits, leg_self_weight)
             rot = Rot.from_euler('xyz', [euler_angles[0], euler_angles[1], euler_angles[2]], degrees=False)
-            W_R_B = rot.as_matrix()
+            if scipy_subversion >3:
+                W_R_B = rot.as_matrix()
+            else:
+                W_R_B = rot.as_dcm()
             actuation_polygons_WF = W_R_B.dot(actuation_polygons[contact_iterator])
             ''' in the case of the IP alg. the contact force limits must be divided by the mass
 			because the gravito inertial wrench is normalized'''
