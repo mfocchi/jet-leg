@@ -10,17 +10,45 @@ from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
 import time
 import matplotlib.pyplot as plt
+
 from scipy.optimize import linprog
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import ConvexHull
 import math
 
+
 plt.close('all')
 math = Math()
 
+
+# Functions from @Mateen Ulhaq and @karlo
+def set_axes_equal(ax: plt.Axes):
+    """Set 3D plot axes to equal scale.
+
+    Make axes of 3D plot have equal scale so that spheres appear as
+    spheres and cubes as cubes.  Required since `ax.axis('equal')`
+    and `ax.set_aspect('equal')` don't work on 3D.
+    """
+    limits = np.array([
+        ax.get_xlim3d(),
+        ax.get_ylim3d(),
+        ax.get_zlim3d(),
+    ])
+    origin = np.mean(limits, axis=1)
+    radius = 0.5 * np.max(np.abs(limits[:, 1] - limits[:, 0]))
+    _set_axes_radius(ax, origin, radius)
+
+def _set_axes_radius(ax, origin, radius):
+    x, y, z = origin
+    ax.set_xlim3d([x - radius, x + radius])
+    ax.set_ylim3d([y - radius, y + radius])
+    ax.set_zlim3d([z - radius, z + radius])
+
+
 def plot_Robot(p_base,  anchor_1, anchor_2, w_R_b):
-    fig = plt.figure(1)
+    fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+
     plt.title("robot")
     ax.set_xlabel('X axis')
     ax.set_ylabel('Y axis')
@@ -37,78 +65,105 @@ def plot_Robot(p_base,  anchor_1, anchor_2, w_R_b):
     ax.plot([p_base[0], p_base[0] + x_axis[0]], [p_base[1], p_base[1] + x_axis[1]], [p_base[2], p_base[2] + x_axis[2]], color='r')
     ax.plot([p_base[0], p_base[0] + y_axis[0]], [p_base[1], p_base[1] + y_axis[1]], [p_base[2], p_base[2] + y_axis[2]], color='g')
     ax.plot([p_base[0], p_base[0] + z_axis[0]], [p_base[1], p_base[1] + z_axis[1]], [p_base[2], p_base[2] + z_axis[2]], color='b')
+
+    ax.set_box_aspect([1, 1, 1])  # IMPORTANT - this is the new, key line
+    # ax.set_proj_type('ortho') # OPTIONAL - default is perspective (shown in image above)
+    set_axes_equal(ax)  # IMPORTANT - this is also required
+
     plt.show()
 
 # This function only plots the linear part of the points!
-def plot_FWP(FWP, title="FWP", static_wrench = None, max_wrench = None, direction_of_max_wrench = np.array([0,0,1])):
-    fig = plt.figure(0)
+def plot_FWP(FWP, title="FWP", static_wrench = None, margin = None, direction_of_max_wrench = np.array([0,0,1])):
+    fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     plt.title(title)
     ax.set_xlabel('X axis')
     ax.set_ylabel('Y axis')
     ax.set_zlabel('Z axis')
+    # plot all points also internal ones
     ax.scatter(FWP[0, :], FWP[1, :], FWP[2, :], marker='o', color='royalblue', alpha=0.2)
 
     if static_wrench is not None:
-        print(static_wrench)
         ax.scatter(static_wrench[0], static_wrench[1], static_wrench[2], marker='o', color='g', s=200)
 
 
-    if max_wrench is not None:
-        ax.scatter(max_wrench[0], max_wrench[1], max_wrench[2], marker='o', color='r', s=1000)
+    if margin is not None:
+        max_wrench = static_wrench[:3] + margin.x[:3]
+        ax.scatter(max_wrench[0], max_wrench[1], max_wrench[2], marker='o', color='r', s=200)
         if direction_of_max_wrench is not None:
             # plot also the line
-            t = np.linspace(-2000, 2000, 50)
+            t = np.linspace(0, 1500, 50)
             points_of_line = np.zeros((3, len(t)))
             for i in range(len(t)):
-                points_of_line[:,i] = max_wrench[:3] + direction_of_max_wrench[:3] *t[i]
+                points_of_line[:,i] = static_wrench[:3] + direction_of_max_wrench[:3] *t[i]
             ax.scatter(points_of_line[0,:], points_of_line[1,:], points_of_line[2,:],  color='g')
 
-    # get boundary
+    # get boundary in 3D
     points = FWP[:3, :].T
     FWP3d_hull = ConvexHull(points)
+
     for i in FWP3d_hull.simplices:
+        # plot edges of external points
         plt.plot(points[i, 0], points[i, 1], points[i, 2], color='r')
         #  plot only external points
         ax.scatter(points[i, 0], points[i, 1], points[i, 2], marker='o', color='royalblue', alpha=1.)
 
-
-    vertices = points[FWP3d_hull.vertices]
-    ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], marker='o', color='b')
+    # an alternative way to get the vertices
+    # vertices = points[FWP3d_hull.vertices]
+    # ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], marker='o', color='b')
 
     plt.show()
 
-def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), offset =  np.array([0,0,0, 0,0,0]), type_of_margin='6D')  :
+def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  np.array([0,0,0, 0,0,0]), type_of_margin='6D')  :
+    res = None
 
     if type_of_margin == '6D':
-        # be sure is a unit vector
-        direction_v_unit= direction_v/ np.linalg.norm(direction_v)
-        FWP_hull = ConvexHull(FWP.T) #, qhull_options="QJ")
-        c = -direction_v_unit
-        # point should be inside polytope
-        A_ub = FWP_hull.equations[:, :-1]
-        b_ub = -FWP_hull.equations[:, -1]
-        # nullspace constraints (remove everything else is orthogonal to direction_v_unit)
-        A_eq = np.eye(6) -np.outer(direction_v_unit,direction_v_unit.T)
-        b_eq = offset
+        FWP_hull = ConvexHull(FWP.T)#, qhull_options="Q0")
+        # flag to see if static wrench is inside
+        inside = np.all(FWP_hull.equations[:, :-1].dot(static_wrench) + FWP_hull.equations[:, -1] < 0)
+
+        if inside:
+            # be sure is a unit vector
+            direction_v_unit= direction_v/ np.linalg.norm(direction_v)
+            # maximizes the cost
+            c = -direction_v_unit.reshape(1,6)
+            # point (x + w_gi) should be inside polytope A (x+wgi)<=b -> A x < b - Aw_gi
+            A_ub = FWP_hull.equations[:, :-1]
+            b_ub = -FWP_hull.equations[:, -1] -A_ub.dot(static_wrench)
+            # nullspace constraints (remove everything else is orthogonal to direction_v_unit)
+            A_eq = np.eye(6) -np.outer(direction_v_unit,direction_v_unit.T)
+            b_eq = np.zeros(6)
+            bound = (-np.inf, np.inf)
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bound] * len(c), method='highs-ds',
+                          callback=None, options=None, x0=None)
+        else:
+            print('static wrench is out of polytope, static equilibrum is not possible')
+
     elif type_of_margin == '3D':
         # for debugging use 3d version
         FWP_hull3d = ConvexHull(FWP[:3, :].T)#, qhull_options="QJ")
-        # be sure is a unit vector
-        direction_v_unit = direction_v[:3] / np.linalg.norm(direction_v[:3])
-        c = -direction_v_unit[:3]
-        A_ub = FWP_hull3d.equations[:, :-1]
-        b_ub = -FWP_hull3d.equations[:, -1]
-        # nullspace constraints (remove everything else is orthogonal to direction_v_unit)
-        A_eq = np.eye(3) -np.outer(direction_v_unit,direction_v_unit.T)
-        b_eq = offset[:3]
+        # flag to see if static wrench is inside
+        inside = np.all(FWP_hull3d.equations[:, :-1].dot(static_wrench[:3]) + FWP_hull3d.equations[:, -1] <0)
+
+        if inside:
+            # be sure is a unit vector
+            direction_v_unit = direction_v[:3] / np.linalg.norm(direction_v[:3])
+            # maximizes the cost
+            c = -direction_v_unit[:3].reshape(1,3)
+            A_ub = FWP_hull3d.equations[:, :-1]
+            b_ub = -FWP_hull3d.equations[:, -1] - A_ub.dot(static_wrench[:3])
+            # nullspace constraints (remove everything else is orthogonal to direction_v_unit)
+            A_eq = np.eye(3) -np.outer(direction_v_unit,direction_v_unit.T)
+            b_eq = np.zeros(3)
+            bound = (-np.inf, np.inf)
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bound] * len(c), method='highs-ds',
+                          callback=None, options=None, x0=None)
+        else:
+            print('static wrench is out of polytope, static equilibrum is not possible')
     else:
         print("Wrong type")
 
-    bound = (-np.inf, np.inf)
 
-    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bound]*len(c), method='highs-ds',
-                  callback=None, options=None, x0=None)
     #debug
     # res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=None, b_eq=None, bounds=None, method='highs-ds',
     #               callback=None, options=None, x0=None)
@@ -124,7 +179,6 @@ def computeOrientation(p_base, p_anchor1, p_anchor2):
     w_R_b=np.array([[np.cos(psi), 0, -np.sin(psi)],
                     [0, 1,                    0   ],
                     [ np.sin(psi), 0, np.cos(psi)]])
-    print(w_R_b)
     return w_R_b
 
 '''You now need to fill the 'params' object with all the relevant 
@@ -172,6 +226,9 @@ print("Contacts position in WF", contactsWF)
 W_rope_axis_sx  = (comWF-p_anchor1)/np.linalg.norm(comWF-p_anchor1)
 W_rope_axis_dx  =  (comWF-p_anchor2)/np.linalg.norm(comWF-p_anchor2)
 
+# min/max anchor forces
+W_rope_force_sx = np.hstack(( -W_rope_axis_sx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
+W_rope_force_dx = np.hstack(( -W_rope_axis_dx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
 
 #debug
 # W_rope_force_sx = np.array([  [0, -10],
@@ -182,15 +239,7 @@ W_rope_axis_dx  =  (comWF-p_anchor2)/np.linalg.norm(comWF-p_anchor2)
 #                            [0, 100],
 #                            [0, 500]])
 
-
-# min/max anchor forces
-W_rope_force_sx = np.hstack(( -W_rope_axis_sx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
-W_rope_force_dx = np.hstack(( -W_rope_axis_dx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
-
-# plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b)
-
-
-
+plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b)
 
 FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
 FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
@@ -209,26 +258,30 @@ print("6-D force sets:", feasible_sets_6D)
 FWP = fwp.minkowskySum(feasible_sets_6D)
 print("Number of vertices", np.shape(FWP)[1])
 
-
 # Compute centroidal wrench
-mass = 15
+mass = 15.07
 external_wrench = [0]*6
 w_gi = comp_dyn.rbd.computeCentroidalWrench(mass, comWF, external_wrench)
+
 # '''I now check whether the given CoM configuration is having any operation margin'''
+direction_of_max_wrench = np.array([-1,  0,  0, 0, 0, 0])
+#w_gi = np.array([0,0,147,400,-320,0])
+res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = w_gi, type_of_margin='3D')
+plot_FWP(FWP, "FWP", static_wrench=w_gi, margin = res, direction_of_max_wrench=direction_of_max_wrench)
 
+if res is not None:
+    print(f"max wrench in {direction_of_max_wrench} direction is: {res.x}")
+# https://www.sandvik.coromant.com/it-it/knowledge/machining-formulas-definitions/drilling-formulas-definitions
+# https://www.albertobarbisan.it/didattica/FORATURA.pdf
 
-direction_of_max_wrench = np.array([0.,  0,  1., 0,0,0])
-res = computeMargin(FWP, direction_v=direction_of_max_wrench , offset = w_gi, type_of_margin='6D')
-
-
-if res.x is None:
-    print('static wrench is out of polytope, static equilibrum is not possible')
-    plot_FWP(FWP, "FWP", static_wrench=w_gi)
-else:
-    plot_FWP(FWP, "FWP", static_wrench=w_gi, max_wrench=res.x)
 
 # Debug
 # direction_of_max_wrench = np.array([0.,  0,  1.])
-# static_wrench = np.array([400,0,0])
-# res = computeMargin(FWP, direction_v=direction_of_max_wrench , offset = static_wrench, type_of_margin='3D')
-# plot_FWP(FWP, "FWP", static_wrench = static_wrench, max_wrench=res.x, direction_of_max_wrench=direction_of_max_wrench)
+# outside
+# static_wrench = np.array([0,0,2000])
+# res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = static_wrench, type_of_margin='3D')
+# plot_FWP(FWP, "FWP", static_wrench = static_wrench, margin = res, direction_of_max_wrench=direction_of_max_wrench)
+# #inside
+# static_wrench = np.array([500,0,147])
+# res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = static_wrench, type_of_margin='3D')
+# plot_FWP(FWP, "FWP", static_wrench = static_wrench, margin = res, direction_of_max_wrench=direction_of_max_wrench)
