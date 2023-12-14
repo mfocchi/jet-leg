@@ -237,9 +237,10 @@ print("Contacts position in WF (row-wise)\n", contactsWF)
 # comment this if you want to run debug
 #plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
 
+
 # line of actions of the anchor forces (rope axis univ vectors)
-W_rope_axis_sx  = (comWF-p_anchor1)/np.linalg.norm(comWF-p_anchor1)
-W_rope_axis_dx  =  (comWF-p_anchor2)/np.linalg.norm(comWF-p_anchor2)
+W_rope_axis_sx  = (contact_hoist_sxW-p_anchor1)/np.linalg.norm(contact_hoist_sxW-p_anchor1)
+W_rope_axis_dx  =  (contact_hoist_dxW-p_anchor2)/np.linalg.norm(contact_hoist_dxW-p_anchor2)
 
 # min/max anchor forces manifolds
 W_rope_force_sx = np.hstack(( -W_rope_axis_sx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )

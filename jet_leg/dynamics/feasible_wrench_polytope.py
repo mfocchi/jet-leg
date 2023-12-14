@@ -39,6 +39,7 @@ class FeasibleWrenchPolytope():
     #    w_gi = np.hstack([linear_aggr_wrench, angular_aggr_wrench])
     #    return w_gi
 
+    # THE OUTPUT IS A 6d POLYTOPE WHERE VERTICES ARE THE COLUMNS
     def computeAngularPart(self, contactsWF, stanceLegs, stanceIndex, forcePolygonsVertices):
 
         wrenchPolytopes = []
