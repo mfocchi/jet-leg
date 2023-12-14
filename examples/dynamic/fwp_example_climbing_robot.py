@@ -8,12 +8,13 @@ from jet_leg.dynamics.computational_dynamics import ComputationalDynamics
 from jet_leg.dynamics.feasible_wrench_polytope import FeasibleWrenchPolytope
 from jet_leg.dynamics.rigid_body_dynamics import RigidBodyDynamics
 from jet_leg.computational_geometry.iterative_projection_parameters import IterativeProjectionParameters
-import time
+import scipy.io.matlab as mio
 import matplotlib.pyplot as plt
-
+from pprint import pprint
 from scipy.optimize import linprog
 from scipy.spatial import ConvexHull
 np.set_printoptions(threshold=np.inf, precision = 5, linewidth = 10000, suppress = True)
+from numpy import nan
 
 plt.close('all')
 math = Math()
@@ -102,11 +103,11 @@ def plot_FWP(FWP, title="FWP", static_wrench = None, margin = None, direction_of
     if np.all(direction_of_max_wrench[:3] ==0):
         print("You are asking margin in a  moment direction, plot of max wrench does not make sense")
     if margin is not None:
-        max_wrench = static_wrench[:3] + margin.x[:3]
+        max_wrench = static_wrench[:3] + margin[:3]
         ax.scatter(max_wrench[0], max_wrench[1], max_wrench[2], marker='o', color='r', s=200)
         if direction_of_max_wrench is not None:
             # plot also the line
-            t = np.linspace(0, 1500, 50)
+            t = np.linspace(0, 1000, 50)
             points_of_line = np.zeros((3, len(t)))
             for i in range(len(t)):
                 points_of_line[:,i] = static_wrench[:3] + direction_of_max_wrench[:3] *t[i]
@@ -127,21 +128,24 @@ def plot_FWP(FWP, title="FWP", static_wrench = None, margin = None, direction_of
     # vertices = points[FWP3d_hull.vertices]
     # ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], marker='o', color='b')
 
+    ax.set_box_aspect([1, 1, 1])  # IMPORTANT - this is the new, key line
+    # ax.set_proj_type('ortho') # OPTIONAL - default is perspective (shown in image above)
+    set_axes_equal(ax)  # IMPORTANT - this is also required
     plt.show()
 
 def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  np.array([0,0,0, 0,0,0]), type_of_margin='6D')  :
-    res = None
+    delta_wrench = None
 
     if type_of_margin == '6D':
         FWP_hull = ConvexHull(FWP.T)#, qhull_options="Q0")
         # flag to see if static wrench is inside
-        inside = np.all(FWP_hull.equations[:, :-1].dot(static_wrench) + FWP_hull.equations[:, -1] < 0)
+        inside = np.all(FWP_hull.equations[:, :-1].dot(static_wrench) + FWP_hull.equations[:, -1] <= 0)
 
         if inside:
             # be sure is a unit vector
             direction_v_unit= direction_v/ np.linalg.norm(direction_v)
             # maximizes the cost
-            c = -direction_v_unit.reshape(1,6)
+            c = -direction_v_unit
             # point (x + w_gi) should be inside polytope A (x+wgi)<=b -> A x < b - Aw_gi
             A_ub = FWP_hull.equations[:, :-1]
             b_ub = -FWP_hull.equations[:, -1] -A_ub.dot(static_wrench)
@@ -151,6 +155,7 @@ def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  n
             bound = (-np.inf, np.inf)
             res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bound] * len(c), method='highs-ds',
                           callback=None, options=None, x0=None)
+            delta_wrench = direction_v_unit*(direction_v_unit.dot(res.x))
         else:
             print('static wrench is out of polytope, static equilibrum is not possible')
 
@@ -164,7 +169,7 @@ def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  n
             # be sure is a unit vector
             direction_v_unit = direction_v[:3] / np.linalg.norm(direction_v[:3])
             # maximizes the cost
-            c = -direction_v_unit[:3].reshape(1,3)
+            c = -direction_v_unit[:3]
             A_ub = FWP_hull3d.equations[:, :-1]
             b_ub = -FWP_hull3d.equations[:, -1] - A_ub.dot(static_wrench[:3])
             # nullspace constraints (remove everything else is orthogonal to direction_v_unit)
@@ -173,6 +178,7 @@ def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  n
             bound = (-np.inf, np.inf)
             res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bound] * len(c), method='highs-ds',
                           callback=None, options=None, x0=None)
+            delta_wrench = direction_v_unit * (direction_v_unit.dot(res.x))
         else:
             print('static wrench is out of polytope, static equilibrum is not possible')
     else:
@@ -183,21 +189,21 @@ def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  n
     # res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=None, b_eq=None, bounds=None, method='highs-ds',
     #               callback=None, options=None, x0=None)
     #print("Max force Fz", res.x[2])
-    return res
+    return delta_wrench
 
 def computeOrientation(p_base, p_anchor1, p_anchor2):
 
     l1 = np.linalg.norm(p_base - p_anchor1)
     l2 =  np.linalg.norm(p_base - p_anchor2)
     psi = np.arctan2(p_base[0], -p_base[2])
-    print("PSI: ", psi)
+    #print("PSI: ", psi)
     w_R_b=np.array([[np.cos(psi), 0, -np.sin(psi)],
                     [0, 1,                    0   ],
                     [ np.sin(psi), 0, np.cos(psi)]])
     return w_R_b
 
 
-def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench):
+def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=True, type_of_margin='6D', verbose=False):
     '''You now need to fill the 'params' object with all the relevant 
         informations needed for the computation of the IP'''
     params = IterativeProjectionParameters()
@@ -242,10 +248,12 @@ def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench
     contact_hoist_sxW = w_R_b.dot(contact_hoist_sx) +comWF
     contact_hoist_dxW = w_R_b.dot(contact_hoist_dx) +comWF
     contactsWF = np.vstack((contact_foot_sxW, contact_foot_dxW, contact_hoist_sxW, contact_hoist_dxW))
-    print("Contacts position in WF (row-wise)\n", contactsWF)
+    if verbose:
+        print("Contacts position in WF (row-wise)\n", contactsWF)
 
     # comment this if you want to run debug
-    #plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
+    if PLOT:
+        plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
 
     # line of actions of the anchor forces (rope axis univ vectors)
     W_rope_axis_sx  = (contact_hoist_sxW-p_anchor1)/np.linalg.norm(contact_hoist_sxW-p_anchor1)
@@ -254,8 +262,9 @@ def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench
     # min/max anchor forces manifolds
     W_rope_force_sx = np.hstack(( -W_rope_axis_sx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
     W_rope_force_dx = np.hstack(( -W_rope_axis_dx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
-    print("Rope force manifold sx in WF (colunmn wise)\n", W_rope_force_sx)
-    print("Rope force manifold dx in WF(colunmn wise)\n", W_rope_force_dx)
+    if verbose:
+        print("Rope force manifold sx in WF (colunmn wise)\n", W_rope_force_sx)
+        print("Rope force manifold dx in WF(colunmn wise)\n", W_rope_force_dx)
 
     #debug
     # W_rope_force_sx = np.array([  [0, -10],
@@ -267,8 +276,8 @@ def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench
     #                            [0, 500]])
 
     #friction cones at feet
-    FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
-    FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
+    FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal, verbose=verbose).T
+    FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal, verbose=verbose).T
 
     # The order you use to append the feasible sets should match the order of the contacts
     friction_cone_v = []
@@ -278,12 +287,12 @@ def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench
     friction_cone_v.append(W_rope_force_dx)
 
     feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, activeContacts, activeContactsIndex, friction_cone_v)
-    from pprint import pprint
-    print("6-D force sets:\n")
-    pprint( feasible_sets_6D)
-
     FWP = fwp.minkowskySum(feasible_sets_6D)
-    print("Number of vertices", np.shape(FWP)[1])
+
+    if verbose:
+        print("6-D force sets:\n")
+        pprint( feasible_sets_6D)
+        print("Number of vertices", np.shape(FWP)[1])
 
     # Compute centroidal wrench
     mass = 15.07
@@ -293,14 +302,16 @@ def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench
     # '''I now check whether the given CoM configuration is having any operation margin'''
 
 
-    res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = w_gi, type_of_margin='6D')
+    margin = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = w_gi, type_of_margin=type_of_margin)
+    if PLOT:
+        plot_FWP(FWP, "FWP", static_wrench=w_gi, margin=margin, direction_of_max_wrench=direction_of_max_wrench)
 
-    if res is not None:
-        print(f"max wrench in {direction_of_max_wrench} direction is: {res.x}")
+    if margin is not None:
+        print(f"max wrench in {direction_of_max_wrench} direction is: {margin}")
     # https://www.sandvik.coromant.com/it-it/knowledge/machining-formulas-definitions/drilling-formulas-definitions
     # https://www.albertobarbisan.it/didattica/FORATURA.pdf
 
-    return res, FWP, w_gi
+    return margin, FWP, w_gi
 
     # Debug
     # direction_of_max_wrench = np.array([0.,  0,  1.])
@@ -317,8 +328,60 @@ comPos = np.array([1.5, 2.5, -6.0])
 max_rope_force = 600.
 max_leg_force = 300.
 mu = 0.8
-direction_of_max_wrench = np.array([-1, 0, 0, 0, 0, 0])
+direction_of_max_wrench = np.array([-1, 0 ,0, 0, 0, 0])
 
-res, FWP, w_gi = evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench)
-plot_FWP(FWP, "FWP", static_wrench=w_gi, margin=res, direction_of_max_wrench=direction_of_max_wrench)
+#for testing
+res, FWP, w_gi = evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench, type_of_margin='6D', verbose=True)
 
+PAPER = False
+
+if PAPER:
+    # for paper
+    Npoints = 30
+    z = np.linspace(-5, -10, Npoints)
+    y = np.linspace(0, 5, Npoints)
+
+
+    # # drilling
+    margin_array = np.zeros((Npoints,Npoints))
+    direction_of_max_wrench = np.array([-1, 0, 0, 0, 0, 0])
+    for z_idx in range(len(z)):
+        print(f"z: {z[z_idx]}")
+        for y_idx in range(len(y)):
+            print(f"y: {y[y_idx]}")
+            res, FWP, w_gi = evalMargin(np.array([1.5, y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=False)
+            if res is not None:
+                margin_array[z_idx, y_idx] = abs(res[0])
+            else:
+                margin_array[z_idx, y_idx] = 0
+    filename = f'drilling.mat'
+    mio.savemat(filename, {'margin': margin_array, 'z': z, 'y':y})
+
+    # scaling
+    margin_array_fz = np.zeros((Npoints,Npoints))
+    margin_array_my = np.zeros((Npoints, Npoints))
+    direction_of_max_wrench = np.array([0, 0, -1, 0, 0, 0])
+    for z_idx in range(len(z)):
+        print(f"z: {z[z_idx]}")
+        for y_idx in range(len(y)):
+            print(f"y: {y[y_idx]}")
+            res, FWP, w_gi = evalMargin(np.array([1.5, y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=False)
+            if res is not None:
+                margin_array_fz[z_idx, y_idx] = abs(res[2])
+            else:
+                margin_array_fz[z_idx, y_idx] = 0
+    filename = f'scaling_fz.mat'
+    mio.savemat(filename, {'margin_fz': margin_array_fz, 'z': z, 'y':y})
+
+    direction_of_max_wrench = np.array([0, 0, 0, 0, -1, 0])
+    for z_idx in range(len(z)):
+        print(f"z: {z[z_idx]}")
+        for y_idx in range(len(y)):
+            print(f"y: {y[y_idx]}")
+            res, FWP, w_gi = evalMargin(np.array([1.5, y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=False)
+            if res is not None:
+                margin_array_my[z_idx, y_idx] = abs(res[4])
+            else:
+                margin_array_my[z_idx, y_idx] = 0
+    filename = f'scaling_my.mat'
+    mio.savemat(filename, {'margin_my': margin_array_my, 'z': z, 'y':y})
