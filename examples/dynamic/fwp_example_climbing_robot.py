@@ -196,124 +196,129 @@ def computeOrientation(p_base, p_anchor1, p_anchor2):
                     [ np.sin(psi), 0, np.cos(psi)]])
     return w_R_b
 
-'''You now need to fill the 'params' object with all the relevant 
-    informations needed for the computation of the IP'''
-params = IterativeProjectionParameters()
-comp_dyn = ComputationalDynamics()
-fwp = FeasibleWrenchPolytope(params)
-# number of contacts
-fwp.no_of_legs = 4
 
-# Set number of edges of the friction cones and value of the cap plane
-num_generators = 4
-# Set active contacts
-mu = 0.8
-activeContacts = [1,1,1,1]
-activeContactsIndex = params.getStanceIndex(activeContacts)
+def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench):
+    '''You now need to fill the 'params' object with all the relevant 
+        informations needed for the computation of the IP'''
+    params = IterativeProjectionParameters()
+    comp_dyn = ComputationalDynamics()
+    fwp = FeasibleWrenchPolytope(params)
+    # number of contacts
+    fwp.no_of_legs = 4
 
-# to avoid polytope flatness I set WF out of the line of the anchors!
-# if I set on left anchor all moments by rope 1 are zero and Y moment of rope 2 is zero
-# if I set on the line between anchors Y moments of ropes are zero
-# if I set on the plane of anchors above left anchor you get Z moment of sx rope 0
+    # Set number of edges of the friction cones and value of the cap plane
+    num_generators = 4
+    # Set active contacts
+    activeContacts = [1,1,1,1]
+    activeContactsIndex = params.getStanceIndex(activeContacts)
 
-gazeboWF_offset = np.array([10, 0, -10]) # we put WF with an offset
+    # to avoid polytope flatness I set WF out of the line of the anchors!
+    # if I set on left anchor all moments by rope 1 are zero and Y moment of rope 2 is zero
+    # if I set on the line between anchors Y moments of ropes are zero
+    # if I set on the plane of anchors above left anchor you get Z moment of sx rope 0
 
-#inputs
-comWF = gazeboWF_offset + np.array([1.5, 2.5, -6.0])
-anchor_distance = 5
-p_anchor1 = gazeboWF_offset + np.array([0,0,0])
-p_anchor2 = gazeboWF_offset + np.array([0, anchor_distance,0])
-wall_normal =  np.array([1, 0, 0])
+    gazeboWF_offset = np.array([10, 0, -10]) # we put WF with an offset wrf to left anchor to avoid flatness
+
+    #inputs
+    comWF = gazeboWF_offset + comPos
+    anchor_distance = 5
+    p_anchor1 = gazeboWF_offset + np.array([0,0,0])
+    p_anchor2 = gazeboWF_offset + np.array([0, anchor_distance,0])
+    wall_normal =  np.array([1, 0, 0])
+
+    # compute relevant kin quantities
+    w_R_b = computeOrientation(comWF, p_anchor1, p_anchor2)
+
+    landing_joint = 0.7 # assumed always positive
+    lower_landing_leg = 0.3
+    offset_base_y = 0.08
+    contact_foot_sx = np.array([-lower_landing_leg*np.sin(landing_joint), - offset_base_y - lower_landing_leg*np.cos(landing_joint), 0.025]) # left foot
+    contact_foot_dx = np.array([-lower_landing_leg*np.sin(landing_joint), offset_base_y + lower_landing_leg*np.cos(landing_joint), 0.025]) # right foot
+    contact_hoist_sx = np.array([0, -0.05, 0.05]) # rope (attachment)
+    contact_hoist_dx = np.array([0, 0.05, 0.05]) # rope (attachment)
+
+    contact_foot_sxW = w_R_b.dot(contact_foot_sx) +comWF
+    contact_foot_dxW = w_R_b.dot(contact_foot_dx) +comWF
+    contact_hoist_sxW = w_R_b.dot(contact_hoist_sx) +comWF
+    contact_hoist_dxW = w_R_b.dot(contact_hoist_dx) +comWF
+    contactsWF = np.vstack((contact_foot_sxW, contact_foot_dxW, contact_hoist_sxW, contact_hoist_dxW))
+    print("Contacts position in WF (row-wise)\n", contactsWF)
+
+    # comment this if you want to run debug
+    #plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
+
+    # line of actions of the anchor forces (rope axis univ vectors)
+    W_rope_axis_sx  = (contact_hoist_sxW-p_anchor1)/np.linalg.norm(contact_hoist_sxW-p_anchor1)
+    W_rope_axis_dx  =  (contact_hoist_dxW-p_anchor2)/np.linalg.norm(contact_hoist_dxW-p_anchor2)
+
+    # min/max anchor forces manifolds
+    W_rope_force_sx = np.hstack(( -W_rope_axis_sx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
+    W_rope_force_dx = np.hstack(( -W_rope_axis_dx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
+    print("Rope force manifold sx in WF (colunmn wise)\n", W_rope_force_sx)
+    print("Rope force manifold dx in WF(colunmn wise)\n", W_rope_force_dx)
+
+    #debug
+    # W_rope_force_sx = np.array([  [0, -10],
+    #                            [0, -100],
+    #                            [0, 500]])
+    #
+    # W_rope_force_dx = np.array([[0, -10],
+    #                            [0, 100],
+    #                            [0, 500]])
+
+    #friction cones at feet
+    FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
+    FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
+
+    # The order you use to append the feasible sets should match the order of the contacts
+    friction_cone_v = []
+    friction_cone_v.append(FC1)
+    friction_cone_v.append(FC2)
+    friction_cone_v.append(W_rope_force_sx)
+    friction_cone_v.append(W_rope_force_dx)
+
+    feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, activeContacts, activeContactsIndex, friction_cone_v)
+    from pprint import pprint
+    print("6-D force sets:\n")
+    pprint( feasible_sets_6D)
+
+    FWP = fwp.minkowskySum(feasible_sets_6D)
+    print("Number of vertices", np.shape(FWP)[1])
+
+    # Compute centroidal wrench
+    mass = 15.07
+    external_wrench = [0]*6
+    w_gi = comp_dyn.rbd.computeCentroidalWrench(mass, comWF, external_wrench)
+    w_gi +=np.array([0., 0., 0.0, 0, 0., 0.])
+    # '''I now check whether the given CoM configuration is having any operation margin'''
+
+
+    res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = w_gi, type_of_margin='6D')
+
+    if res is not None:
+        print(f"max wrench in {direction_of_max_wrench} direction is: {res.x}")
+    # https://www.sandvik.coromant.com/it-it/knowledge/machining-formulas-definitions/drilling-formulas-definitions
+    # https://www.albertobarbisan.it/didattica/FORATURA.pdf
+
+    return res, FWP, w_gi
+
+    # Debug
+    # direction_of_max_wrench = np.array([0.,  0,  1.])
+    # outside
+    # static_wrench = np.array([0,0,2000])
+    # res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = static_wrench, type_of_margin='3D')
+    # plot_FWP(FWP, "FWP", static_wrench = static_wrench, margin = res, direction_of_max_wrench=direction_of_max_wrench)
+    # #inside
+    # static_wrench = np.array([500,0,147])
+    # res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = static_wrench, type_of_margin='3D')
+    # plot_FWP(FWP, "FWP", static_wrench = static_wrench, margin = res, direction_of_max_wrench=direction_of_max_wrench)
+
+comPos = np.array([1.5, 2.5, -6.0])
 max_rope_force = 600.
 max_leg_force = 300.
+mu = 0.8
+direction_of_max_wrench = np.array([-1, 0, 0, 0, 0, 0])
 
-# compute relevant kin quantities
-w_R_b = computeOrientation(comWF, p_anchor1, p_anchor2)
+res, FWP, w_gi = evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench)
+plot_FWP(FWP, "FWP", static_wrench=w_gi, margin=res, direction_of_max_wrench=direction_of_max_wrench)
 
-landing_joint = 0.7 # assumed always positive
-lower_landing_leg = 0.3
-offset_base_y = 0.08
-contact_foot_sx = np.array([-lower_landing_leg*np.sin(landing_joint), - offset_base_y - lower_landing_leg*np.cos(landing_joint), 0.025]) # left foot
-contact_foot_dx = np.array([-lower_landing_leg*np.sin(landing_joint), offset_base_y + lower_landing_leg*np.cos(landing_joint), 0.025]) # right foot
-contact_hoist_sx = np.array([0, -0.05, 0.05]) # rope (attachment)
-contact_hoist_dx = np.array([0, 0.05, 0.05]) # rope (attachment)
-
-contact_foot_sxW = w_R_b.dot(contact_foot_sx) +comWF
-contact_foot_dxW = w_R_b.dot(contact_foot_dx) +comWF
-contact_hoist_sxW = w_R_b.dot(contact_hoist_sx) +comWF
-contact_hoist_dxW = w_R_b.dot(contact_hoist_dx) +comWF
-contactsWF = np.vstack((contact_foot_sxW, contact_foot_dxW, contact_hoist_sxW, contact_hoist_dxW))
-print("Contacts position in WF (row-wise)\n", contactsWF)
-# comment this if you want to run debug
-plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
-
-
-# line of actions of the anchor forces (rope axis univ vectors)
-W_rope_axis_sx  = (contact_hoist_sxW-p_anchor1)/np.linalg.norm(contact_hoist_sxW-p_anchor1)
-W_rope_axis_dx  =  (contact_hoist_dxW-p_anchor2)/np.linalg.norm(contact_hoist_dxW-p_anchor2)
-
-# min/max anchor forces manifolds
-W_rope_force_sx = np.hstack(( -W_rope_axis_sx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
-W_rope_force_dx = np.hstack(( -W_rope_axis_dx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
-print("Rope force manifold sx in WF (colunmn wise)\n", W_rope_force_sx)
-print("Rope force manifold dx in WF(colunmn wise)\n", W_rope_force_dx)
-
-
-#debug
-# W_rope_force_sx = np.array([  [0, -10],
-#                            [0, -100],
-#                            [0, 500]])
-#
-# W_rope_force_dx = np.array([[0, -10],
-#                            [0, 100],
-#                            [0, 500]])
-
-
-#friction cones at feet
-FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
-FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
-
-
-
-# The order you use to append the feasible sets should match the order of the contacts
-friction_cone_v = []
-friction_cone_v.append(FC1)
-friction_cone_v.append(FC2)
-friction_cone_v.append(W_rope_force_sx)
-friction_cone_v.append(W_rope_force_dx)
-
-feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, activeContacts, activeContactsIndex, friction_cone_v)
-from pprint import pprint
-print("6-D force sets:\n")
-pprint( feasible_sets_6D)
-
-FWP = fwp.minkowskySum(feasible_sets_6D)
-print("Number of vertices", np.shape(FWP)[1])
-
-# Compute centroidal wrench
-mass = 15.07
-external_wrench = [0]*6
-w_gi = comp_dyn.rbd.computeCentroidalWrench(mass, comWF, external_wrench)
-w_gi +=np.array([0., 0., 0.0, 0, 0., 0.])
-# '''I now check whether the given CoM configuration is having any operation margin'''
-direction_of_max_wrench = np.array([-1,  0,  0, 0, 0, 0])
-
-res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = w_gi, type_of_margin='6D')
-plot_FWP(FWP, "FWP", static_wrench=w_gi, margin = res, direction_of_max_wrench=direction_of_max_wrench)
-
-if res is not None:
-    print(f"max wrench in {direction_of_max_wrench} direction is: {res.x}")
-# https://www.sandvik.coromant.com/it-it/knowledge/machining-formulas-definitions/drilling-formulas-definitions
-# https://www.albertobarbisan.it/didattica/FORATURA.pdf
-
-
-# Debug
-# direction_of_max_wrench = np.array([0.,  0,  1.])
-# outside
-# static_wrench = np.array([0,0,2000])
-# res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = static_wrench, type_of_margin='3D')
-# plot_FWP(FWP, "FWP", static_wrench = static_wrench, margin = res, direction_of_max_wrench=direction_of_max_wrench)
-# #inside
-# static_wrench = np.array([500,0,147])
-# res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = static_wrench, type_of_margin='3D')
-# plot_FWP(FWP, "FWP", static_wrench = static_wrench, margin = res, direction_of_max_wrench=direction_of_max_wrench)
