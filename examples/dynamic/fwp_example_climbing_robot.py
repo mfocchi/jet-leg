@@ -99,7 +99,8 @@ def plot_FWP(FWP, title="FWP", static_wrench = None, margin = None, direction_of
     if static_wrench is not None:
         ax.scatter(static_wrench[0], static_wrench[1], static_wrench[2], marker='o', color='g', s=200)
 
-
+    if np.all(direction_of_max_wrench[:3] ==0):
+        print("You are asking margin in a  moment direction, plot of max wrench does not make sense")
     if margin is not None:
         max_wrench = static_wrench[:3] + margin.x[:3]
         ax.scatter(max_wrench[0], max_wrench[1], max_wrench[2], marker='o', color='r', s=200)
@@ -109,6 +110,7 @@ def plot_FWP(FWP, title="FWP", static_wrench = None, margin = None, direction_of
             points_of_line = np.zeros((3, len(t)))
             for i in range(len(t)):
                 points_of_line[:,i] = static_wrench[:3] + direction_of_max_wrench[:3] *t[i]
+            # plot max wrench blob
             ax.scatter(points_of_line[0,:], points_of_line[1,:], points_of_line[2,:],  color='g')
 
     # get boundary in 3D
@@ -209,10 +211,18 @@ mu = 0.8
 activeContacts = [1,1,1,1]
 activeContactsIndex = params.getStanceIndex(activeContacts)
 
+# to avoid polytope flatness I set WF out of the line of the anchors!
+# if I set on left anchor all moments by rope 1 are zero and Y moment of rope 2 is zero
+# if I set on the line between anchors Y moments of ropes are zero
+# if I set on the plane of anchors above left anchor you get Z moment of sx rope 0
+
+gazeboWF_offset = np.array([10, 0, -10]) # we put WF with an offset
+
 #inputs
-comWF = np.array([1.5, 2.5, -6.0])
-p_anchor1 = np.array([0,0,0])
-p_anchor2 = np.array([0,5,0])
+comWF = gazeboWF_offset + np.array([1.5, 2.5, -6.0])
+anchor_distance = 5
+p_anchor1 = gazeboWF_offset + np.array([0,0,0])
+p_anchor2 = gazeboWF_offset + np.array([0, anchor_distance,0])
 wall_normal =  np.array([1, 0, 0])
 max_rope_force = 600.
 max_leg_force = 300.
@@ -235,7 +245,7 @@ contact_hoist_dxW = w_R_b.dot(contact_hoist_dx) +comWF
 contactsWF = np.vstack((contact_foot_sxW, contact_foot_dxW, contact_hoist_sxW, contact_hoist_dxW))
 print("Contacts position in WF (row-wise)\n", contactsWF)
 # comment this if you want to run debug
-#plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
+plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
 
 
 # line of actions of the anchor forces (rope axis univ vectors)
@@ -273,9 +283,9 @@ friction_cone_v.append(W_rope_force_sx)
 friction_cone_v.append(W_rope_force_dx)
 
 feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, activeContacts, activeContactsIndex, friction_cone_v)
-
+from pprint import pprint
 print("6-D force sets:\n")
-print(feasible_sets_6D)
+pprint( feasible_sets_6D)
 
 FWP = fwp.minkowskySum(feasible_sets_6D)
 print("Number of vertices", np.shape(FWP)[1])
@@ -284,11 +294,11 @@ print("Number of vertices", np.shape(FWP)[1])
 mass = 15.07
 external_wrench = [0]*6
 w_gi = comp_dyn.rbd.computeCentroidalWrench(mass, comWF, external_wrench)
-
+w_gi +=np.array([0., 0., 0.0, 0, 0., 0.])
 # '''I now check whether the given CoM configuration is having any operation margin'''
 direction_of_max_wrench = np.array([-1,  0,  0, 0, 0, 0])
-#w_gi = np.array([0,0,147,400,-320,0])
-res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = w_gi, type_of_margin='3D')
+
+res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = w_gi, type_of_margin='6D')
 plot_FWP(FWP, "FWP", static_wrench=w_gi, margin = res, direction_of_max_wrench=direction_of_max_wrench)
 
 if res is not None:
