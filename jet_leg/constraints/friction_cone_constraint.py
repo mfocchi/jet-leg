@@ -54,8 +54,8 @@ class FrictionConeConstraint:
         v_wf = c_force
         for i, v in enumerate(c_force):
             v_wf[i,:] = np.dot(v, rotationMatrix.T)
-        
-        print("C force", v_wf)
+
+        print("Friction Cone\n", v_wf)
 
         return c_force
 

@@ -12,10 +12,8 @@ import time
 import matplotlib.pyplot as plt
 
 from scipy.optimize import linprog
-from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import ConvexHull
-import math
-
+np.set_printoptions(threshold=np.inf, precision = 5, linewidth = 10000, suppress = True)
 
 plt.close('all')
 math = Math()
@@ -45,9 +43,14 @@ def _set_axes_radius(ax, origin, radius):
     ax.set_zlim3d([z - radius, z + radius])
 
 
-def plot_Robot(p_base,  anchor_1, anchor_2, w_R_b):
+def plot_Robot(p_base,  anchor_1, anchor_2, w_R_b, contactsW):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+
+    foot_sx = contactsW[0,:]
+    foot_dx = contactsW[1, :]
+    hoist_sx = contactsW[2, :]
+    hoist_dx = contactsW[3, :]
 
     plt.title("robot")
     ax.set_xlabel('X axis')
@@ -55,9 +58,12 @@ def plot_Robot(p_base,  anchor_1, anchor_2, w_R_b):
     ax.set_zlabel('Z axis')
     #base
     ax.scatter(p_base[0], p_base[1], p_base[2], marker='o', color='g', s=200)
-    #anchor points
-    ax.plot([p_base[0] , anchor_1[0]], [p_base[1] , anchor_1[1]], [p_base[2] , anchor_1[2]],  color='r')
-    ax.plot([p_base[0] , anchor_2[0]], [p_base[1] , anchor_2[1]], [p_base[2] , anchor_2[2]],  color='r')
+    #anchors
+    ax.scatter(anchor_1[0], anchor_1[1], anchor_1[2], marker='o', color='b', s=50)
+    ax.scatter(anchor_2[0], anchor_2[1], anchor_2[2], marker='o', color='b', s=50)
+    #plot ropes
+    ax.plot([hoist_sx[0] , anchor_1[0]], [hoist_sx[1] , anchor_1[1]], [hoist_sx[2] , anchor_1[2]],  color='r')
+    ax.plot([hoist_dx[0] , anchor_2[0]], [hoist_dx[1] , anchor_2[1]], [hoist_dx[2] , anchor_2[2]],  color='r')
     # plot base  xaxis
     x_axis = w_R_b[:,0]
     y_axis = w_R_b[:, 1]
@@ -65,6 +71,13 @@ def plot_Robot(p_base,  anchor_1, anchor_2, w_R_b):
     ax.plot([p_base[0], p_base[0] + x_axis[0]], [p_base[1], p_base[1] + x_axis[1]], [p_base[2], p_base[2] + x_axis[2]], color='r')
     ax.plot([p_base[0], p_base[0] + y_axis[0]], [p_base[1], p_base[1] + y_axis[1]], [p_base[2], p_base[2] + y_axis[2]], color='g')
     ax.plot([p_base[0], p_base[0] + z_axis[0]], [p_base[1], p_base[1] + z_axis[1]], [p_base[2], p_base[2] + z_axis[2]], color='b')
+    # feet
+    ax.scatter(foot_sx[0], foot_sx[1], foot_sx[2], marker='o', color='b', s=50)
+    ax.scatter(foot_dx[0], foot_dx[1], foot_dx[2], marker='o', color='b', s=50)
+
+    #hoists
+    ax.scatter(hoist_sx[0], hoist_sx[1], hoist_sx[2], marker='o', color='r', s=50)
+    ax.scatter(hoist_dx[0], hoist_dx[1], hoist_dx[2], marker='o', color='r', s=50)
 
     ax.set_box_aspect([1, 1, 1])  # IMPORTANT - this is the new, key line
     # ax.set_proj_type('ortho') # OPTIONAL - default is perspective (shown in image above)
@@ -220,15 +233,20 @@ contact_foot_dxW = w_R_b.dot(contact_foot_dx) +comWF
 contact_hoist_sxW = w_R_b.dot(contact_hoist_sx) +comWF
 contact_hoist_dxW = w_R_b.dot(contact_hoist_dx) +comWF
 contactsWF = np.vstack((contact_foot_sxW, contact_foot_dxW, contact_hoist_sxW, contact_hoist_dxW))
-print("Contacts position in WF", contactsWF)
+print("Contacts position in WF (row-wise)\n", contactsWF)
+# comment this if you want to run debug
+#plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b, contactsWF)
 
 # line of actions of the anchor forces (rope axis univ vectors)
 W_rope_axis_sx  = (comWF-p_anchor1)/np.linalg.norm(comWF-p_anchor1)
 W_rope_axis_dx  =  (comWF-p_anchor2)/np.linalg.norm(comWF-p_anchor2)
 
-# min/max anchor forces
+# min/max anchor forces manifolds
 W_rope_force_sx = np.hstack(( -W_rope_axis_sx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
 W_rope_force_dx = np.hstack(( -W_rope_axis_dx.reshape(3,1)*max_rope_force, np.zeros((3,1))) )
+print("Rope force manifold sx in WF (colunmn wise)\n", W_rope_force_sx)
+print("Rope force manifold dx in WF(colunmn wise)\n", W_rope_force_dx)
+
 
 #debug
 # W_rope_force_sx = np.array([  [0, -10],
@@ -239,10 +257,12 @@ W_rope_force_dx = np.hstack(( -W_rope_axis_dx.reshape(3,1)*max_rope_force, np.ze
 #                            [0, 100],
 #                            [0, 500]])
 
-plot_Robot(comWF, p_anchor1, p_anchor2, w_R_b)
 
+#friction cones at feet
 FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
 FC2 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force, normal=wall_normal).T
+
+
 
 # The order you use to append the feasible sets should match the order of the contacts
 friction_cone_v = []
@@ -253,7 +273,8 @@ friction_cone_v.append(W_rope_force_dx)
 
 feasible_sets_6D = fwp.computeAngularPart(contactsWF.T, activeContacts, activeContactsIndex, friction_cone_v)
 
-print("6-D force sets:", feasible_sets_6D)
+print("6-D force sets:\n")
+print(feasible_sets_6D)
 
 FWP = fwp.minkowskySum(feasible_sets_6D)
 print("Number of vertices", np.shape(FWP)[1])
