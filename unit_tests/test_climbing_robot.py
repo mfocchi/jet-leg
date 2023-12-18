@@ -14,6 +14,7 @@ from scipy.optimize import linprog
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial import ConvexHull
 import unittest
+np.set_printoptions(threshold=np.inf, precision = 5, linewidth = 10000, suppress = True)
 
 #to run: python3 -m unittest test_climbing_robot
 
@@ -215,10 +216,12 @@ class TestClimbingRobot(unittest.TestCase):
         activeContacts = [1, 1, 1, 1]
         activeContactsIndex = params.getStanceIndex(activeContacts)
 
+        gazeboWF_offset = np.array([10, 10, -10])
+
         # inputs
-        comWF = np.array([1.5, 2.5, -6.0])
-        p_anchor1 = np.array([0, 0, 0])
-        p_anchor2 = np.array([0, 5, 0])
+        comWF = gazeboWF_offset+ np.array([1.5, 2.5, -6.0])
+        p_anchor1 = gazeboWF_offset + np.array([0, 0, 0])
+        p_anchor2 = gazeboWF_offset + np.array([0, 5, 0])
         wall_normal = np.array([1, 0, 0])
         max_rope_force = 600.
         max_leg_force = 300.
@@ -246,13 +249,15 @@ class TestClimbingRobot(unittest.TestCase):
         print("Contacts position in WF", contactsWF)
 
         # line of actions of the anchor forces (rope axis univ vectors)
-        W_rope_axis_sx = (comWF - p_anchor1) / np.linalg.norm(comWF - p_anchor1)
-        W_rope_axis_dx = (comWF - p_anchor2) / np.linalg.norm(comWF - p_anchor2)
+        W_rope_axis_sx = (contact_hoist_sxW - p_anchor1) / np.linalg.norm(contact_hoist_sxW - p_anchor1)
+        W_rope_axis_dx = (contact_hoist_dxW - p_anchor2) / np.linalg.norm(contact_hoist_dxW - p_anchor2)
 
         # min/max anchor forces
         W_rope_force_sx = np.hstack((-W_rope_axis_sx.reshape(3, 1) * max_rope_force, np.zeros((3, 1))))
         W_rope_force_dx = np.hstack((-W_rope_axis_dx.reshape(3, 1) * max_rope_force, np.zeros((3, 1))))
 
+        print("Rope force manifold sx in WF (colunmn wise)\n", W_rope_force_sx)
+        print("Rope force manifold dx in WF(colunmn wise)\n", W_rope_force_dx)
 
         FC1 = comp_dyn.constr.frictionConeConstr.linearized_cone_vertices(num_generators, mu, cone_height=max_leg_force,
                                                                           normal=wall_normal).T
@@ -284,7 +289,7 @@ class TestClimbingRobot(unittest.TestCase):
         res = self.computeMargin(FWP, direction_v=direction_of_max_wrench, static_wrench=w_gi, type_of_margin='3D')
 
         print("Result", res.x)
-        self.assertEqual(res.x[0], -36.959175)
+        self.assertEqual(res.x[0], -36.487051829840745)
         self.assertEqual(res.x[1], 0)
         self.assertEqual(res.x[2], 0)
 
