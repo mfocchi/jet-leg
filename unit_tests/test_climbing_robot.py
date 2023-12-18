@@ -216,12 +216,21 @@ class TestClimbingRobot(unittest.TestCase):
         activeContacts = [1, 1, 1, 1]
         activeContactsIndex = params.getStanceIndex(activeContacts)
 
-        gazeboWF_offset = np.array([10, 10, -10])
+        # previous implementation with external WF, moments have different values and this was affecting the forces as well
+        # gazeboWF_offset = np.array([10, 10, -10])  # we put WF with an offset wrf to left anchor to avoid flatness
+        # comWF = gazeboWF_offset + comPos
+        # anchor_distance = 5
+        # p_anchor1 = gazeboWF_offset + np.array([0,0,0])
+        # p_anchor2 = gazeboWF_offset + np.array([0, anchor_distance,0])
 
-        # inputs
-        comWF = gazeboWF_offset+ np.array([1.5, 2.5, -6.0])
-        p_anchor1 = gazeboWF_offset + np.array([0, 0, 0])
-        p_anchor2 = gazeboWF_offset + np.array([0, 5, 0])
+        # new implementation we compute moments about com
+        comPos = np.array([1.5, 2.5, -6.0])
+        comWF = np.array([0, 0, 0])
+        anchor_distance = 5
+        p_anchor1 = -comPos
+        p_anchor2 = p_anchor1 + np.array([0, anchor_distance, 0])
+
+
         wall_normal = np.array([1, 0, 0])
         max_rope_force = 600.
         max_leg_force = 300.
@@ -286,10 +295,10 @@ class TestClimbingRobot(unittest.TestCase):
 
         # '''I now check whether the given CoM configuration is having any operation margin'''
         direction_of_max_wrench = np.array([-1, 0, 0, 0, 0, 0])
-        res = self.computeMargin(FWP, direction_v=direction_of_max_wrench, static_wrench=w_gi, type_of_margin='3D')
+        res = self.computeMargin(FWP, direction_v=direction_of_max_wrench, static_wrench=w_gi, type_of_margin='6D')
 
         print("Result", res.x)
-        self.assertEqual(res.x[0], -36.487051829840745)
+        self.assertEqual(res.x[0], -25.46500553167481 )
         self.assertEqual(res.x[1], 0)
         self.assertEqual(res.x[2], 0)
 
