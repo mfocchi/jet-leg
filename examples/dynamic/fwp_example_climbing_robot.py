@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 
 from numpy import array
@@ -146,6 +148,7 @@ def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  n
             direction_v_unit= direction_v/ np.linalg.norm(direction_v)
             # maximizes the cost
             c = -direction_v_unit
+
             # point (x + w_gi) should be inside polytope A (x+wgi)<=b -> A x < b - Aw_gi
             A_ub = FWP_hull.equations[:, :-1]
             b_ub = -FWP_hull.equations[:, -1] -A_ub.dot(static_wrench)
@@ -167,7 +170,11 @@ def computeMargin(FWP, direction_v =np.array([0,0,1, 0,0,0]), static_wrench =  n
 
         if inside:
             # be sure is a unit vector
-            direction_v_unit = direction_v[:3] / np.linalg.norm(direction_v[:3])
+            if np.linalg.norm(direction_v[:3]) == 0:
+                print("You are asking an angular direction but setting 3D of margin type, is not possible, exiting")
+                sys.exit()
+            else:
+                direction_v_unit = direction_v[:3] / np.linalg.norm(direction_v[:3])
             # maximizes the cost
             c = -direction_v_unit[:3]
             A_ub = FWP_hull3d.equations[:, :-1]
@@ -203,7 +210,7 @@ def computeOrientation(p_base, p_anchor1, p_anchor2):
     return w_R_b
 
 
-def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=True, type_of_margin='6D', verbose=False):
+def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench, wall_normal =  np.array([1, 0, 0]), PLOT=True, type_of_margin='6D', verbose=False):
     '''You now need to fill the 'params' object with all the relevant 
         informations needed for the computation of the IP'''
     params = IterativeProjectionParameters()
@@ -223,14 +230,13 @@ def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench
     # if I set on the line between anchors Y moments of ropes are zero
     # if I set on the plane of anchors above left anchor you get Z moment of sx rope 0
 
-    gazeboWF_offset = np.array([10, 0, -10]) # we put WF with an offset wrf to left anchor to avoid flatness
+    gazeboWF_offset = np.array([10, 10, -10]) # we put WF with an offset wrf to left anchor to avoid flatness
 
     #inputs
     comWF = gazeboWF_offset + comPos
     anchor_distance = 5
     p_anchor1 = gazeboWF_offset + np.array([0,0,0])
     p_anchor2 = gazeboWF_offset + np.array([0, anchor_distance,0])
-    wall_normal =  np.array([1, 0, 0])
 
     # compute relevant kin quantities
     w_R_b = computeOrientation(comWF, p_anchor1, p_anchor2)
@@ -324,64 +330,110 @@ def evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench
     # res = computeMargin(FWP, direction_v=direction_of_max_wrench , static_wrench = static_wrench, type_of_margin='3D')
     # plot_FWP(FWP, "FWP", static_wrench = static_wrench, margin = res, direction_of_max_wrench=direction_of_max_wrench)
 
-comPos = np.array([1.5, 2.5, -6.0])
+comPos = np.array([0.5, 2.5, -6.0])
 max_rope_force = 600.
 max_leg_force = 300.
 mu = 0.8
 direction_of_max_wrench = np.array([-1, 0 ,0, 0, 0, 0])
-
-#for testing
-res, FWP, w_gi = evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench, type_of_margin='6D', verbose=True)
+wall_normal = np.array([1, 0, 0])
+wall_inclination = 0.4
+Ry = np.array([[np.cos(wall_inclination), 0, np.sin(wall_inclination)],
+               [0 & 1 & 0],
+               [-np.sin(wall_inclination), 0, np.cos(wall_inclination)]])
+wall_normal = Ry.dot(np.array([1, 0, 0]))
+# offset to com due to wal inclination
+comPos[0] += np.tan(wall_inclination) * abs(comPos[2])
+print(comPos)
 
 PAPER = False
 
-if PAPER:
-    # for paper
-    Npoints = 30
-    z = np.linspace(-5, -10, Npoints)
-    y = np.linspace(0, 5, Npoints)
+#for testing
+if not PAPER:
+    res, FWP, w_gi = evalMargin(comPos, mu,max_rope_force, max_leg_force, direction_of_max_wrench, wall_normal=wall_normal, type_of_margin='6D', verbose=True)
+else:
+    if PAPER:
+        # for paper
+        Npoints = 30
+        z = np.linspace(-5, -10, Npoints)
+        y = np.linspace(0, 5, Npoints)
+        comPos = np.array([0.5, 2.5, -6.0])
+
+        # # drilling 0.2
+        wall_inclination = 0.2
+        Ry = np.array([[np.cos(wall_inclination), 0, np.sin(wall_inclination)],
+                       [0 & 1 & 0],
+                       [-np.sin(wall_inclination), 0, np.cos(wall_inclination)]])
+        wall_normal = Ry.dot(np.array([1, 0, 0]))
+        # offset to com due to wal inclination
+        comPos[0] += np.tan(wall_inclination)* abs(comPos[2])
+
+        margin_array = np.zeros((Npoints,Npoints))
+        direction_of_max_wrench = np.array([-1, 0, 0, 0, 0, 0])
+        for z_idx in range(len(z)):
+            print(f"z: {z[z_idx]}")
+            for y_idx in range(len(y)):
+                print(f"y: {y[y_idx]}")
+                res, FWP, w_gi = evalMargin(np.array([comPos[0], y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force,
+                                            direction_of_max_wrench, wall_normal=wall_normal, PLOT=False, type_of_margin='6D')
+                if res is not None:
+                    margin_array[z_idx, y_idx] = abs(res[0])
+                else:
+                    margin_array[z_idx, y_idx] = 0
+        filename = f'drilling02.mat'
+        mio.savemat(filename, {'margin': margin_array, 'z': z, 'y':y})
+
+        ################################
+        # drilling 0.4
+        wall_inclination = 0.4
+        comPos = np.array([0.5, 2.5, -6.0])
+        Ry = np.array([[np.cos(wall_inclination), 0, np.sin(wall_inclination)],
+                       [0 & 1 & 0],
+                       [-np.sin(wall_inclination), 0, np.cos(wall_inclination)]])
+        wall_normal = Ry.dot(np.array([1, 0, 0]))
+        # offset to com due to wal inclination
+        comPos[0] += np.tan(wall_inclination)*abs(comPos[2])
+
+        margin_array = np.zeros((Npoints, Npoints))
+        direction_of_max_wrench = np.array([-1, 0, 0, 0, 0, 0])
+        for z_idx in range(len(z)):
+            print(f"z: {z[z_idx]}")
+            for y_idx in range(len(y)):
+                print(f"y: {y[y_idx]}")
+                res, FWP, w_gi = evalMargin(np.array([comPos[0], y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force,
+                                            direction_of_max_wrench, wall_normal=wall_normal, PLOT=False, type_of_margin='6D')
+                if res is not None:
+                    margin_array[z_idx, y_idx] = abs(res[0])
+                else:
+                    margin_array[z_idx, y_idx] = 0
+        filename = f'drilling04.mat'
+        mio.savemat(filename, {'margin': margin_array, 'z': z, 'y': y})
 
 
-    # # drilling
-    margin_array = np.zeros((Npoints,Npoints))
-    direction_of_max_wrench = np.array([-1, 0, 0, 0, 0, 0])
-    for z_idx in range(len(z)):
-        print(f"z: {z[z_idx]}")
-        for y_idx in range(len(y)):
-            print(f"y: {y[y_idx]}")
-            res, FWP, w_gi = evalMargin(np.array([1.5, y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=False)
-            if res is not None:
-                margin_array[z_idx, y_idx] = abs(res[0])
-            else:
-                margin_array[z_idx, y_idx] = 0
-    filename = f'drilling.mat'
-    mio.savemat(filename, {'margin': margin_array, 'z': z, 'y':y})
-
-    # scaling
-    margin_array_fz = np.zeros((Npoints,Npoints))
-    margin_array_my = np.zeros((Npoints, Npoints))
-    direction_of_max_wrench = np.array([0, 0, -1, 0, 0, 0])
-    for z_idx in range(len(z)):
-        print(f"z: {z[z_idx]}")
-        for y_idx in range(len(y)):
-            print(f"y: {y[y_idx]}")
-            res, FWP, w_gi = evalMargin(np.array([1.5, y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=False)
-            if res is not None:
-                margin_array_fz[z_idx, y_idx] = abs(res[2])
-            else:
-                margin_array_fz[z_idx, y_idx] = 0
-    filename = f'scaling_fz.mat'
-    mio.savemat(filename, {'margin_fz': margin_array_fz, 'z': z, 'y':y})
-
-    direction_of_max_wrench = np.array([0, 0, 0, 0, -1, 0])
-    for z_idx in range(len(z)):
-        print(f"z: {z[z_idx]}")
-        for y_idx in range(len(y)):
-            print(f"y: {y[y_idx]}")
-            res, FWP, w_gi = evalMargin(np.array([1.5, y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench, PLOT=False)
-            if res is not None:
-                margin_array_my[z_idx, y_idx] = abs(res[4])
-            else:
-                margin_array_my[z_idx, y_idx] = 0
-    filename = f'scaling_my.mat'
-    mio.savemat(filename, {'margin_my': margin_array_my, 'z': z, 'y':y})
+        # scaling
+        # margin_array_fz = np.zeros((Npoints,Npoints))
+        # margin_array_my = np.zeros((Npoints, Npoints))
+        # direction_of_max_wrench = np.array([0, 0, -1, 0, 0, 0])
+        # for z_idx in range(len(z)):
+        #     print(f"z: {z[z_idx]}")
+        #     for y_idx in range(len(y)):
+        #         print(f"y: {y[y_idx]}")
+        #         res, FWP, w_gi = evalMargin(np.array([comPos[0], y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench, wall_normal=wall_normal,PLOT=False)
+        #         if res is not None:
+        #             margin_array_fz[z_idx, y_idx] = abs(res[2])
+        #         else:
+        #             margin_array_fz[z_idx, y_idx] = 0
+        # filename = f'scaling_fz.mat'
+        # mio.savemat(filename, {'margin_fz': margin_array_fz, 'z': z, 'y':y})
+        #
+        # direction_of_max_wrench = np.array([0, 0, 0, 0, -1, 0])
+        # for z_idx in range(len(z)):
+        #     print(f"z: {z[z_idx]}")
+        #     for y_idx in range(len(y)):
+        #         print(f"y: {y[y_idx]}")
+        #         res, FWP, w_gi = evalMargin(np.array([comPos[0], y[y_idx], z[z_idx]]), mu, max_rope_force, max_leg_force, direction_of_max_wrench,wall_normal=wall_normal, PLOT=False)
+        #         if res is not None:
+        #             margin_array_my[z_idx, y_idx] = abs(res[4])
+        #         else:
+        #             margin_array_my[z_idx, y_idx] = 0
+        # filename = f'scaling_my.mat'
+        # mio.savemat(filename, {'margin_my': margin_array_my, 'z': z, 'y':y})
